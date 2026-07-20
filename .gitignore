@@ -64,3 +64,9 @@ data/raw/
 data/processed/
 data/vectorstore/
 data/cache/
+
+# ==========================
+# AI Development Files
+# ==========================
+AI_CONTEXT.md
+docs/PROMPT_GUIDE.md
