@@ -1,13 +1,66 @@
-# Python-generated files
+# ==========================
+# Python
+# ==========================
 __pycache__/
-*.py[oc]
+*.py[cod]
+*$py.class
+
+# Distribution
 build/
 dist/
-wheels/
-*.egg-info
+*.egg-info/
+.eggs/
 
-# Virtual environments
-.venv
+# ==========================
+# Virtual Environment
+# ==========================
+.venv/
+venv/
 
-# environment variable
+# ==========================
+# Environment Variables
+# ==========================
 .env
+
+# ==========================
+# IDE
+# ==========================
+.vscode/
+.idea/
+
+# ==========================
+# Testing
+# ==========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================
+# Jupyter
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+
+# ==========================
+# OS Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Streamlit
+# ==========================
+.streamlit/secrets.toml
+
+# ==========================
+# Local Data
+# ==========================
+data/raw/
+data/processed/
+data/vectorstore/
+data/cache/
