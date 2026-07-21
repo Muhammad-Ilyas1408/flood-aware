@@ -56,10 +56,6 @@ Completed:
 - Coordinate Reference System (CRS) support
 - GIS exception hierarchy
 - GIS validation utilities
-- Coordinate validation
-- EPSG validation
-- CRS validation
-- WGS 84 GIS foundation
 
 ### Sprint 3.2 – Geometry Models & Spatial Operations
 Completed:
@@ -68,7 +64,17 @@ Completed:
 - DistanceResult model
 - Haversine distance calculations
 - Initial bearing calculations
-- Geographic midpoint helper
-- Bounding box helpers
-- Coordinate rounding utilities
-- Longitude normalization
+- Bounding box operations
+- Geometry helper utilities
+- Coordinate normalization
+- Coordinate rounding
+
+### Sprint 3.3 – GeoJSON Parsing & Serialization
+Completed:
+- GeoJSON Point model
+- GeoJSON Feature model
+- GeoJSON FeatureCollection model
+- Point ↔ GeoJSON conversion
+- GeoJSON serialization/deserialization
+- GeoJSON validation
+- Point-only GeoJSON support
