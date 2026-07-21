@@ -60,3 +60,15 @@ Completed:
 - EPSG validation
 - CRS validation
 - WGS 84 GIS foundation
+
+### Sprint 3.2 – Geometry Models & Spatial Operations
+Completed:
+- Immutable Point model
+- Immutable BoundingBox model
+- DistanceResult model
+- Haversine distance calculations
+- Initial bearing calculations
+- Geographic midpoint helper
+- Bounding box helpers
+- Coordinate rounding utilities
+- Longitude normalization

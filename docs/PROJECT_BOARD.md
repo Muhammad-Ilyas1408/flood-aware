@@ -52,12 +52,16 @@ Deliverables:
 
 ---
 
-## Sprint 3.3 – GeoJSON Support
-Status: Planned
+## Sprint 3 – GIS Foundation
+Status: Completed
+Completed: 2026-07-22
 
 Deliverables:
-- [ ] GeoJSON models
-- [ ] Feature support
-- [ ] FeatureCollection support
-- [ ] GeoJSON serialization
-- [ ] GeoJSON validation
+- [x] GIS constants
+- [x] CRS support
+- [x] GIS exception hierarchy
+- [x] GIS validation utilities
+- [x] Geometry models
+- [x] BoundingBox
+- [x] Distance calculations
+- [x] Geometry helper utilities
