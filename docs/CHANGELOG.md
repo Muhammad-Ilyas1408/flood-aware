@@ -8,6 +8,36 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.2] - 2026-07-22
+
+### Added
+
+#### Sprint 4.3 – File Repository Infrastructure
+
+- Added shared file support utilities
+- Added dataset file format detection
+- Added immutable filesystem metadata model
+- Added deterministic dataset discovery
+- Added CSV validation infrastructure
+- Added CSV record counting
+- Added GeoJSON FeatureCollection validation infrastructure
+- Added GeoJSON feature counting
+- Reused existing GeoJSON parser for validation
+- Added UTF-8/BOM-safe dataset loading
+- Applied Rule of Two for shared filesystem abstractions
+
+### Notes
+
+- No repository implementations added
+- No CRUD operations implemented
+- No dataset identifiers introduced
+- No metadata values fabricated
+- No import/export functionality added
+- No API endpoints changed
+- File infrastructure currently provides reusable read-only utilities only
+
+---
+
 ## [0.4.1] - 2026-07-22
 
 ### Added

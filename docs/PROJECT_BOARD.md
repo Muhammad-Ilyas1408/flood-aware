@@ -104,32 +104,34 @@ Deliverables:
 
 ---
 
-### Sprint 4.3 – Repository Implementations & Dataset Management
+### Sprint 4.3 – File Repository Infrastructure
 
-Status: Planned
+Status: Completed
+Completed: 2026-07-22
 
 Deliverables:
 
-- [ ] In-memory repository
-- [ ] CSV repository
-- [ ] Repository factory
-- [ ] Repository validation
-- [ ] Dataset discovery
-- [ ] Dataset metadata loading
-- [ ] Import/export contracts
-- [ ] File abstraction
-- [ ] Dataset registration
+- [x] Shared filesystem support
+- [x] Dataset file format detection
+- [x] File metadata extraction
+- [x] Dataset discovery
+- [x] CSV validation
+- [x] CSV record counting
+- [x] GeoJSON validation
+- [x] GeoJSON feature counting
 
 ---
 
-## Sprint 5 – Planned
+### Sprint 4.4 – Dataset Import & Export
 
 Status: Planned
 
 Deliverables:
 
-- [ ] Flood domain models
-- [ ] Prediction contracts
-- [ ] Risk-level models
-- [ ] Hazard zones
-- [ ] Business entities
+- [ ] CSV export
+- [ ] GeoJSON export
+- [ ] Import helpers
+- [ ] Format conversion
+- [ ] Streaming support
+
+---
