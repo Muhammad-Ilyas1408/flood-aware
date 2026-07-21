@@ -32,7 +32,7 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         "Starting %s version %s in %s environment.",
         settings.application_name,
         settings.version,
-        settings.environment,
+        settings.environment.value,
     )
     try:
         yield
@@ -74,7 +74,7 @@ def run_application() -> None:
         "backend.app.main:app",
         host=str(settings.host),
         port=settings.port,
-        log_level=settings.log_level.lower(),
+        log_level=settings.log_level.value.lower(),
     )
 
 
