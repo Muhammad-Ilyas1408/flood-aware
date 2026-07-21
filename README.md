@@ -96,7 +96,7 @@ Evaluate hypothetical flood situations such as:
 
 ---
 
-# ⚙ Technology Stack
+# Technology Stack
 
 ## Backend
 
@@ -202,7 +202,7 @@ Flood-Aware/
 
 ---
 
-# 🛣 Development Roadmap
+# Development Roadmap
 
 ## Phase 1
 

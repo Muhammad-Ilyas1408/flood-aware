@@ -28,12 +28,36 @@ Deliverables:
 
 ---
 
-## Sprint 3 – GIS Foundation
+## Sprint 3.1 – GIS Foundation
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+- [x] GIS constants
+- [x] CRS support
+- [x] GIS exception hierarchy
+- [x] GIS validation utilities
+
+---
+
+## Sprint 3.2 – Geometry Models & Spatial Operations
 Status: Planned
 
 Deliverables:
-- [ ] GIS package
-- [ ] Spatial models
-- [ ] Coordinate transformations
-- [ ] GeoJSON support
-- [ ] Spatial validation
+- [ ] Coordinate models
+- [ ] Point model
+- [ ] Bounding box model
+- [ ] Distance calculations
+- [ ] Geometry validation
+
+---
+
+## Sprint 3.3 – GeoJSON Support
+Status: Planned
+
+Deliverables:
+- [ ] GeoJSON models
+- [ ] Feature support
+- [ ] FeatureCollection support
+- [ ] GeoJSON serialization
+- [ ] GeoJSON validation
