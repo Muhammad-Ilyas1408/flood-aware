@@ -8,6 +8,32 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.1] - 2026-07-22
+
+### Added
+
+#### Sprint 4.2 – Repository Contracts
+
+- Added repository protocol architecture
+- Added generic repository contracts
+- Added `RepositoryProtocol`
+- Added `ReadOnlyRepositoryProtocol`
+- Added `WritableRepositoryProtocol`
+- Applied Interface Segregation Principle (ISP)
+- Adopted `typing.Protocol` for structural typing
+- Added strongly typed generic repository interfaces
+- Added reusable repository validation contract
+- Added reusable repository metadata contract
+
+### Notes
+
+- No repository implementations added
+- No filesystem access introduced
+- No persistence logic added
+- No business logic added
+- No API endpoints changed
+- Repository layer currently defines reusable contracts only
+
 ## [0.4.0] - 2026-07-22
 
 ### Added

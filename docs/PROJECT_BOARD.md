@@ -70,6 +70,8 @@ Completed: 2026-07-22
 
 Status: In Progress
 
+---
+
 ### Sprint 4.1 – Data Layer Foundation
 
 Status: Completed
@@ -82,28 +84,36 @@ Deliverables:
 - [x] Dataset statistics model
 - [x] Dataset bounds model
 - [x] Dataset information model
-- [x] Dataset validation utilities
-- [x] Reuse GIS contracts
-- [x] Metadata timestamp validation
+- [x] Data validation utilities
+
+---
 
 ### Sprint 4.2 – Repository Contracts
 
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] RepositoryProtocol
+- [x] ReadOnlyRepositoryProtocol
+- [x] WritableRepositoryProtocol
+- [x] Generic repository typing
+- [x] Repository metadata contract
+- [x] Repository validation contract
+
+---
+
+### Sprint 4.3 – Repository Implementations & Dataset Management
+
 Status: Planned
 
 Deliverables:
 
-- [ ] Repository interfaces
-- [ ] Abstract repository contracts
-- [ ] Generic CRUD operations
-- [ ] Repository exceptions
+- [ ] In-memory repository
+- [ ] CSV repository
+- [ ] Repository factory
 - [ ] Repository validation
-
-### Sprint 4.3 – Dataset Management
-
-Status: Planned
-
-Deliverables:
-
 - [ ] Dataset discovery
 - [ ] Dataset metadata loading
 - [ ] Import/export contracts
