@@ -1,9 +1,9 @@
 """Centralized application configuration."""
 
+from enum import Enum
 from functools import lru_cache
 from ipaddress import IPv4Address
 from pathlib import Path
-from enum import Enum
 
 from pydantic import Field, IPvAnyAddress
 from pydantic_settings import BaseSettings, SettingsConfigDict
