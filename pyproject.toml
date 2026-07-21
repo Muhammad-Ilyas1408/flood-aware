@@ -1,9 +1,11 @@
 [project]
 name = "flood-aware"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered Flood Decision Support System for the Swat River Basin"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.139.2",
+    "pydantic-settings>=2.0.0",
+    "uvicorn[standard]>=0.30.0",
 ]
