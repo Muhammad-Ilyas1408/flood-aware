@@ -31,6 +31,7 @@ async def log_request(
     """
 
     request_id = request.headers.get("X-Request-ID", str(uuid4()))
+    request.state.request_id = request_id
     start_time = perf_counter()
     try:
         response = await call_next(request)

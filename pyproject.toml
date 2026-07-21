@@ -3,6 +3,25 @@ name = "flood-aware"
 version = "0.1.0"
 description = "AI-powered Flood Decision Support System for the Swat River Basin"
 readme = "README.md"
+
+authors = [
+    { name = "Muhammad Ilyas" }
+]
+
+license = "MIT"
+
+keywords = [
+    "ai",
+    "llm",
+    "langgraph",
+    "fastapi",
+    "streamlit",
+    "gis",
+    "flood",
+    "rag",
+    "disaster-management",
+]
+
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.139.2",

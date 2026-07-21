@@ -1,40 +1,34 @@
 """Centralized HTTP exception handling for the FastAPI application."""
 
 from datetime import UTC, datetime
-from typing import Any
 
 from fastapi import Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from starlette.exceptions import HTTPException
 
 from backend.app.core.logger import get_logger
+from backend.app.core.validation_exceptions import ValidationException
+from backend.app.schemas.errors import ErrorResponse, ValidationIssue
 
 
 logger = get_logger(__name__)
 
 
-class ErrorResponse(BaseModel):
-    """Represent the standardized JSON error response returned by the API."""
-
-    status_code: int
-    detail: str
-    timestamp: datetime
-    errors: list[dict[str, Any]] | None = None
-
-
 def _error_response(
+    request: Request,
     status_code: int,
     detail: str,
-    errors: list[dict[str, Any]] | None = None,
+    errors: list[ValidationIssue] | None = None,
 ) -> JSONResponse:
     """Build a standardized JSON error response without exposing internals."""
 
     payload = ErrorResponse(
         status_code=status_code,
         detail=detail,
+        path=request.url.path,
+        request_id=getattr(request.state, "request_id", None),
         timestamp=datetime.now(UTC),
         errors=errors,
     )
@@ -57,7 +51,7 @@ async def handle_http_exception(
         exception.status_code,
     )
     detail = exception.detail if isinstance(exception.detail, str) else "Request failed."
-    return _error_response(exception.status_code, detail)
+    return _error_response(request, exception.status_code, detail)
 
 
 async def handle_request_validation_error(
@@ -73,9 +67,43 @@ async def handle_request_validation_error(
         len(exception.errors()),
     )
     return _error_response(
+        request,
         status.HTTP_422_UNPROCESSABLE_CONTENT,
         "Request validation failed.",
-        exception.errors(),
+        [
+            ValidationIssue(
+                location=[str(part) if not isinstance(part, int) else part for part in error["loc"]],
+                message=error["msg"],
+                error_type=error["type"],
+            )
+            for error in exception.errors()
+        ],
+    )
+
+
+async def handle_validation_exception(
+    request: Request,
+    exception: ValidationException,
+) -> JSONResponse:
+    """Return a consistent response for shared domain validation failures."""
+
+    logger.warning(
+        "Domain validation failed: method=%s path=%s exception_type=%s",
+        request.method,
+        request.url.path,
+        type(exception).__name__,
+    )
+    return _error_response(
+        request,
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+        "Request validation failed.",
+        [
+            ValidationIssue(
+                location=[exception.field] if exception.field else ["validation"],
+                message=exception.message,
+                error_type=type(exception).__name__,
+            )
+        ],
     )
 
 
@@ -92,6 +120,7 @@ async def handle_unexpected_exception(
         type(exception).__name__,
     )
     return _error_response(
+        request,
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         "An unexpected server error occurred.",
     )

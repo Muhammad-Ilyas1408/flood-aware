@@ -3,26 +3,14 @@
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, status
-from pydantic import BaseModel, ConfigDict
 
 from backend.app.config.settings import Settings, get_settings
 from backend.app.core.logger import get_logger
+from backend.app.schemas.health import HealthResponse
 
 
 logger = get_logger(__name__)
 router = APIRouter(tags=["Health"])
-
-
-class HealthResponse(BaseModel):
-    """Describe the running application's health using an additive response contract."""
-
-    model_config = ConfigDict(extra="ignore")
-
-    status: str
-    application: str
-    version: str
-    environment: str
-    timestamp: datetime
 
 
 @router.get(
@@ -39,6 +27,6 @@ async def get_health(settings: Settings = Depends(get_settings)) -> HealthRespon
         status="healthy",
         application=settings.application_name,
         version=settings.version,
-        environment=settings.environment,
+        environment=settings.environment.value,
         timestamp=datetime.now(UTC),
     )

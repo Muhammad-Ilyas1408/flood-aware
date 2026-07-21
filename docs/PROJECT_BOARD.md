@@ -2,6 +2,7 @@
 
 ## Sprint 1 – Backend Foundation
 Status: Completed
+Completed: 2026-07-21
 
 Deliverables:
 - [x] FastAPI application
@@ -15,10 +16,24 @@ Deliverables:
 ---
 
 ## Sprint 2 – Core Backend Components
-Status: Not Started
+Status: Completed
+Completed: 2026-07-21
 
 Deliverables:
-- [ ] Shared API schemas
-- [ ] Domain models
-- [ ] Common response models
-- [ ] Validation utilities
+- [x] Shared API schemas
+- [x] Domain models
+- [x] Common response models
+- [x] Validation utilities
+- [x] Validation exception refinement
+
+---
+
+## Sprint 3 – GIS Foundation
+Status: Planned
+
+Deliverables:
+- [ ] GIS package
+- [ ] Spatial models
+- [ ] Coordinate transformations
+- [ ] GeoJSON support
+- [ ] Spatial validation

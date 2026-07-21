@@ -15,8 +15,10 @@ from backend.app.core.exceptions import (
     handle_http_exception,
     handle_request_validation_error,
     handle_unexpected_exception,
+    handle_validation_exception,
 )
 from backend.app.core.logger import get_logger
+from backend.app.core.validation_exceptions import ValidationException
 from backend.app.middleware.request_logging import log_request
 
 
@@ -61,6 +63,7 @@ def create_application() -> FastAPI:
     application.include_router(api_router, prefix=settings.api_prefix)
     application.add_exception_handler(HTTPException, handle_http_exception)
     application.add_exception_handler(RequestValidationError, handle_request_validation_error)
+    application.add_exception_handler(ValidationException, handle_validation_exception)
     application.add_exception_handler(Exception, handle_unexpected_exception)
     application.middleware("http")(log_request)
     return application
