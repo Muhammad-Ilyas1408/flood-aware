@@ -260,3 +260,42 @@ Deliverables:
 - [x] CSV repository validation tests
 - [x] GeoJSON repository validation tests
 - [x] Negative validation scenarios
+
+---
+
+## Sprint 6 – API Layer
+
+Status: In Progress
+
+---
+
+### Sprint 6.1 – API Contracts
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] VillageResponse
+- [x] VillageListResponse
+- [x] ShelterResponse
+- [x] ShelterListResponse
+- [x] DatasetSummaryResponse
+- [x] Reused shared response wrappers
+- [x] Reused DatasetMetadata
+- [x] Reused DatasetStatistics
+- [x] Standardized API response contracts
+
+---
+
+### Sprint 6.2 – API Endpoints
+
+Status: Planned
+
+Deliverables:
+
+- [ ] GET /villages
+- [ ] GET /shelters
+- [ ] GET /datasets/summary
+- [ ] Service integration
+- [ ] FastAPI routers

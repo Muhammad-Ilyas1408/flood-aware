@@ -8,6 +8,37 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.1] - 2026-07-22
+
+### Added
+
+#### Sprint 6.1 – API Contracts
+
+- Added `VillageResponse`
+- Added `VillageListResponse`
+- Added `ShelterResponse`
+- Added `ShelterListResponse`
+- Added `DatasetSummaryResponse`
+- Reused existing `SuccessResponse`
+- Reused existing `BaseResponse`
+- Reused existing `ErrorResponse`
+- Reused existing `DatasetMetadata`
+- Reused existing `DatasetStatistics`
+- Added strict immutable Pydantic API contracts
+- Refined `DatasetSummaryResponse` by renaming `dataset_metadata` to `metadata` for improved readability
+
+### Notes
+
+- No API endpoints added
+- No routing added
+- No dependency injection added
+- No repository changes
+- No service changes
+- No business logic introduced
+- API contracts only
+
+---
+
 ## [0.5.3] - 2026-07-22
 
 ### Added
