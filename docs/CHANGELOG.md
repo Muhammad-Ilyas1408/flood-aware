@@ -8,6 +8,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.3] - 2026-07-22
+
+### Changed
+
+#### Sprint 4.4 – Dataset Contracts
+
+- Introduced reusable `DatasetScalar` type alias
+- Refactored `DatasetRow` to use `DatasetScalar`
+- Reduced duplication in tabular dataset contracts
+- Improved maintainability without changing behavior
+
+### Notes
+
+- No API changes
+- No validation changes
+- No serialization changes
+- No exception changes
+- Refactoring only
+
 ## [0.4.2] - 2026-07-22
 
 ### Added

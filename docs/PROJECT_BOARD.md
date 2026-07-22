@@ -111,27 +111,37 @@ Completed: 2026-07-22
 
 Deliverables:
 
-- [x] Shared filesystem support
-- [x] Dataset file format detection
-- [x] File metadata extraction
-- [x] Dataset discovery
+- [x] File infrastructure
 - [x] CSV validation
-- [x] CSV record counting
 - [x] GeoJSON validation
-- [x] GeoJSON feature counting
+- [x] Dataset discovery
+- [x] Filesystem metadata extraction
 
 ---
 
-### Sprint 4.4 – Dataset Import & Export
+### Sprint 4.4 – Dataset Contracts
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] DatasetColumnType
+- [x] DatasetColumn
+- [x] DatasetSchema
+- [x] DatasetRow
+- [x] DatasetTable
+- [x] Dataset scalar type alias
+
+---
+
+### Sprint 4.5 – Repository Implementations
 
 Status: Planned
 
 Deliverables:
 
-- [ ] CSV export
-- [ ] GeoJSON export
-- [ ] Import helpers
-- [ ] Format conversion
-- [ ] Streaming support
-
----
+- [ ] In-memory repository
+- [ ] CSV repository
+- [ ] GeoJSON repository
+- [ ] Repository validation

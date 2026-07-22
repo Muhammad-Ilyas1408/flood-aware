@@ -1,5 +1,8 @@
 """Immutable metadata contracts for future Flood-Aware data sources."""
 
+from datetime import datetime
+from enum import StrEnum
+
 from pydantic import (
     AwareDatetime,
     BaseModel,
@@ -22,6 +25,129 @@ from backend.app.gis.crs import CRS
 from backend.app.gis.exceptions import CRSError
 from backend.app.gis.geometry import BoundingBox
 from backend.app.gis.validation import validate_crs
+
+
+DatasetScalar = str | int | float | bool | datetime | None
+
+
+class DatasetColumnType(StrEnum):
+    """Represent scalar value types supported by tabular dataset contracts."""
+
+    STRING = "string"
+    INTEGER = "integer"
+    FLOAT = "float"
+    BOOLEAN = "boolean"
+    DATETIME = "datetime"
+
+
+class DatasetColumn(BaseModel):
+    """Describe one ordered, typed column in a structured dataset schema."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    name: str
+    data_type: DatasetColumnType
+    nullable: bool = True
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def validate_column_name(cls, value: object) -> str:
+        """Validate that a column name is a nonblank string."""
+
+        if not isinstance(value, str) or not value.strip():
+            raise DatasetValidationError("Dataset column name must be a nonblank string.")
+        return value
+
+
+class DatasetSchema(BaseModel):
+    """Describe the ordered columns that define a structured dataset."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    columns: tuple[DatasetColumn, ...]
+
+    @model_validator(mode="after")
+    def validate_unique_column_names(self) -> "DatasetSchema":
+        """Ensure each schema column name is unique."""
+
+        column_names = tuple(column.name for column in self.columns)
+        if len(column_names) != len(set(column_names)):
+            raise DatasetValidationError("Dataset schema column names must be unique.")
+        return self
+
+
+class DatasetRow(BaseModel):
+    """Represent immutable scalar values ordered according to a dataset schema."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    values: tuple[DatasetScalar, ...]
+
+    @field_validator("values", mode="before")
+    @classmethod
+    def validate_row_values(
+        cls,
+        value: object,
+    ) -> tuple[DatasetScalar, ...]:
+        """Validate immutable scalar row values before model parsing."""
+
+        if not isinstance(value, (list, tuple)):
+            raise DatasetValidationError("Dataset row values must be a sequence.")
+        if any(
+            cell is not None
+            and not isinstance(cell, (str, int, float, bool, datetime))
+            for cell in value
+        ):
+            raise DatasetValidationError("Dataset row values must be scalar values.")
+        return tuple(value)
+
+
+class DatasetTable(BaseModel):
+    """Represent an immutable structured dataset using a schema and ordered rows."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
+
+    dataset_schema: DatasetSchema
+    rows: tuple[DatasetRow, ...] = ()
+
+    @model_validator(mode="after")
+    def validate_rows_against_schema(self) -> "DatasetTable":
+        """Validate row widths, nullability, and scalar types against the schema."""
+
+        for row in self.rows:
+            if len(row.values) != len(self.dataset_schema.columns):
+                raise DatasetValidationError(
+                    "Dataset row value count must match the schema column count."
+                )
+            for column, value in zip(
+                self.dataset_schema.columns,
+                row.values,
+                strict=True,
+            ):
+                if value is None:
+                    if not column.nullable:
+                        raise DatasetValidationError(
+                            f"Dataset column '{column.name}' does not allow null values."
+                        )
+                    continue
+
+                match column.data_type:
+                    case DatasetColumnType.STRING:
+                        is_valid_type = isinstance(value, str)
+                    case DatasetColumnType.INTEGER:
+                        is_valid_type = isinstance(value, int) and not isinstance(value, bool)
+                    case DatasetColumnType.FLOAT:
+                        is_valid_type = isinstance(value, float)
+                    case DatasetColumnType.BOOLEAN:
+                        is_valid_type = isinstance(value, bool)
+                    case DatasetColumnType.DATETIME:
+                        is_valid_type = isinstance(value, datetime)
+
+                if not is_valid_type:
+                    raise DatasetValidationError(
+                        f"Dataset value does not match column '{column.name}' type."
+                    )
+        return self
 
 
 class DatasetBounds(BaseModel):
