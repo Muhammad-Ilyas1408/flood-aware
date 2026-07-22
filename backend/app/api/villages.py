@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, status
 
-from backend.app.composition import get_village_service
+from backend.app.composition import get_village_use_case
 from backend.app.schemas.datasets import VillageListResponse
 from backend.app.schemas.errors import ErrorResponse
-from backend.app.services.protocols import VillageServiceProtocol
+from backend.app.use_cases.protocols import ViewVillagesUseCaseProtocol
 
 
 router = APIRouter(tags=["Villages"])
@@ -27,7 +27,7 @@ router = APIRouter(tags=["Villages"])
     },
 )
 def get_villages(
-    service: VillageServiceProtocol = Depends(get_village_service),
+    use_case: ViewVillagesUseCaseProtocol = Depends(get_village_use_case),
 ) -> VillageListResponse:
-    """Return configured village records translated from the service DTO."""
-    return VillageListResponse.from_dto(service.load_villages())
+    """Return configured village records translated from the use-case DTO."""
+    return VillageListResponse.from_dto(use_case.execute())

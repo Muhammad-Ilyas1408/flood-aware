@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, status
 
-from backend.app.composition import get_dataset_catalog_service
+from backend.app.composition import get_dataset_catalog_use_case
 from backend.app.schemas.datasets import DatasetCatalogResponse
 from backend.app.schemas.errors import ErrorResponse
-from backend.app.services.protocols import DatasetCatalogServiceProtocol
+from backend.app.use_cases.protocols import ViewDatasetCatalogUseCaseProtocol
 
 
 router = APIRouter(tags=["Datasets"])
@@ -27,7 +27,9 @@ router = APIRouter(tags=["Datasets"])
     },
 )
 def get_dataset_catalog(
-    service: DatasetCatalogServiceProtocol = Depends(get_dataset_catalog_service),
+    use_case: ViewDatasetCatalogUseCaseProtocol = Depends(
+        get_dataset_catalog_use_case
+    ),
 ) -> DatasetCatalogResponse:
-    """Return configured dataset summaries translated from the service DTO."""
-    return DatasetCatalogResponse.from_dto(service.load_catalog())
+    """Return configured dataset summaries translated from the use-case DTO."""
+    return DatasetCatalogResponse.from_dto(use_case.execute())

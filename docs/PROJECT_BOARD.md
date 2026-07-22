@@ -348,3 +348,86 @@ Deliverables:
 - [x] OpenAPI documentation
 - [x] Endpoint integration tests
 - [x] Centralized exception handling
+
+## Sprint 7 – Application Use Cases
+
+Status: Completed
+Completed: 2026-07-23
+
+### Sprint 7.1 – Application Layer Foundation
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] Application Use Case layer
+- [x] Application package structure
+- [x] Clean orchestration boundary
+
+---
+
+### Sprint 7.2 – Use Case Protocols
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] ViewVillagesUseCaseProtocol
+- [x] ViewSheltersUseCaseProtocol
+- [x] ViewDatasetCatalogUseCaseProtocol
+
+---
+
+### Sprint 7.3 – Concrete Use Cases
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] ViewVillagesUseCase
+- [x] ViewSheltersUseCase
+- [x] ViewDatasetCatalogUseCase
+- [x] DTO passthrough orchestration
+
+---
+
+### Sprint 7.4 – Composition Providers
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] get_village_use_case()
+- [x] get_shelter_use_case()
+- [x] get_dataset_catalog_use_case()
+- [x] Composition Root integration
+
+---
+
+### Sprint 7.5 – API Migration
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] API depends on use-case protocols
+- [x] Endpoint migration
+- [x] DTO translation preserved
+
+---
+
+### Sprint 7.6 – Application Layer Tests
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] Use case delegation tests
+- [x] DTO identity verification
+- [x] Application Layer isolation tests

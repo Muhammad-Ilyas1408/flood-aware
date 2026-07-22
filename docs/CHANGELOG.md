@@ -8,6 +8,79 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.7.0] - 2026-07-23
+
+---
+
+### Added
+
+#### Sprint 7 – Application Use Case Layer
+
+##### Sprint 7.1 – Application Layer Foundation
+
+- Added dedicated Application Use Case layer
+- Established application-task orchestration boundary
+- Introduced application use-case package structure
+
+##### Sprint 7.2 – Use Case Protocols
+
+- Added `ViewVillagesUseCaseProtocol`
+- Added `ViewSheltersUseCaseProtocol`
+- Added `ViewDatasetCatalogUseCaseProtocol`
+- Introduced structural protocols for application tasks
+
+##### Sprint 7.3 – Concrete Use Cases
+
+- Added `ViewVillagesUseCase`
+- Added `ViewSheltersUseCase`
+- Added `ViewDatasetCatalogUseCase`
+- Introduced thin orchestration layer between API and Services
+- Preserved immutable DTO passthrough
+
+##### Sprint 7.4 – Composition Providers
+
+- Added `get_village_use_case()`
+- Added `get_shelter_use_case()`
+- Added `get_dataset_catalog_use_case()`
+- Extended Composition Root to construct application use cases
+- Preserved existing service composition
+
+##### Sprint 7.5 – API Migration
+
+- Migrated API endpoints to depend on use-case protocols
+- API now invokes application use cases instead of services
+- DTO-to-schema translation remains exclusively within the API layer
+- Preserved endpoint behavior and response payloads
+
+##### Sprint 7.6 – Application Layer Tests
+
+- Added dedicated unit tests for application use cases
+- Verified service delegation
+- Verified immutable DTO passthrough
+- Verified Application Layer isolation from FastAPI, repositories, and filesystem
+- Added orchestration-layer architectural tests
+
+### Changed
+
+- API dependency flow now follows:
+
+  API → Use Cases → Services → Repositories
+
+- Application Layer now provides the stable orchestration boundary for future AI agents
+
+### Notes
+
+- No business logic introduced
+- No repository behavior changed
+- No service behavior changed
+- No DTO changes
+- No API response changes
+- Clean Architecture dependency direction preserved
+- Application Layer completed
+- Ready for Sprint 8 – AI Decision Engine
+
+---
+
 ## [0.6.4] - 2026-07-23
 
 ### Added

@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, status
 
-from backend.app.composition import get_shelter_service
+from backend.app.composition import get_shelter_use_case
 from backend.app.schemas.datasets import ShelterListResponse
 from backend.app.schemas.errors import ErrorResponse
-from backend.app.services.protocols import ShelterServiceProtocol
+from backend.app.use_cases.protocols import ViewSheltersUseCaseProtocol
 
 
 router = APIRouter(tags=["Shelters"])
@@ -27,7 +27,7 @@ router = APIRouter(tags=["Shelters"])
     },
 )
 def get_shelters(
-    service: ShelterServiceProtocol = Depends(get_shelter_service),
+    use_case: ViewSheltersUseCaseProtocol = Depends(get_shelter_use_case),
 ) -> ShelterListResponse:
-    """Return configured shelter records translated from the service DTO."""
-    return ShelterListResponse.from_dto(service.load_shelters())
+    """Return configured shelter records translated from the use-case DTO."""
+    return ShelterListResponse.from_dto(use_case.execute())

@@ -14,6 +14,14 @@ from backend.app.services.protocols import (
     ShelterServiceProtocol,
     VillageServiceProtocol,
 )
+from backend.app.use_cases.dataset_catalog import ViewDatasetCatalogUseCase
+from backend.app.use_cases.protocols import (
+    ViewDatasetCatalogUseCaseProtocol,
+    ViewSheltersUseCaseProtocol,
+    ViewVillagesUseCaseProtocol,
+)
+from backend.app.use_cases.shelters import ViewSheltersUseCase
+from backend.app.use_cases.villages import ViewVillagesUseCase
 
 
 def configure_dataset_dependencies(
@@ -54,6 +62,23 @@ def get_shelter_service(request: Request) -> ShelterServiceProtocol:
 def get_dataset_catalog_service(request: Request) -> DatasetCatalogServiceProtocol:
     """Provide a dataset catalog service from application configuration."""
     return create_dataset_catalog_service(_get_dataset_catalog_config(request))
+
+
+def get_village_use_case(request: Request) -> ViewVillagesUseCaseProtocol:
+    """Provide the use case for viewing configured village records."""
+    return ViewVillagesUseCase(get_village_service(request))
+
+
+def get_shelter_use_case(request: Request) -> ViewSheltersUseCaseProtocol:
+    """Provide the use case for viewing configured shelter records."""
+    return ViewSheltersUseCase(get_shelter_service(request))
+
+
+def get_dataset_catalog_use_case(
+    request: Request,
+) -> ViewDatasetCatalogUseCaseProtocol:
+    """Provide the use case for viewing the configured dataset catalog."""
+    return ViewDatasetCatalogUseCase(get_dataset_catalog_service(request))
 
 
 def _get_dataset_catalog_config(request: Request) -> DatasetCatalogConfig:
