@@ -228,3 +228,19 @@ Deliverables:
 - [x] Constructor dependency injection
 - [x] DatasetTableRepositoryProtocol integration
 
+---
+
+### Sprint 5.3 – Service Configuration / Dependency Wiring
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] Dependency factory functions
+- [x] create_dataset_service()
+- [x] create_village_service()
+- [x] create_shelter_service()
+- [x] Centralized repository construction
+- [x] Explicit dependency injection
+- [x] CSV repository wiring

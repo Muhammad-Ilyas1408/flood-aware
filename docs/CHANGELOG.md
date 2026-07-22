@@ -8,6 +8,32 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.2] - 2026-07-22
+
+### Added
+
+#### Sprint 5.3 – Service Configuration / Dependency Wiring
+
+- Added explicit dependency factory functions
+- Added `create_dataset_service`
+- Added `create_village_service`
+- Added `create_shelter_service`
+- Centralized repository and service construction
+- Added reusable CSV repository construction helper
+- Preserved explicit dependency injection
+- Prepared architecture for future FastAPI endpoint wiring
+
+### Notes
+
+- No API endpoints added
+- No business logic introduced
+- No repository contracts modified
+- No service contracts modified
+- No filesystem access performed during construction
+- All metadata and schemas remain caller supplied
+
+---
+
 ## [0.5.1] - 2026-07-22
 
 ### Added
