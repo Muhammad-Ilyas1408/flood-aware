@@ -135,13 +135,17 @@ Deliverables:
 
 ---
 
-### Sprint 4.5 – Repository Implementations
+### Sprint 4.5 – Serialization Contracts
 
-Status: Planned
+Status: Completed
+Completed: 2026-07-22
 
 Deliverables:
 
-- [ ] In-memory repository
-- [ ] CSV repository
-- [ ] GeoJSON repository
-- [ ] Repository validation
+- [x] CSV serialization
+- [x] CSV deserialization
+- [x] GeoJSON serialization
+- [x] GeoJSON deserialization
+- [x] Explicit schema validation
+- [x] Explicit geometry validation
+- [x] Reusable serialization utilities

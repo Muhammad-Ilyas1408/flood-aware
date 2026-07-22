@@ -8,6 +8,34 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.4] - 2026-07-22
+
+### Added
+
+#### Sprint 4.5 – Serialization Contracts
+
+- Added CSV serialization between `DatasetTable` and CSV text
+- Added CSV deserialization using explicit `DatasetSchema`
+- Added GeoJSON serialization between `DatasetTable` and `FeatureCollection`
+- Added GeoJSON deserialization using explicit `DatasetSchema`
+- Added deterministic serialization validation
+- Reused existing GIS GeoJSON models
+- Reused existing dataset contracts
+- Added shared dataset table construction helper
+- Enforced explicit schema and geometry requirements
+- Added strict scalar serialization rules
+
+### Notes
+
+- No repository implementations added
+- No CRUD logic added
+- No schema inference introduced
+- No geometry inference introduced
+- No metadata or identifiers invented
+- No business logic added
+- Existing APIs remain unchanged
+- Serialization operates exclusively through explicit dataset contracts
+
 ## [0.4.3] - 2026-07-22
 
 ### Changed
