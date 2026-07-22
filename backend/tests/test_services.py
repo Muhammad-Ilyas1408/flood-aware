@@ -5,7 +5,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from fastapi import Request
+
+from backend.app.composition import (
+    get_dataset_catalog_service,
+    get_shelter_service,
+    get_village_service,
+)
 from backend.app.config.datasets import DatasetCatalogConfig
+from backend.app.core.application_exceptions import ApplicationConfigurationError
 from backend.app.data.exceptions import DatasetFormatError, DatasetValidationError
 from backend.app.data.file_support import DatasetFileFormat
 from backend.app.data.models import (
@@ -35,6 +43,7 @@ from backend.app.schemas.datasets import (
     ShelterListResponse,
     VillageListResponse,
 )
+from backend.app.main import create_application
 
 
 FIXTURES_DIRECTORY = Path(__file__).parent / "fixtures"
@@ -134,6 +143,25 @@ def _geojson_repository(
             dataset_schema=schema,
             file_format=DatasetFileFormat.GEOJSON,
         )
+    )
+
+
+def _dataset_catalog_configuration() -> DatasetCatalogConfig:
+    """Build explicit fixture configuration for composition tests."""
+
+    return DatasetCatalogConfig(
+        villages=FileRepositoryConfig(
+            dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
+            dataset_metadata=_dataset_metadata("Village catalog fixture"),
+            dataset_schema=_village_schema(),
+            file_format=DatasetFileFormat.CSV,
+        ),
+        shelters=FileRepositoryConfig(
+            dataset_path=str(FIXTURES_DIRECTORY / "shelters.csv"),
+            dataset_metadata=_dataset_metadata("Shelter catalog fixture"),
+            dataset_schema=_shelter_schema(),
+            file_format=DatasetFileFormat.CSV,
+        ),
     )
 
 
@@ -286,20 +314,7 @@ class DependencyFactoryTests(unittest.TestCase):
     def test_catalog_service_factory_constructs_independent_summaries(self) -> None:
         """The catalog factory returns separate village and shelter summaries."""
 
-        configuration = DatasetCatalogConfig(
-            villages=FileRepositoryConfig(
-                dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
-                dataset_metadata=_dataset_metadata("Village catalog fixture"),
-                dataset_schema=_village_schema(),
-                file_format=DatasetFileFormat.CSV,
-            ),
-            shelters=FileRepositoryConfig(
-                dataset_path=str(FIXTURES_DIRECTORY / "shelters.csv"),
-                dataset_metadata=_dataset_metadata("Shelter catalog fixture"),
-                dataset_schema=_shelter_schema(),
-                file_format=DatasetFileFormat.CSV,
-            ),
-        )
+        configuration = _dataset_catalog_configuration()
 
         service = create_dataset_catalog_service(configuration)
         catalog = service.load_catalog()
@@ -339,26 +354,42 @@ class ApiSchemaTranslationTests(unittest.TestCase):
     def test_catalog_response_translation_uses_named_datasets(self) -> None:
         """Catalog response exposes village and shelter summaries by name."""
 
-        configuration = DatasetCatalogConfig(
-            villages=FileRepositoryConfig(
-                dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
-                dataset_metadata=_dataset_metadata("Village API catalog fixture"),
-                dataset_schema=_village_schema(),
-                file_format=DatasetFileFormat.CSV,
-            ),
-            shelters=FileRepositoryConfig(
-                dataset_path=str(FIXTURES_DIRECTORY / "shelters.csv"),
-                dataset_metadata=_dataset_metadata("Shelter API catalog fixture"),
-                dataset_schema=_shelter_schema(),
-                file_format=DatasetFileFormat.CSV,
-            ),
-        )
+        configuration = _dataset_catalog_configuration()
         catalog_dto = create_dataset_catalog_service(configuration).load_catalog()
 
         response = DatasetCatalogResponse.from_dto(catalog_dto)
 
         self.assertEqual(response.villages.statistics.record_count, EXPECTED_RECORD_COUNT)
         self.assertEqual(response.shelters.statistics.record_count, EXPECTED_RECORD_COUNT)
+
+
+class CompositionRootTests(unittest.TestCase):
+    """Verify application composition wires only explicit runtime dependencies."""
+
+    def test_dependency_providers_construct_configured_services(self) -> None:
+        """Providers construct services through the application-held configuration."""
+
+        configuration = _dataset_catalog_configuration()
+        application = create_application(configuration)
+        request = Request({"type": "http", "app": application})
+
+        self.assertIsInstance(get_village_service(request), VillageService)
+        self.assertIsInstance(get_shelter_service(request), ShelterService)
+        self.assertIsInstance(
+            get_dataset_catalog_service(request),
+            DatasetCatalogService,
+        )
+
+    def test_dependency_providers_require_explicit_configuration(self) -> None:
+        """Providers reject applications without deployment-supplied configuration."""
+
+        request = Request({"type": "http", "app": create_application()})
+
+        with self.assertRaisesRegex(
+            ApplicationConfigurationError,
+            "Application dataset dependencies require an explicit DatasetCatalogConfig.",
+        ):
+            get_village_service(request)
 
 
 class NegativeRepositoryTests(unittest.TestCase):

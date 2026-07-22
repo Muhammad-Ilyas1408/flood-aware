@@ -9,6 +9,8 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 
 from backend.app.api.router import api_router
+from backend.app.composition import configure_dataset_dependencies
+from backend.app.config.datasets import DatasetCatalogConfig
 from backend.app.config.logging import configure_logging
 from backend.app.config.settings import Settings, get_settings
 from backend.app.core.exceptions import (
@@ -42,8 +44,15 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         logger.info("Shutting down %s.", settings.application_name)
 
 
-def create_application() -> FastAPI:
-    """Create and configure the Flood-Aware FastAPI application."""
+def create_application(
+    dataset_catalog_config: DatasetCatalogConfig | None = None,
+) -> FastAPI:
+    """Create and configure the Flood-Aware FastAPI application.
+
+    Args:
+        dataset_catalog_config: Explicit runtime dataset configuration when
+            dataset-backed dependencies are required.
+    """
 
     settings = get_settings()
     configure_logging(settings.log_level)
@@ -61,6 +70,8 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
     application.include_router(api_router, prefix=settings.api_prefix)
+    if dataset_catalog_config is not None:
+        configure_dataset_dependencies(application, dataset_catalog_config)
     application.add_exception_handler(HTTPException, handle_http_exception)
     application.add_exception_handler(RequestValidationError, handle_request_validation_error)
     application.add_exception_handler(ValidationException, handle_validation_exception)

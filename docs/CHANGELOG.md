@@ -6,9 +6,53 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.5.2] - 2026-07-22
+---
+
+## [0.6.3] - 2026-07-23
+
+### Added
+
+#### Sprint 6.1.6 – Application Composition Root
+
+- Added application composition root
+- Added runtime dataset dependency configuration
+- Added `configure_dataset_dependencies()`
+- Added `get_village_service()`
+- Added `get_shelter_service()`
+- Added `get_dataset_catalog_service()`
+- Added application-owned runtime `DatasetCatalogConfig`
+- Introduced transport-independent dependency providers
+- Added immutable DTO translation boundary between Services and API schemas
+- Added `ApplicationError`
+- Added `ApplicationConfigurationError`
+- Composition providers now return service protocols instead of concrete implementations
+- API schemas now translate DTOs using `from_dto()` methods
+- Dataset catalog now exposes explicit `villages` and `shelters` summaries
+
+### Changed
+
+- Service layer no longer depends on API schemas
+- Introduced DTO layer between Services and API
+- Restored Clean Architecture dependency direction
+- Application configuration now owns runtime dataset configuration
+- Configuration failures now use `ApplicationConfigurationError`
+- Dependency providers expose service abstractions instead of concrete classes
+
+### Notes
+
+- No API endpoints added
+- No routers added
+- No business logic introduced
+- No repository behavior changed
+- No dependency injection redesign
+- No caching introduced
+- No authentication introduced
+- Composition Root completed
+- Ready for Sprint 6.2 – API Endpoints
 
 ---
+
+## [0.6.2] - 2026-07-22
 
 ### Changed
 
@@ -74,7 +118,7 @@ Updated service tests to validate:
 
 ---
 
-## [0.5.1] - 2026-07-22
+## [0.6.1] - 2026-07-22
 
 ### Added
 

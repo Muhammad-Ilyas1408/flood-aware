@@ -310,6 +310,28 @@ Deliverables:
 
 ---
 
+### Sprint 6.1.6 – Application Composition Root
+
+Status: Completed
+
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] Composition Root
+- [x] Runtime DatasetCatalogConfig ownership
+- [x] configure_dataset_dependencies()
+- [x] get_village_service()
+- [x] get_shelter_service()
+- [x] get_dataset_catalog_service()
+- [x] Service protocol dependency providers
+- [x] ApplicationConfigurationError
+- [x] ApplicationError
+- [x] Explicit runtime configuration
+- [x] Clean Architecture dependency preservation
+
+---
+
 ### Sprint 6.2 – API Endpoints
 
 Status: Planned
