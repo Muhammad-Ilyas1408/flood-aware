@@ -288,6 +288,28 @@ Deliverables:
 
 ---
 
+---
+
+### Sprint 6.1.1 – Clean Architecture Refinement
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] Introduced application DTO layer
+- [x] Removed API schema dependency from services
+- [x] Added immutable DTO contracts
+- [x] Added DTO → API translation layer
+- [x] Added DatasetCatalogDTO
+- [x] Replaced positional catalog with explicit named datasets
+- [x] Preserved dependency injection
+- [x] Preserved repository architecture
+- [x] Updated service tests
+- [x] Restored Clean Architecture dependency direction
+
+---
+
 ### Sprint 6.2 – API Endpoints
 
 Status: Planned

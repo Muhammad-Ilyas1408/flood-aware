@@ -1,11 +1,17 @@
 """Explicit dependency construction for Flood-Aware dataset services."""
 
+from backend.app.config.datasets import DatasetCatalogConfig
 from backend.app.data.file_support import DatasetFileFormat
 from backend.app.data.models import DatasetMetadata, DatasetSchema
 from backend.app.data.protocols import DatasetTableRepositoryProtocol
 from backend.app.data.repositories import CSVRepository
 from backend.app.data.repository_config import FileRepositoryConfig
-from backend.app.services.services import DatasetService, ShelterService, VillageService
+from backend.app.services.services import (
+    DatasetCatalogService,
+    DatasetService,
+    ShelterService,
+    VillageService,
+)
 
 
 def create_dataset_service(
@@ -65,6 +71,33 @@ def create_shelter_service(
     """
     return ShelterService(
         _create_csv_repository(dataset_path, dataset_metadata, dataset_schema)
+    )
+
+
+def create_dataset_catalog_service(
+    configuration: DatasetCatalogConfig,
+) -> DatasetCatalogService:
+    """Create a catalog service from explicit application dataset configuration.
+
+    Args:
+        configuration: The explicit village and shelter repository configurations.
+
+    Returns:
+        A ready-to-use service that returns independent dataset summaries.
+    """
+    village_configuration = configuration.villages
+    shelter_configuration = configuration.shelters
+    return DatasetCatalogService(
+        create_village_service(
+            village_configuration.dataset_path,
+            village_configuration.dataset_metadata,
+            village_configuration.dataset_schema,
+        ),
+        create_shelter_service(
+            shelter_configuration.dataset_path,
+            shelter_configuration.dataset_metadata,
+            shelter_configuration.dataset_schema,
+        ),
     )
 
 

@@ -6,6 +6,72 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-22
+
+---
+
+### Changed
+
+#### Sprint 6.1.1 – API Architecture Refinement
+
+##### Clean Architecture
+
+- Introduced an application DTO layer between Services and API schemas
+- Restored one-way dependency flow from API → Services → Repository
+- Removed all Pydantic model dependencies from the service layer
+- Removed all FastAPI dependencies from the service layer
+- Services now return immutable application DTOs instead of API response models
+
+##### DTO Layer
+
+Added immutable application DTOs:
+
+- VillageDTO
+- VillageListDTO
+- ShelterDTO
+- ShelterListDTO
+- DatasetSummaryDTO
+- DatasetCatalogDTO
+
+##### API Schema Translation
+
+- Added `from_dto()` translation methods to all API response models
+- API schemas are now responsible only for transport serialization
+- Moved DTO → API conversion entirely into the schema layer
+
+##### Dataset Catalog
+
+Refined dataset catalog contract.
+
+Replaced positional summaries
+
+(village_summary, shelter_summary)
+
+with explicit named fields
+villages
+shelters
+
+improving readability and eliminating ordering assumptions.
+
+##### Testing
+
+Updated service tests to validate:
+
+- DTO generation
+- API translation layer
+- Named dataset catalog responses
+- Service independence from transport models
+
+### Notes
+
+- Repository layer unchanged
+- Dependency Injection unchanged
+- Runtime behavior unchanged
+- No business logic introduced
+- No FastAPI endpoints added
+- No routers added
+- Architecture only
+
 ---
 
 ## [0.5.1] - 2026-07-22

@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+from backend.app.config.datasets import DatasetCatalogConfig
 from backend.app.data.exceptions import DatasetFormatError, DatasetValidationError
 from backend.app.data.file_support import DatasetFileFormat
 from backend.app.data.models import (
@@ -16,12 +17,24 @@ from backend.app.data.models import (
 )
 from backend.app.data.repositories import CSVRepository, GeoJSONRepository
 from backend.app.data.repository_config import FileRepositoryConfig
+from backend.app.dtos.datasets import ShelterListDTO, VillageListDTO
 from backend.app.services.dependencies import (
+    create_dataset_catalog_service,
     create_dataset_service,
     create_shelter_service,
     create_village_service,
 )
-from backend.app.services.services import DatasetService, ShelterService, VillageService
+from backend.app.services.services import (
+    DatasetCatalogService,
+    DatasetService,
+    ShelterService,
+    VillageService,
+)
+from backend.app.schemas.datasets import (
+    DatasetCatalogResponse,
+    ShelterListResponse,
+    VillageListResponse,
+)
 
 
 FIXTURES_DIRECTORY = Path(__file__).parent / "fixtures"
@@ -198,10 +211,10 @@ class ServiceTests(unittest.TestCase):
             _village_schema(),
         )
 
-        table = VillageService(repository).load_villages()
+        response = VillageService(repository).load_villages()
 
-        self.assertIsInstance(table, DatasetTable)
-        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+        self.assertIsInstance(response, VillageListDTO)
+        self.assertEqual(len(response.villages), EXPECTED_RECORD_COUNT)
 
     def test_shelter_service_loads_shelter_repository(self) -> None:
         """ShelterService delegates through its composed DatasetService."""
@@ -212,10 +225,21 @@ class ServiceTests(unittest.TestCase):
             _shelter_schema(),
         )
 
-        table = ShelterService(repository).load_shelters()
+        response = ShelterService(repository).load_shelters()
 
-        self.assertIsInstance(table, DatasetTable)
-        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+        self.assertIsInstance(response, ShelterListDTO)
+        self.assertEqual(len(response.shelters), EXPECTED_RECORD_COUNT)
+
+    def test_dataset_service_returns_exact_summary(self) -> None:
+        """DatasetService derives summary statistics from the loaded table."""
+
+        metadata = _dataset_metadata("Village summary fixture")
+        repository = _csv_repository("villages.csv", metadata, _village_schema())
+
+        summary = DatasetService(repository).load_summary()
+
+        self.assertEqual(summary.metadata, metadata)
+        self.assertEqual(summary.statistics.record_count, EXPECTED_RECORD_COUNT)
 
 
 class DependencyFactoryTests(unittest.TestCase):
@@ -245,7 +269,7 @@ class DependencyFactoryTests(unittest.TestCase):
         )
 
         self.assertIsInstance(service, VillageService)
-        self.assertEqual(len(service.load_villages().rows), EXPECTED_RECORD_COUNT)
+        self.assertEqual(len(service.load_villages().villages), EXPECTED_RECORD_COUNT)
 
     def test_shelter_service_factory_constructs_csv_service(self) -> None:
         """The shelter factory builds a service that loads the shelter fixture."""
@@ -257,7 +281,84 @@ class DependencyFactoryTests(unittest.TestCase):
         )
 
         self.assertIsInstance(service, ShelterService)
-        self.assertEqual(len(service.load_shelters().rows), EXPECTED_RECORD_COUNT)
+        self.assertEqual(len(service.load_shelters().shelters), EXPECTED_RECORD_COUNT)
+
+    def test_catalog_service_factory_constructs_independent_summaries(self) -> None:
+        """The catalog factory returns separate village and shelter summaries."""
+
+        configuration = DatasetCatalogConfig(
+            villages=FileRepositoryConfig(
+                dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
+                dataset_metadata=_dataset_metadata("Village catalog fixture"),
+                dataset_schema=_village_schema(),
+                file_format=DatasetFileFormat.CSV,
+            ),
+            shelters=FileRepositoryConfig(
+                dataset_path=str(FIXTURES_DIRECTORY / "shelters.csv"),
+                dataset_metadata=_dataset_metadata("Shelter catalog fixture"),
+                dataset_schema=_shelter_schema(),
+                file_format=DatasetFileFormat.CSV,
+            ),
+        )
+
+        service = create_dataset_catalog_service(configuration)
+        catalog = service.load_catalog()
+
+        self.assertIsInstance(service, DatasetCatalogService)
+        self.assertEqual(catalog.villages.statistics.record_count, EXPECTED_RECORD_COUNT)
+        self.assertEqual(catalog.shelters.statistics.record_count, EXPECTED_RECORD_COUNT)
+
+
+class ApiSchemaTranslationTests(unittest.TestCase):
+    """Verify API schemas translate service DTOs without service schema imports."""
+
+    def test_village_and_shelter_response_translation(self) -> None:
+        """List response schemas preserve records from application DTOs."""
+
+        village_dto = VillageService(
+            _csv_repository(
+                "villages.csv",
+                _dataset_metadata("Village schema translation fixture"),
+                _village_schema(),
+            )
+        ).load_villages()
+        shelter_dto = ShelterService(
+            _csv_repository(
+                "shelters.csv",
+                _dataset_metadata("Shelter schema translation fixture"),
+                _shelter_schema(),
+            )
+        ).load_shelters()
+
+        village_response = VillageListResponse.from_dto(village_dto)
+        shelter_response = ShelterListResponse.from_dto(shelter_dto)
+
+        self.assertEqual(len(village_response.data), EXPECTED_RECORD_COUNT)
+        self.assertEqual(len(shelter_response.data), EXPECTED_RECORD_COUNT)
+
+    def test_catalog_response_translation_uses_named_datasets(self) -> None:
+        """Catalog response exposes village and shelter summaries by name."""
+
+        configuration = DatasetCatalogConfig(
+            villages=FileRepositoryConfig(
+                dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
+                dataset_metadata=_dataset_metadata("Village API catalog fixture"),
+                dataset_schema=_village_schema(),
+                file_format=DatasetFileFormat.CSV,
+            ),
+            shelters=FileRepositoryConfig(
+                dataset_path=str(FIXTURES_DIRECTORY / "shelters.csv"),
+                dataset_metadata=_dataset_metadata("Shelter API catalog fixture"),
+                dataset_schema=_shelter_schema(),
+                file_format=DatasetFileFormat.CSV,
+            ),
+        )
+        catalog_dto = create_dataset_catalog_service(configuration).load_catalog()
+
+        response = DatasetCatalogResponse.from_dto(catalog_dto)
+
+        self.assertEqual(response.villages.statistics.record_count, EXPECTED_RECORD_COUNT)
+        self.assertEqual(response.shelters.statistics.record_count, EXPECTED_RECORD_COUNT)
 
 
 class NegativeRepositoryTests(unittest.TestCase):
