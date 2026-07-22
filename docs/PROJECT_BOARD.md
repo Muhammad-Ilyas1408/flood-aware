@@ -431,3 +431,100 @@ Deliverables:
 - [x] Use case delegation tests
 - [x] DTO identity verification
 - [x] Application Layer isolation tests
+
+---
+
+## Sprint 8 – AI Decision Layer
+
+Status: Completed
+Completed: 2026-07-23
+
+---
+
+### Sprint 8.1 – AI Layer Foundation
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] AI package
+- [x] AI architecture boundary
+- [x] Package organization
+
+---
+
+### Sprint 8.2 – AI Domain Models
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] DecisionRequest
+- [x] DecisionContext
+- [x] DecisionResult
+- [x] Recommendation
+- [x] RecommendationPriority
+- [x] ToolResult
+
+---
+
+### Sprint 8.3 – AI Tool Protocols
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] VillageToolProtocol
+- [x] ShelterToolProtocol
+- [x] DatasetCatalogToolProtocol
+- [x] Structural AI interfaces
+
+---
+
+### Sprint 8.4 – AI Tool Implementations
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] Village Tool
+- [x] Shelter Tool
+- [x] Dataset Catalog Tool
+- [x] Immutable ToolResult generation
+
+---
+
+### Sprint 8.5 – Decision Engine
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] DecisionEngine
+- [x] Deterministic orchestration
+- [x] Immutable DecisionContext propagation
+- [x] Request context preservation
+- [x] Placeholder recommendation
+- [x] ToolResult aggregation
+
+---
+
+### Sprint 8.6 – Decision Engine Tests
+
+Status: Completed
+Completed: 2026-07-23
+
+Deliverables:
+
+- [x] Contract tests
+- [x] Tool invocation verification
+- [x] Context propagation verification
+- [x] ToolResult identity verification
+- [x] Recommendation verification
+- [x] Failure propagation verification
+- [x] LangGraph-ready implementation-independent tests

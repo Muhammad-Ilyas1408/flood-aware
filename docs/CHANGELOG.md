@@ -8,6 +8,93 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.0] - 2026-07-23
+
+---
+
+### Added
+
+#### Sprint 8 – AI Decision Layer
+
+##### Sprint 8.1 – AI Layer Foundation
+
+- Added dedicated AI package
+- Established AI orchestration boundary
+- Introduced AI package structure
+
+##### Sprint 8.2 – AI Domain Models
+
+- Added `DecisionRequest`
+- Added `DecisionContext`
+- Added `DecisionResult`
+- Added `Recommendation`
+- Added `RecommendationPriority`
+- Added `ToolResult`
+- Introduced immutable AI decision contracts
+
+##### Sprint 8.3 – AI Tool Protocols
+
+- Added `VillageToolProtocol`
+- Added `ShelterToolProtocol`
+- Added `DatasetCatalogToolProtocol`
+- Added structural AI tool interfaces
+- Preserved dependency inversion
+
+##### Sprint 8.4 – AI Tool Implementations
+
+- Added deterministic Village Tool
+- Added deterministic Shelter Tool
+- Added deterministic Dataset Catalog Tool
+- Introduced immutable ToolResult generation
+- Preserved framework independence
+
+##### Sprint 8.5 – Decision Engine
+
+- Added deterministic `DecisionEngine`
+- Introduced immutable `DecisionContext` propagation
+- Added request context preservation
+- Added orchestration of AI tools
+- Added placeholder recommendation generation
+- Preserved Clean Architecture dependency direction
+
+##### Sprint 8.6 – Decision Engine Tests
+
+- Added contract-focused Decision Engine tests
+- Verified tool invocation
+- Verified request context propagation
+- Verified ToolResult identity preservation
+- Verified placeholder recommendation contract
+- Verified failure propagation
+- Decoupled tests from implementation details
+- Prepared test suite for future LangGraph implementation
+
+### Changed
+
+- Introduced dedicated AI orchestration layer
+- Added stable AI execution contract
+- Established deterministic execution flow:
+
+  Decision Engine
+  → AI Tools
+  → Application Use Cases
+  → Services
+  → Repositories
+
+### Notes
+
+- No business logic introduced
+- No LLM integration
+- No LangChain dependency
+- No LangGraph dependency
+- No FastAPI dependency
+- No repository changes
+- No service changes
+- No API changes
+- AI layer completed
+- Ready for Sprint 9 – LangChain / LangGraph Integration
+
+---
+
 ## [0.7.0] - 2026-07-23
 
 ---
