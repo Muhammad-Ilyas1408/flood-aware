@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from backend.app.core.application_exceptions import ApplicationError
 from backend.app.core.logger import get_logger
 from backend.app.core.validation_exceptions import ValidationException
 from backend.app.schemas.errors import ErrorResponse, ValidationIssue
@@ -104,6 +105,25 @@ async def handle_validation_exception(
                 error_type=type(exception).__name__,
             )
         ],
+    )
+
+
+async def handle_application_exception(
+    request: Request,
+    exception: ApplicationError,
+) -> JSONResponse:
+    """Return a safe standardized response for known application failures."""
+
+    logger.error(
+        "Application exception: method=%s path=%s exception_type=%s",
+        request.method,
+        request.url.path,
+        type(exception).__name__,
+    )
+    return _error_response(
+        request,
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "An unexpected server error occurred.",
     )
 
 

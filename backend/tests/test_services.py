@@ -1,11 +1,13 @@
-"""Integration-style tests for repository, service, and dependency composition."""
+"""Integration-style tests for repository, service, dependency, and API composition."""
 
+import asyncio
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
-from fastapi import Request
+from fastapi import FastAPI, Request
 
 from backend.app.composition import (
     get_dataset_catalog_service,
@@ -48,6 +50,55 @@ from backend.app.main import create_application
 
 FIXTURES_DIRECTORY = Path(__file__).parent / "fixtures"
 EXPECTED_RECORD_COUNT = 10
+
+
+async def _get_application_response(
+    application: FastAPI,
+    path: str,
+) -> tuple[int, bytes]:
+    """Execute a GET request against the ASGI application without external clients."""
+
+    messages: list[dict[str, object]] = []
+
+    async def receive() -> dict[str, object]:
+        """Provide the single empty HTTP request body."""
+
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message: dict[str, object]) -> None:
+        """Collect ASGI response messages emitted by the application."""
+
+        messages.append(message)
+
+    await application(
+        {
+            "type": "http",
+            "asgi": {"version": "3.0"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("ascii"),
+            "query_string": b"",
+            "headers": [],
+            "client": ("testclient", 50000),
+            "server": ("testserver", 80),
+            "root_path": "",
+        },
+        receive,
+        send,
+    )
+    status_code = next(
+        message["status"]
+        for message in messages
+        if message["type"] == "http.response.start"
+    )
+    body = b"".join(
+        message["body"]
+        for message in messages
+        if message["type"] == "http.response.body"
+    )
+    return int(status_code), body
 
 
 def _dataset_metadata(name: str) -> DatasetMetadata:
@@ -390,6 +441,122 @@ class CompositionRootTests(unittest.TestCase):
             "Application dataset dependencies require an explicit DatasetCatalogConfig.",
         ):
             get_village_service(request)
+
+
+class ApiEndpointTests(unittest.TestCase):
+    """Verify API endpoints coordinate dependencies, services, and schemas."""
+
+    def setUp(self) -> None:
+        """Create an application with explicit fixture-backed configuration."""
+
+        self.application = create_application(_dataset_catalog_configuration())
+        self.unconfigured_application = create_application()
+
+    def _assert_configuration_failure(self, path: str) -> None:
+        """Assert a missing runtime configuration returns the global error response."""
+
+        status_code, body = asyncio.run(
+            _get_application_response(self.unconfigured_application, path)
+        )
+
+        self.assertEqual(status_code, 500)
+        payload = json.loads(body)
+        self.assertEqual(payload["status"], "error")
+        self.assertEqual(payload["status_code"], 500)
+        self.assertEqual(payload["detail"], "An unexpected server error occurred.")
+        self.assertEqual(payload["path"], path)
+        self.assertIn("request_id", payload)
+
+    def test_get_villages_returns_configured_response(self) -> None:
+        """The villages endpoint returns the translated village response schema."""
+
+        status_code, body = asyncio.run(
+            _get_application_response(self.application, "/villages")
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["status"], "success")
+        self.assertEqual(len(payload["data"]), EXPECTED_RECORD_COUNT)
+        self.assertEqual(payload["data"][0]["name"], "Akora Khattak")
+
+    def test_get_shelters_returns_configured_response(self) -> None:
+        """The shelters endpoint returns the translated shelter response schema."""
+
+        status_code, body = asyncio.run(
+            _get_application_response(self.application, "/shelters")
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["status"], "success")
+        self.assertEqual(len(payload["data"]), EXPECTED_RECORD_COUNT)
+        self.assertEqual(payload["data"][0]["name"], "Government High School Akora")
+
+    def test_get_dataset_catalog_returns_named_summaries(self) -> None:
+        """The catalog endpoint returns independent named dataset summaries."""
+
+        status_code, body = asyncio.run(
+            _get_application_response(self.application, "/datasets/catalog")
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["status"], "success")
+        self.assertEqual(
+            payload["villages"]["statistics"]["record_count"],
+            EXPECTED_RECORD_COUNT,
+        )
+        self.assertEqual(
+            payload["shelters"]["statistics"]["record_count"],
+            EXPECTED_RECORD_COUNT,
+        )
+
+    def test_get_villages_returns_global_error_for_missing_configuration(self) -> None:
+        """The villages endpoint exposes the centralized configuration failure response."""
+
+        self._assert_configuration_failure("/villages")
+
+    def test_get_shelters_returns_global_error_for_missing_configuration(self) -> None:
+        """The shelters endpoint exposes the centralized configuration failure response."""
+
+        self._assert_configuration_failure("/shelters")
+
+    def test_get_dataset_catalog_returns_global_error_for_missing_configuration(self) -> None:
+        """The catalog endpoint exposes the centralized configuration failure response."""
+
+        self._assert_configuration_failure("/datasets/catalog")
+
+    def test_openapi_registers_dataset_endpoints(self) -> None:
+        """OpenAPI exposes the three read-only dataset endpoints."""
+
+        status_code, body = asyncio.run(
+            _get_application_response(self.application, "/openapi.json")
+        )
+
+        self.assertEqual(status_code, 200)
+        paths = json.loads(body)["paths"]
+        self.assertIn("/villages", paths)
+        self.assertIn("/shelters", paths)
+        self.assertIn("/datasets/catalog", paths)
+        self.assertEqual(paths["/villages"]["get"]["operationId"], "getVillages")
+        self.assertEqual(paths["/shelters"]["get"]["operationId"], "getShelters")
+        self.assertEqual(
+            paths["/datasets/catalog"]["get"]["operationId"],
+            "getDatasetCatalog",
+        )
+        self.assertIn("500", paths["/villages"]["get"]["responses"])
+        self.assertIn("500", paths["/shelters"]["get"]["responses"])
+        self.assertIn("500", paths["/datasets/catalog"]["get"]["responses"])
+
+    def test_docs_loads(self) -> None:
+        """Swagger UI remains available after dataset route registration."""
+
+        status_code, _ = asyncio.run(
+            _get_application_response(self.application, "/docs")
+        )
+
+        self.assertEqual(status_code, 200)
 
 
 class NegativeRepositoryTests(unittest.TestCase):

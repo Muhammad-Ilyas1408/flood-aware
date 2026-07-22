@@ -8,6 +8,49 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.6.4] - 2026-07-23
+
+### Added
+
+#### Sprint 6.2 – API Endpoints
+
+- Added `GET /villages`
+- Added `GET /shelters`
+- Added `GET /datasets/catalog`
+- Added dedicated API routers:
+  - `villages.py`
+  - `shelters.py`
+  - `datasets.py`
+- Added centralized router registration
+- Added dependency injection through Composition Root
+- Added endpoint response translation from DTOs to API schemas
+- Added endpoint integration tests
+- Added OpenAPI documentation for all dataset endpoints
+
+### Changed
+
+- Centralized API route registration
+- Improved global exception registration
+- Application exceptions now use the centralized exception handler
+- OpenAPI now documents all dataset endpoints
+
+### Testing
+
+- Added endpoint integration tests
+- Verified Swagger (`/docs`)
+- Verified ReDoc (`/redoc`)
+- Verified OpenAPI schema generation
+- Verified global exception handling
+- Verified dependency injection through application configuration
+
+### Notes
+
+- Sprint 6 completed
+- API Layer completed
+- Ready for Sprint 7
+
+---
+
 ## [0.6.3] - 2026-07-23
 
 ### Added

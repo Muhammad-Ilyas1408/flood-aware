@@ -13,7 +13,9 @@ from backend.app.composition import configure_dataset_dependencies
 from backend.app.config.datasets import DatasetCatalogConfig
 from backend.app.config.logging import configure_logging
 from backend.app.config.settings import Settings, get_settings
+from backend.app.core.application_exceptions import ApplicationError
 from backend.app.core.exceptions import (
+    handle_application_exception,
     handle_http_exception,
     handle_request_validation_error,
     handle_unexpected_exception,
@@ -75,6 +77,7 @@ def create_application(
     application.add_exception_handler(HTTPException, handle_http_exception)
     application.add_exception_handler(RequestValidationError, handle_request_validation_error)
     application.add_exception_handler(ValidationException, handle_validation_exception)
+    application.add_exception_handler(ApplicationError, handle_application_exception)
     application.add_exception_handler(Exception, handle_unexpected_exception)
     application.middleware("http")(log_request)
     return application

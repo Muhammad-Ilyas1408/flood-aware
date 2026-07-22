@@ -265,7 +265,8 @@ Deliverables:
 
 ## Sprint 6 – API Layer
 
-Status: In Progress
+Status: Completed
+Completed: 2026-07-23
 
 ---
 
@@ -334,12 +335,16 @@ Deliverables:
 
 ### Sprint 6.2 – API Endpoints
 
-Status: Planned
+Status: Completed
+Completed: 2026-07-23
 
 Deliverables:
 
-- [ ] GET /villages
-- [ ] GET /shelters
-- [ ] GET /datasets/summary
-- [ ] Service integration
-- [ ] FastAPI routers
+- [x] GET /villages
+- [x] GET /shelters
+- [x] GET /datasets/catalog
+- [x] Service integration
+- [x] FastAPI routers
+- [x] OpenAPI documentation
+- [x] Endpoint integration tests
+- [x] Centralized exception handling
