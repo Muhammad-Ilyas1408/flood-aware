@@ -8,6 +8,32 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.1] - 2026-07-22
+
+### Added
+
+#### Sprint 5.2 – Service Implementations
+
+- Added generic `DatasetService`
+- Added `VillageService`
+- Added `ShelterService`
+- Implemented service composition using `DatasetTableRepositoryProtocol`
+- Implemented repository delegation through `CSVRepository`
+- Applied constructor dependency injection
+- Preserved repository and service separation
+
+### Notes
+
+- No business logic introduced
+- No repository changes
+- No CRUD operations
+- No caching
+- No API endpoints added
+- No LangGraph integration
+- Services coordinate repository access only
+
+---
+
 ## [0.5.0] - 2026-07-22
 
 ### Added

@@ -216,11 +216,15 @@ Deliverables:
 
 ### Sprint 5.2 – Service Implementations
 
-Status: Planned
+Status: Completed
+Completed: 2026-07-22
 
 Deliverables:
 
-- [ ] DatasetService
-- [ ] VillageService
-- [ ] ShelterService
-- [ ] Repository composition
+- [x] DatasetService
+- [x] VillageService
+- [x] ShelterService
+- [x] Repository composition
+- [x] Constructor dependency injection
+- [x] DatasetTableRepositoryProtocol integration
+
