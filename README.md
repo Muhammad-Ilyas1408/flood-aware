@@ -23,7 +23,7 @@ Instead of providing generic AI responses, the system grounds every recommendati
 ```text
                    Flood-Aware
 
-         AI Flood Decision Support System
+      AI-Powered Flood Decision Support System
 
                     Dashboard
                          │

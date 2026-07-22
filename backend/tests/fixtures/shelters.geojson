@@ -1,0 +1,55 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.1282, 33.8245]},
+      "properties": {"name": "Government High School Akora", "district": "Nowshera", "capacity": 850}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7314, 34.1482]},
+      "properties": {"name": "Charsadda Community Hall", "district": "Charsadda", "capacity": 420}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.0216, 34.2524]},
+      "properties": {"name": "Government High School Takht Bhai", "district": "Mardan", "capacity": 680}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.4257, 34.1716]},
+      "properties": {"name": "Hund Sports Complex", "district": "Swabi", "capacity": 550}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.4985, 35.4881]},
+      "properties": {"name": "Kalam Community Hall", "district": "Swat", "capacity": 260}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.6201, 33.9153]},
+      "properties": {"name": "Mattani Relief Camp", "district": "Peshawar", "capacity": 1200}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.0556, 34.0108]},
+      "properties": {"name": "Nowshera District Sports Complex", "district": "Nowshera", "capacity": 1450}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7931, 34.0065]},
+      "properties": {"name": "Pabbi Government High School", "district": "Nowshera", "capacity": 740}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.4658, 34.1207]},
+      "properties": {"name": "Swabi Community Centre", "district": "Swabi", "capacity": 390}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7803, 34.1591]},
+      "properties": {"name": "Utmanzai Relief Camp", "district": "Charsadda", "capacity": 980}
+    }
+  ]
+}

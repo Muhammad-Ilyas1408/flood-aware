@@ -8,6 +8,29 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.0] - 2026-07-22
+
+### Added
+
+#### Sprint 5.1 – Service Contracts
+
+- Added `DatasetServiceProtocol`
+- Added `VillageServiceProtocol`
+- Added `ShelterServiceProtocol`
+- Introduced service-layer structural contracts
+- Established separation between Service Layer and Repository Layer
+
+### Notes
+
+- No service implementations added
+- No business logic introduced
+- No repository changes
+- No API changes
+- No LangGraph integration
+- Service layer now provides stable contracts for future implementations
+
+---
+
 ## [0.4.7] - 2026-07-22
 
 ### Added

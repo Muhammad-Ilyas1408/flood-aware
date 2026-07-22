@@ -1,0 +1,55 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.1264, 33.8231]},
+      "properties": {"name": "Akora Khattak", "district": "Nowshera", "population": 6250}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.3547, 34.7501]},
+      "properties": {"name": "Barikot", "district": "Swat", "population": 4180}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7356, 34.1465]},
+      "properties": {"name": "Charsadda Khas", "district": "Charsadda", "population": 7350}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.0178, 34.2431]},
+      "properties": {"name": "Gari Kapoora", "district": "Mardan", "population": 2890}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.4221, 34.1735]},
+      "properties": {"name": "Hund", "district": "Swabi", "population": 1640}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.8709, 34.3136]},
+      "properties": {"name": "Jalala", "district": "Mardan", "population": 5320}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [72.4980, 35.4909]},
+      "properties": {"name": "Kalam", "district": "Swat", "population": 3140}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.6174, 33.9169]},
+      "properties": {"name": "Mattani", "district": "Peshawar", "population": 6840}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7952, 34.0083]},
+      "properties": {"name": "Pabbi", "district": "Nowshera", "population": 7620}
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [71.7818, 34.1577]},
+      "properties": {"name": "Utmanzai", "district": "Charsadda", "population": 4910}
+    }
+  ]
+}

@@ -196,3 +196,31 @@ Deliverables:
 - [x] FileRepositoryConfig integration
 - [x] Explicit schema-based loading
 - [x] Explicit metadata-based loading
+
+---
+
+### Sprint 5.1 – Service Contracts
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] DatasetServiceProtocol
+- [x] VillageServiceProtocol
+- [x] ShelterServiceProtocol
+- [x] Structural service contracts
+- [x] Service layer architecture
+
+---
+
+### Sprint 5.2 – Service Implementations
+
+Status: Planned
+
+Deliverables:
+
+- [ ] DatasetService
+- [ ] VillageService
+- [ ] ShelterService
+- [ ] Repository composition
