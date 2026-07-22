@@ -1,0 +1,348 @@
+"""Integration-style tests for repository, service, and dependency composition."""
+
+from datetime import datetime, timezone
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import unittest
+
+from backend.app.data.exceptions import DatasetFormatError, DatasetValidationError
+from backend.app.data.file_support import DatasetFileFormat
+from backend.app.data.models import (
+    DatasetColumn,
+    DatasetColumnType,
+    DatasetMetadata,
+    DatasetSchema,
+    DatasetTable,
+)
+from backend.app.data.repositories import CSVRepository, GeoJSONRepository
+from backend.app.data.repository_config import FileRepositoryConfig
+from backend.app.services.dependencies import (
+    create_dataset_service,
+    create_shelter_service,
+    create_village_service,
+)
+from backend.app.services.services import DatasetService, ShelterService, VillageService
+
+
+FIXTURES_DIRECTORY = Path(__file__).parent / "fixtures"
+EXPECTED_RECORD_COUNT = 10
+
+
+def _dataset_metadata(name: str) -> DatasetMetadata:
+    """Build explicit metadata required by a file repository configuration."""
+
+    timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    return DatasetMetadata(
+        name=name,
+        description="Service-layer integration test dataset.",
+        version="1.0.0",
+        source="test fixture",
+        created_at=timestamp,
+        updated_at=timestamp,
+    )
+
+
+def _village_schema() -> DatasetSchema:
+    """Build the explicit schema used by the village fixture dataset."""
+
+    return DatasetSchema(
+        columns=(
+            DatasetColumn(
+                name="name",
+                data_type=DatasetColumnType.STRING,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="district",
+                data_type=DatasetColumnType.STRING,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="population",
+                data_type=DatasetColumnType.INTEGER,
+                nullable=False,
+            ),
+        )
+    )
+
+
+def _shelter_schema() -> DatasetSchema:
+    """Build the explicit schema used by the shelter fixture dataset."""
+
+    return DatasetSchema(
+        columns=(
+            DatasetColumn(
+                name="name",
+                data_type=DatasetColumnType.STRING,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="district",
+                data_type=DatasetColumnType.STRING,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="capacity",
+                data_type=DatasetColumnType.INTEGER,
+                nullable=False,
+            ),
+        )
+    )
+
+
+def _csv_repository(
+    filename: str,
+    metadata: DatasetMetadata,
+    schema: DatasetSchema,
+) -> CSVRepository:
+    """Construct a CSV repository over one existing fixture file."""
+
+    return CSVRepository(
+        FileRepositoryConfig(
+            dataset_path=str(FIXTURES_DIRECTORY / filename),
+            dataset_metadata=metadata,
+            dataset_schema=schema,
+            file_format=DatasetFileFormat.CSV,
+        )
+    )
+
+
+def _geojson_repository(
+    filename: str,
+    metadata: DatasetMetadata,
+    schema: DatasetSchema,
+) -> GeoJSONRepository:
+    """Construct a GeoJSON repository over one existing fixture file."""
+
+    return GeoJSONRepository(
+        FileRepositoryConfig(
+            dataset_path=str(FIXTURES_DIRECTORY / filename),
+            dataset_metadata=metadata,
+            dataset_schema=schema,
+            file_format=DatasetFileFormat.GEOJSON,
+        )
+    )
+
+
+class RepositoryTests(unittest.TestCase):
+    """Verify concrete repositories load the approved fixture datasets."""
+
+    def test_csv_repository_loads_village_fixture(self) -> None:
+        """CSV repositories return validated tables and configured metadata."""
+
+        metadata = _dataset_metadata("Village CSV fixture")
+        repository = _csv_repository("villages.csv", metadata, _village_schema())
+
+        repository.validate()
+        table = repository.load()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+        self.assertEqual(repository.metadata(), metadata)
+
+    def test_geojson_repository_loads_village_fixture(self) -> None:
+        """GeoJSON repositories return validated tables and configured metadata."""
+
+        metadata = _dataset_metadata("Village GeoJSON fixture")
+        repository = _geojson_repository(
+            "villages.geojson",
+            metadata,
+            _village_schema(),
+        )
+
+        repository.validate()
+        table = repository.load()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+        self.assertEqual(repository.metadata(), metadata)
+
+
+class ServiceTests(unittest.TestCase):
+    """Verify services orchestrate repository loading without extra behavior."""
+
+    def test_dataset_service_loads_csv_repository_result(self) -> None:
+        """DatasetService delegates loading to a CSV-backed repository."""
+
+        repository = _csv_repository(
+            "villages.csv",
+            _dataset_metadata("Village CSV service fixture"),
+            _village_schema(),
+        )
+
+        table = DatasetService(repository).load_dataset()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+
+    def test_dataset_service_loads_geojson_repository_result(self) -> None:
+        """DatasetService accepts a GeoJSON repository through the table protocol."""
+
+        repository = _geojson_repository(
+            "villages.geojson",
+            _dataset_metadata("Village GeoJSON service fixture"),
+            _village_schema(),
+        )
+
+        table = DatasetService(repository).load_dataset()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+
+    def test_village_service_loads_village_repository(self) -> None:
+        """VillageService delegates through its composed DatasetService."""
+
+        repository = _csv_repository(
+            "villages.csv",
+            _dataset_metadata("Village service fixture"),
+            _village_schema(),
+        )
+
+        table = VillageService(repository).load_villages()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+
+    def test_shelter_service_loads_shelter_repository(self) -> None:
+        """ShelterService delegates through its composed DatasetService."""
+
+        repository = _csv_repository(
+            "shelters.csv",
+            _dataset_metadata("Shelter service fixture"),
+            _shelter_schema(),
+        )
+
+        table = ShelterService(repository).load_shelters()
+
+        self.assertIsInstance(table, DatasetTable)
+        self.assertEqual(len(table.rows), EXPECTED_RECORD_COUNT)
+
+
+class DependencyFactoryTests(unittest.TestCase):
+    """Verify dependency factories construct correctly wired services."""
+
+    def test_dataset_service_factory_accepts_geojson_repository(self) -> None:
+        """The generic factory returns a service that loads GeoJSON data."""
+
+        repository = _geojson_repository(
+            "villages.geojson",
+            _dataset_metadata("Dataset factory fixture"),
+            _village_schema(),
+        )
+
+        service = create_dataset_service(repository)
+
+        self.assertIsInstance(service, DatasetService)
+        self.assertEqual(len(service.load_dataset().rows), EXPECTED_RECORD_COUNT)
+
+    def test_village_service_factory_constructs_csv_service(self) -> None:
+        """The village factory builds a service that loads the village fixture."""
+
+        service = create_village_service(
+            str(FIXTURES_DIRECTORY / "villages.csv"),
+            _dataset_metadata("Village factory fixture"),
+            _village_schema(),
+        )
+
+        self.assertIsInstance(service, VillageService)
+        self.assertEqual(len(service.load_villages().rows), EXPECTED_RECORD_COUNT)
+
+    def test_shelter_service_factory_constructs_csv_service(self) -> None:
+        """The shelter factory builds a service that loads the shelter fixture."""
+
+        service = create_shelter_service(
+            str(FIXTURES_DIRECTORY / "shelters.csv"),
+            _dataset_metadata("Shelter factory fixture"),
+            _shelter_schema(),
+        )
+
+        self.assertIsInstance(service, ShelterService)
+        self.assertEqual(len(service.load_shelters().rows), EXPECTED_RECORD_COUNT)
+
+
+class NegativeRepositoryTests(unittest.TestCase):
+    """Verify existing configuration and format validation remains unchanged."""
+
+    def test_configuration_rejects_wrong_file_format(self) -> None:
+        """Repository configuration rejects a declared format that mismatches a path."""
+
+        with self.assertRaisesRegex(
+            DatasetValidationError,
+            "Repository configuration file format must match the dataset path extension.",
+        ):
+            FileRepositoryConfig(
+                dataset_path=str(FIXTURES_DIRECTORY / "villages.csv"),
+                dataset_metadata=_dataset_metadata("Wrong format fixture"),
+                dataset_schema=_village_schema(),
+                file_format=DatasetFileFormat.GEOJSON,
+            )
+
+    def test_csv_repository_rejects_schema_mismatch(self) -> None:
+        """CSV loading retains existing schema mismatch validation."""
+
+        mismatched_schema = DatasetSchema(
+            columns=(
+                DatasetColumn(
+                    name="unexpected",
+                    data_type=DatasetColumnType.STRING,
+                    nullable=False,
+                ),
+            )
+        )
+        repository = _csv_repository(
+            "villages.csv",
+            _dataset_metadata("CSV schema mismatch fixture"),
+            mismatched_schema,
+        )
+
+        with self.assertRaisesRegex(
+            DatasetValidationError,
+            "CSV headers must match the supplied schema.",
+        ):
+            repository.load()
+
+    def test_csv_repository_rejects_malformed_csv(self) -> None:
+        """CSV loading retains existing malformed CSV validation."""
+
+        with TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "malformed.csv"
+            path.write_text(
+                "name,district,population\n\"unterminated,Swat,1000\n",
+                encoding="utf-8",
+            )
+            repository = CSVRepository(
+                FileRepositoryConfig(
+                    dataset_path=str(path),
+                    dataset_metadata=_dataset_metadata("Malformed CSV fixture"),
+                    dataset_schema=_village_schema(),
+                    file_format=DatasetFileFormat.CSV,
+                )
+            )
+
+            with self.assertRaisesRegex(DatasetFormatError, "CSV input is malformed."):
+                repository.load()
+
+    def test_geojson_repository_rejects_malformed_geojson(self) -> None:
+        """GeoJSON validation retains existing FeatureCollection requirements."""
+
+        with TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "malformed.geojson"
+            path.write_text('{"type":"FeatureCollection"}', encoding="utf-8")
+            repository = GeoJSONRepository(
+                FileRepositoryConfig(
+                    dataset_path=str(path),
+                    dataset_metadata=_dataset_metadata("Malformed GeoJSON fixture"),
+                    dataset_schema=_village_schema(),
+                    file_format=DatasetFileFormat.GEOJSON,
+                )
+            )
+
+            with self.assertRaisesRegex(
+                DatasetFormatError,
+                "GeoJSON dataset must be a valid FeatureCollection.",
+            ):
+                repository.validate()
+
+
+if __name__ == "__main__":
+    unittest.main()

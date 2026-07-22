@@ -244,3 +244,19 @@ Deliverables:
 - [x] Centralized repository construction
 - [x] Explicit dependency injection
 - [x] CSV repository wiring
+
+---
+
+### Sprint 5.4 – Service Tests
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] Repository integration tests
+- [x] Service integration tests
+- [x] Dependency factory tests
+- [x] CSV repository validation tests
+- [x] GeoJSON repository validation tests
+- [x] Negative validation scenarios

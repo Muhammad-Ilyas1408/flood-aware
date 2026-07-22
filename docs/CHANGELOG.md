@@ -8,6 +8,32 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.3] - 2026-07-22
+
+### Added
+
+#### Sprint 5.4 – Service Tests
+
+- Added integration-style service layer tests
+- Verified CSVRepository loads DatasetTable correctly
+- Verified GeoJSONRepository loads DatasetTable correctly
+- Verified DatasetService delegates to repositories
+- Verified VillageService composition
+- Verified ShelterService composition
+- Verified dependency factory construction
+- Added negative validation tests
+- Reused fixture datasets for repository/service integration testing
+
+### Notes
+
+- No production architecture changed
+- No business logic introduced
+- No repository behavior modified
+- No service behavior modified
+- Tests verify composition only
+
+---
+
 ## [0.5.2] - 2026-07-22
 
 ### Added
