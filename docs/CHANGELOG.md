@@ -8,6 +8,51 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.6] - 2026-07-22
+
+### Added
+
+#### Sprint 4.7 – Repository Protocol Refinement
+
+- Added `DatasetTableRepositoryProtocol`
+- Separated dataset-oriented repositories from entity-oriented repositories
+- Refined repository protocol architecture
+- Applied Interface Segregation Principle (ISP)
+- Preserved existing entity repository protocols
+- Prepared architecture for concrete repository implementations
+
+### Notes
+
+- No repository implementations added
+- No CRUD logic introduced
+- No identifiers invented
+- No metadata or schema inference
+- No filesystem access introduced
+
+## [0.4.5] - 2026-07-22
+
+### Added
+
+#### Sprint 4.6 – Repository Configuration Contracts
+
+- Added immutable `FileRepositoryConfig`
+- Added explicit repository configuration contract
+- Added repository path validation
+- Added repository metadata validation
+- Added repository schema validation
+- Added repository file format validation
+- Added repository configuration consistency checks
+
+### Notes
+
+- No repository implementations added
+- No filesystem access introduced
+- No metadata inference
+- No schema inference
+- Configuration is entirely caller-supplied
+
+---
+
 ## [0.4.4] - 2026-07-22
 
 ### Added

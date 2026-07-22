@@ -149,3 +149,46 @@ Deliverables:
 - [x] Explicit schema validation
 - [x] Explicit geometry validation
 - [x] Reusable serialization utilities
+
+---
+
+### Sprint 4.6 – Repository Configuration Contracts
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] FileRepositoryConfig
+- [x] Repository configuration validation
+- [x] Path validation
+- [x] Metadata validation
+- [x] Schema validation
+- [x] File format validation
+
+---
+
+### Sprint 4.7 – Repository Protocol Refinement
+
+Status: Completed
+Completed: 2026-07-22
+
+Deliverables:
+
+- [x] DatasetTableRepositoryProtocol
+- [x] Protocol separation
+- [x] Repository protocol refinement
+- [x] Interface Segregation refinement
+- [x] Dataset-oriented repository support
+
+### Sprint 4.8 – Repository Implementations
+
+Status: Planned
+
+Deliverables:
+
+- [ ] CSVRepository
+- [ ] GeoJSONRepository
+- [ ] DatasetTableRepositoryProtocol implementation
+- [ ] Repository validation
+- [ ] Repository loading

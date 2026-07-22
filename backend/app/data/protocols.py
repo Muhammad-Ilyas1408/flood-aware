@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from typing import Protocol, TypeVar
 
-from backend.app.data.models import DatasetMetadata
+from backend.app.data.models import DatasetMetadata, DatasetTable
 
 
 _ReadItemT = TypeVar("_ReadItemT", covariant=True)
@@ -24,6 +24,15 @@ class RepositoryProtocol(Protocol[_ReadItemT]):
 
     def validate(self) -> None:
         """Validate that the repository is ready to serve its dataset contract."""
+
+        ...
+
+
+class DatasetTableRepositoryProtocol(RepositoryProtocol[DatasetTable], Protocol):
+    """Define read-only access to a complete dataset table without item identifiers."""
+
+    def load(self) -> DatasetTable:
+        """Load and return the complete validated dataset table."""
 
         ...
 
