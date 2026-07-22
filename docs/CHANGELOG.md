@@ -8,6 +8,35 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.7] - 2026-07-22
+
+### Added
+
+#### Sprint 4.8 – Repository Implementations
+
+- Added concrete `CSVRepository`
+- Added concrete `GeoJSONRepository`
+- Implemented `DatasetTableRepositoryProtocol`
+- Added repository validation workflows
+- Added dataset loading through explicit repository configuration
+- Reused `FileRepositoryConfig`
+- Reused serialization contracts
+- Reused CSV and GeoJSON validation infrastructure
+- Completed the first concrete repository implementations for the data layer
+
+### Notes
+
+- Read-only repositories only
+- No CRUD operations introduced
+- No metadata inference
+- No schema inference
+- No identifier generation
+- No business logic added
+- No caching introduced
+- Existing APIs remain unchanged
+
+---
+
 ## [0.4.6] - 2026-07-22
 
 ### Added

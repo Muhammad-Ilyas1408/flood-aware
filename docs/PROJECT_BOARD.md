@@ -183,12 +183,16 @@ Deliverables:
 
 ### Sprint 4.8 – Repository Implementations
 
-Status: Planned
+Status: Completed
+Completed: 2026-07-22
 
 Deliverables:
 
-- [ ] CSVRepository
-- [ ] GeoJSONRepository
-- [ ] DatasetTableRepositoryProtocol implementation
-- [ ] Repository validation
-- [ ] Repository loading
+- [x] CSVRepository
+- [x] GeoJSONRepository
+- [x] DatasetTableRepositoryProtocol implementation
+- [x] Repository validation
+- [x] Repository loading
+- [x] FileRepositoryConfig integration
+- [x] Explicit schema-based loading
+- [x] Explicit metadata-based loading
