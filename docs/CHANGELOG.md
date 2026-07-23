@@ -6,6 +6,58 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-24
+
+---
+
+### Added
+
+#### Sprint 9 – AI Runtime Infrastructure
+
+##### Sprint 9.1 – Runtime Infrastructure
+
+- Added framework-independent AI runtime package
+- Added Tool Registry for runtime tool discovery
+- Added immutable Tool Metadata contracts
+- Added Runtime Tool Executor
+- Added runtime lifecycle state definitions
+- Added decision lifecycle state definitions
+- Added execution-scoped memory
+- Added deterministic Sequential Planner
+- Added execution trace infrastructure
+- Added runtime exception hierarchy
+- Preserved complete framework independence
+
+##### Sprint 9.1.5 – Runtime Composition
+
+- Added immutable `AIRuntime` composition facade
+- Composed Planner
+- Composed Executor
+- Composed Registry
+- Composed Execution Memory
+- Composed Execution Trace
+- Established a stable runtime boundary between the Decision Engine and future LangGraph orchestration
+
+### Changed
+
+- ExecutionMemory now preserves chronological execution order.
+- AI runtime infrastructure is now considered frozen.
+- Future Sprint 9 work will build on this runtime instead of modifying it.
+
+### Notes
+
+- No business logic introduced
+- No LangChain dependency
+- No LangGraph dependency
+- No LLM provider dependency
+- No FastAPI dependency
+- No repository changes
+- No service changes
+- No API changes
+- Runtime infrastructure completed
+- Stable architectural foundation established
+- Ready for Sprint 9.2 – Runtime AI Tools
+
 ---
 
 ## [0.8.0] - 2026-07-23

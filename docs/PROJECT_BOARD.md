@@ -528,3 +528,60 @@ Deliverables:
 - [x] Recommendation verification
 - [x] Failure propagation verification
 - [x] LangGraph-ready implementation-independent tests
+
+---
+
+## Sprint 9 – AI Runtime Infrastructure
+
+Status: In Progress
+
+---
+
+### Sprint 9.1 – Runtime Infrastructure
+
+Status: Completed
+Completed: 2026-07-24
+
+Deliverables:
+
+- [x] Runtime package organization
+- [x] Tool Registry
+- [x] Tool Metadata
+- [x] Runtime Tool Executor
+- [x] Runtime Exception Hierarchy
+- [x] Runtime Lifecycle States
+- [x] Decision Lifecycle States
+- [x] Sequential Planner
+- [x] Execution Memory
+- [x] Execution Trace
+
+---
+
+### Sprint 9.1.5 – Runtime Composition
+
+Status: Completed
+Completed: 2026-07-24
+
+Deliverables:
+
+- [x] AIRuntime composition facade
+- [x] Planner composition
+- [x] Executor composition
+- [x] Registry composition
+- [x] Execution Memory composition
+- [x] Execution Trace composition
+- [x] Stable runtime boundary
+
+---
+
+### Sprint 9.2 – Runtime AI Tools
+
+Status: Not Started
+
+Deliverables:
+
+- [ ] Weather Tool
+- [ ] RAG Tool
+- [ ] Routing Tool
+- [ ] Runtime Tool Registration
+- [ ] Runtime Tool Tests
