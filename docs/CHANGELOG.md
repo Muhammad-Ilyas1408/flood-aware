@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## [Unreleased]
+--- 
+
+## [0.9.4] - 2026-07-24
+
+---
+
+## Sprint 9.4 – Weather Tool (2026-07-25)
+
+### Added
+- Introduced isolated Weather Tool package.
+- Added OpenWeatherMap client using httpx.
+- Added immutable WeatherRequest and WeatherResult models.
+- Added WeatherMapper for provider-to-domain translation.
+- Added WeatherSettings with environment-based configuration.
+- Added Weather-specific exception hierarchy.
+- Added standalone WeatherTool service.
+- Added comprehensive unit tests.
+- Added standalone live verification script.
+- Added Weather Tool documentation.
+
+### Improved
+- Added ownership-aware HTTP client cleanup.
+- Added configurable weather units through settings.
+- Simplified Weather Tool tests for improved readability.
+- Removed static-analysis warnings.
+
+### Verified
+- Live OpenWeatherMap verification completed successfully.
+- All unit tests passed.
+- All pytest suites passed.
 
 ---
 

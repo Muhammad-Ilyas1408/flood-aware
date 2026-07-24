@@ -633,3 +633,89 @@ Deliverables:
 - [x] DecisionContext preservation
 - [x] Runtime failure validation
 - [x] Production dataset integration
+
+---
+
+## Sprint 9.3 – Government Knowledge Engine (RAG Tool)
+
+Status: Completed
+
+Completed: 2026-07-24
+
+---
+
+### Sprint 9.3.0 – Government Knowledge Base
+
+Status: Completed
+
+Completed: 2026-07-24
+
+Deliverables:
+
+- [x] Government document loader
+- [x] PDF cleaning pipeline
+- [x] Semantic chunking
+- [x] OpenAI embedding service
+- [x] Chroma persistent vector store
+- [x] Government Retriever
+- [x] Knowledge Tool
+- [x] Prompt Builder
+- [x] Response Generator
+- [x] Immutable RAG models
+- [x] Framework-independent protocols
+- [x] Offline index builder
+
+---
+
+### Sprint 9.3.1 – Government Knowledge Evaluation
+
+Status: Completed
+
+Completed: 2026-07-24
+
+Deliverables:
+
+- [x] Benchmark Loader
+- [x] Evaluation Runner
+- [x] Retrieval Metrics
+- [x] Citation Checker
+- [x] Metrics Aggregator
+- [x] Evaluation Report Writer
+- [x] Evaluation CLI
+- [x] evaluation.json generation
+- [x] evaluation.md generation
+- [x] Evaluation tests
+
+---
+
+### Sprint 9.3.2 – Benchmark Synchronization
+
+Status: Completed
+
+Completed: 2026-07-24
+
+Deliverables:
+
+- [x] Benchmark synchronization utility
+- [x] Automatic chunk-id synchronization
+- [x] Automatic citation synchronization
+- [x] Preserve benchmark metadata
+- [x] Documented synchronization workflow
+
+---
+
+## Sprint 9.4 – Weather Tool
+
+Status: Completed
+Completed: 2026-07-24
+
+Completed
+
+- [x] Weather package implemented
+- [x] OpenWeatherMap client
+- [x] Typed request/result models
+- [x] Weather mapper
+- [x] Exception hierarchy
+- [x] Unit tests
+- [x] Live verification script
+- [x] Documentation completed
