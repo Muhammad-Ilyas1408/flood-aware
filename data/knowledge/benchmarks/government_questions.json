@@ -1,0 +1,49 @@
+{
+  "questions": [
+    {
+      "id": "swat-flood-risk",
+      "question": "What government evidence describes flood risk in District Swat?",
+      "relevant_chunk_ids": [
+        "33f6f3c6fa429e8961f976ca655628570c5f0553536c4591e67cff4c36ddde94",
+        "b0b7a4d4d6efe3dd67017b0ad198d4c7b8c5bb03d816a69b237ec703877132f8",
+        "8a41cfc341d17c4710ec41ccefa8913e70e4118e5593f554307af0beaed3026b",
+        "f338f26d4703a8794a9f1317c1a00b30073397d095a219e40bd15a7462052267",
+        "633ffa94f27a7fd7747f2f33f54e460b55283b97b0f202bdd9e4e1c054abbf30"
+      ],
+      "relevant_documents": [
+        "Disaster_Risk_Mapping_District_Swat.pdf"
+      ],
+      "expected_citations": [
+        {
+          "document_name": "Disaster_Risk_Mapping_District_Swat.pdf",
+          "page_number": 21,
+          "section": null
+        },
+        {
+          "document_name": "Disaster_Risk_Mapping_District_Swat.pdf",
+          "page_number": 9,
+          "section": null
+        },
+        {
+          "document_name": "Disaster_Risk_Mapping_District_Swat.pdf",
+          "page_number": 25,
+          "section": null
+        },
+        {
+          "document_name": "Disaster_Risk_Mapping_District_Swat.pdf",
+          "page_number": 24,
+          "section": null
+        },
+        {
+          "document_name": "National_Disaster_Management_Plan__NDMP__Main_Volume.pdf",
+          "page_number": 88,
+          "section": "14 Under the 18th Constitutional Amendment, the Ministry of Social Welfare and Special Education was devolved into provincial governments."
+        }
+      ],
+      "difficulty": "easy",
+      "category": "preparedness",
+      "hazard": "flood",
+      "agency": "NDMA"
+    }
+  ]
+}

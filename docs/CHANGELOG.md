@@ -8,6 +8,78 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.9.3] - 2026-07-24
+
+---
+
+### Added
+
+#### Sprint 9.3 – Government Knowledge Engine (RAG Tool)
+
+##### Sprint 9.3.0 – Government Knowledge Base
+
+- Added Government Knowledge Engine package
+- Added Government document loader
+- Added PDF cleaning pipeline
+- Added semantic chunking pipeline
+- Added OpenAI embedding service
+- Added Chroma persistent vector store
+- Added production Government Retriever
+- Added Knowledge Tool
+- Added prompt builder
+- Added response generator
+- Added immutable RAG models
+- Added framework-independent RAG protocols
+- Added explicit RAG configuration
+
+##### Sprint 9.3.1 – Government Knowledge Evaluation
+
+- Added isolated evaluation framework
+- Added Benchmark Loader
+- Added Retrieval Metrics
+- Added Citation Checker
+- Added Metrics Aggregator
+- Added Evaluation Runner
+- Added Evaluation Report Writer
+- Added evaluation CLI
+- Added benchmark validation tests
+- Added evaluation integration tests
+- Added evaluation JSON report generation
+- Added evaluation Markdown report generation
+
+##### Sprint 9.3.2 – Benchmark Synchronization
+
+- Added benchmark synchronization utility
+- Added automatic benchmark chunk-id synchronization
+- Added automatic benchmark citation synchronization
+- Preserved all human-authored benchmark metadata
+- Added documented evaluation workflow
+
+### Changed
+
+- Government Knowledge Engine now uses a single shared `OPENAI_API_KEY`.
+- Persistent Chroma index is rebuilt using the offline indexing pipeline.
+- Benchmark maintenance is now automated after rebuilding the knowledge base.
+
+### Notes
+
+- No AI Runtime changes
+- No Planner changes
+- No Registry changes
+- No Decision Engine changes
+- No Weather Tool changes
+- No Runtime execution changes
+- No FastAPI changes
+- No Agent orchestration changes
+- Production runtime remains isolated from evaluation
+- Government Knowledge Engine completed
+- Evaluation pipeline completed
+- Benchmark synchronization completed
+- Sprint 9.3 frozen
+- Ready for Sprint 9.4 – Weather Tool
+
+---
+
 ## [0.9.2] - 2026-07-24
 
 ---
