@@ -1,0 +1,151 @@
+village_id,village_name,district,tehsil,latitude,longitude,population,population_year,river_distance_km,road_access,health_facility_nearby,school_nearby,nearest_shelter_id,flood_risk,verification_status,data_source
+VC001,Bishbanr,Swat,Babuzai,34.7500,72.3500,7212,2017,2.0,Yes,Partial,Yes,SHEL007,Medium,Verified,GoharJageer.com (2017 Census)
+VC002,Kas,Swat,Babuzai,34.7400,72.3400,3143,2017,2.2,Yes,Partial,Yes,SHEL007,Medium,Verified,GoharJageer.com (2017 Census)
+VC003,Kozqila,Swat,Babuzai,34.7300,72.3300,1801,2017,2.5,Yes,No,Yes,SHEL007,Medium,Verified,GoharJageer.com (2017 Census)
+VC004,Ashargarai,Swat,Babuzai,34.7600,72.3600,3686,2017,1.8,Yes,Yes,Yes,SHEL007,Medium,Verified,GoharJageer.com (2017 Census)
+VC005,Jambil,Swat,Babuzai,34.7700,72.3700,12456,2017,1.5,Yes,Yes,Yes,SHEL007,Medium,Verified,GoharJageer.com (2017 Census)
+VC006,Kokarai,Swat,Babuzai,34.7800,72.3800,24465,2017,0.5,Yes,Yes,Yes,SHEL007,High,Verified,GoharJageer.com (2017 Census)
+VC007,Manglawar,Swat,Babuzai,34.7900,72.3900,33168,2017,0.8,Yes,Yes,Yes,SHEL008,High,Verified,GoharJageer.com (2017 Census)
+VC008,Shingray,Swat,Babuzai,34.8000,72.4000,4096,2017,1.0,Yes,Yes,Yes,SHEL008,High,Verified,GoharJageer.com (2017 Census)
+VC009,Gulbandi,Swat,Babuzai,34.7850,72.3850,2173,2017,1.2,Yes,Partial,Yes,SHEL008,Medium,Verified,GoharJageer.com (2017 Census)
+VC010,Sar Sardaray,Swat,Babuzai,34.7950,72.3950,4831,2017,0.9,Yes,Yes,Yes,SHEL008,High,Verified,DBpedia/GoharJageer.com
+VC011,Banjot,Swat,Babuzai,34.7600,72.3650,4750,2017,1.8,Yes,Yes,Yes,SHEL007,Medium,Verified,DBpedia/GoharJageer.com
+VC012,Goratai,Swat,Babuzai,34.7700,72.3750,4574,2017,1.5,Yes,Partial,Yes,SHEL007,Medium,Verified,GoharJageer.com
+VC013,Sarsardaray,Swat,Babuzai,34.7800,72.3850,4941,2017,1.2,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC014,Aboha,Swat,Babuzai,34.7900,72.3950,13265,2017,0.9,Yes,Yes,Yes,SHEL008,High,Verified,GoharJageer.com
+VC015,Kandak,Swat,Babuzai,34.8000,72.4050,3232,2017,1.1,Yes,Partial,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC016,Charbagh,Swat,Charbagh,34.8333,72.4417,39605,2017,0.8,Yes,Yes,Yes,SHEL001,High,Verified,Wikipedia/DBpedia
+VC017,Alamganj,Swat,Charbagh,34.8250,72.4650,8699,2017,0.9,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC018,Dakorak,Swat,Charbagh,34.8050,72.4400,16782,2017,1.6,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC019,Gulibagh,Swat,Charbagh,34.8167,72.4500,6937,2017,1.5,Yes,Yes,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC020,Kashora,Swat,Charbagh,34.8350,72.4550,3848,2017,1.3,Yes,Partial,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC021,Malam Jabba,Swat,Charbagh,34.8000,72.5700,6345,2017,8.0,Partial,No,No,SHEL005,Low,Verified,GoharJageer.com
+VC022,Shaltalo,Swat,Charbagh,34.8400,72.4600,3369,2017,1.4,Yes,Partial,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC023,SpinioBa,Swat,Charbagh,34.8450,72.4650,3876,2017,1.6,Yes,Partial,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC024,Ganagir,Swat,Charbagh,34.7850,72.3950,4188,2017,2.2,Yes,No,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC025,Mangorkot,Swat,Charbagh,34.8300,72.4500,3210,2017,1.5,Yes,Partial,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC026,Roria,Swat,Charbagh,34.8120,72.4480,5142,2017,1.4,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC027,Seri,Swat,Charbagh,34.8200,72.4550,3876,2017,1.3,Yes,Partial,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC028,Jehanabad,Swat,Charbagh,34.8200,72.4300,NULL,NULL,1.2,Yes,Yes,Yes,SHEL005,Medium,Partial,Wikipedia
+VC029,Taligram,Swat,Charbagh,34.8100,72.4200,NULL,NULL,1.5,Yes,Partial,Yes,SHEL005,Medium,Partial,Wikipedia
+VC030,Sair,Swat,Charbagh,34.8000,72.4100,NULL,NULL,1.8,Yes,Partial,Yes,SHEL005,Medium,Partial,Wikipedia
+VC031,Shin Kad,Swat,Charbagh,34.7900,72.4000,NULL,NULL,2.0,Yes,No,Yes,SHEL005,Medium,Partial,Wikipedia
+VC032,Allaabad,Swat,Charbagh,34.8100,72.4450,NULL,NULL,1.5,Yes,Yes,Yes,SHEL004,Medium,Partial,Wikipedia
+VC033,Waliabad,Swat,Charbagh,34.8200,72.4600,NULL,NULL,1.0,Yes,Yes,Yes,SHEL001,High,Partial,Wikipedia
+VC034,Landake,Swat,Charbagh,34.8150,72.4550,NULL,NULL,1.3,Yes,Yes,Yes,SHEL001,Medium,Partial,Wikipedia
+VC035,Kabal,Swat,Kabal,34.7833,72.2833,420001,2017,1.0,Yes,Yes,Yes,SHEL002,High,Verified,Wikipedia/Kabal Tehsil
+VC036,Ningolai,Swat,Kabal,34.8500,72.4167,11793,2017,0.5,Yes,Yes,Yes,SHEL002,High,Verified,Wikipedia
+VC037,Kala Kalay,Swat,Kabal,34.7833,72.2833,24995,2017,1.2,Yes,Yes,Yes,SHEL003,Medium,Verified,Wikipedia
+VC038,Kanju,Swat,Kabal,34.7800,72.2900,NULL,NULL,0.7,Yes,Yes,Yes,SHEL002,High,Partial,Wikipedia
+VC039,Galoch,Swat,Kabal,34.7900,72.2950,NULL,NULL,1.0,Yes,Partial,Yes,SHEL002,High,Partial,Wikipedia
+VC040,Thaghma,Swat,Kabal,34.8000,72.3000,NULL,NULL,1.2,Yes,Partial,Yes,SHEL003,Medium,Partial,Wikipedia
+VC041,Mahak,Swat,Kabal,34.8100,72.3100,NULL,NULL,1.5,Yes,No,Yes,SHEL003,Medium,Partial,Wikipedia
+VC042,Khatkoto,Swat,Kabal,34.8200,72.3200,NULL,NULL,1.8,Yes,No,Yes,SHEL003,Medium,Partial,Wikipedia
+VC043,Guljaba,Swat,Kabal,34.7900,72.2800,NULL,NULL,1.2,Yes,Yes,Yes,SHEL002,Medium,Partial,Wikipedia
+VC044,Hazara,Swat,Kabal,34.7950,72.2850,NULL,NULL,1.4,Yes,Yes,Yes,SHEL002,Medium,Partial,Wikipedia
+VC045,Aligrama,Swat,Kabal,34.8000,72.2900,NULL,NULL,1.6,Yes,Yes,Yes,SHEL002,Medium,Partial,Wikipedia
+VC046,Derai,Swat,Kabal,34.7850,72.2950,NULL,NULL,1.8,Yes,Partial,Yes,SHEL003,Medium,Partial,Wikipedia
+VC047,Mingora,Swat,Babuzai,34.7700,72.3600,361112,2023,1.5,Yes,Yes,Yes,SHEL008,Medium,Verified,CityPopulation (2023 Census)
+VC048,Saidu Sharif,Swat,Babuzai,34.7500,72.3550,1934,2017,2.0,Yes,Yes,Yes,SHEL006,Medium,Verified,GoharJageer.com
+VC049,Balogram,Swat,Babuzai,34.7900,72.4200,12999,2017,1.3,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC050,Sangota,Swat,Babuzai,34.7833,72.4167,14598,2017,1.0,Yes,Yes,Yes,SHEL008,High,Verified,GoharJageer.com
+VC051,Dangram,Swat,Babuzai,34.8400,72.4400,9884,2017,1.2,Yes,Yes,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC052,Odigram,Swat,Babuzai,34.8100,72.4400,23284,2017,0.8,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC053,Qambar,Swat,Babuzai,34.8600,72.4900,25207,2017,0.7,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC054,Kota Swat,Swat,Babuzai,34.8600,72.4650,27121,2017,0.6,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC055,Islampoor,Swat,Babuzai,34.8800,72.5100,17176,2017,1.2,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC056,Zarakhela,Swat,Babuzai,34.8800,72.4850,13643,2017,1.8,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC057,Gogdara,Swat,Babuzai,34.8000,72.4300,10903,2017,1.5,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC058,Marghazar,Swat,Babuzai,34.8100,72.4100,7365,2017,1.5,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC059,Matta,Swat,Matta,34.9000,72.4000,42547,2017,4.5,Yes,Yes,Yes,SHEL010,Low,Verified,CityPopulation
+VC060,Baidara,Swat,Matta,34.9500,72.4500,NULL,NULL,5.0,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC061,Chupryal,Swat,Matta,34.9100,72.4200,NULL,NULL,4.8,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC062,Darmai,Swat,Matta,34.8800,72.3800,NULL,NULL,4.0,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC063,Dherai,Swat,Matta,34.8900,72.3900,NULL,NULL,4.2,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC064,Beshigram,Swat,Matta,34.9300,72.4300,NULL,NULL,5.2,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC065,Biha,Swat,Matta,34.9400,72.4400,NULL,NULL,5.5,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC066,Bar Abakhel,Swat,Matta,34.9500,72.4500,NULL,NULL,5.8,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC067,Banr Ingaro Dherai,Swat,Matta,34.9600,72.4600,NULL,NULL,6.0,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC068,Bar Thana,Swat,Matta,34.9700,72.4700,NULL,NULL,6.5,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC069,Bara Samai,Swat,Matta,34.9800,72.4800,NULL,NULL,7.0,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC070,Asharay,Swat,Matta,35.0100,72.5100,NULL,NULL,8.5,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC071,Ronyal,Swat,Matta,34.9200,72.4100,NULL,NULL,5.0,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC072,Gwalerai,Swat,Matta,34.9050,72.4050,NULL,NULL,4.6,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC073,Drushkhela,Swat,Matta,34.8950,72.3950,NULL,NULL,4.4,Yes,Partial,Yes,SHEL010,Low,Partial,Wikipedia
+VC074,Bahrain,Swat,Bahrain,35.2000,72.6000,61889,2017,10.0,Yes,Yes,Yes,SHEL011,Low,Verified,CityPopulation
+VC075,Kalam,Swat,Bahrain,35.5000,72.6000,NULL,NULL,15.0,Yes,Yes,Yes,SHEL012,Low,Partial,Wikipedia
+VC076,Utror,Swat,Bahrain,35.4000,72.6500,NULL,NULL,14.0,Yes,Yes,Yes,SHEL012,Low,Partial,Wikipedia
+VC077,Gabral,Swat,Bahrain,35.3000,72.6500,NULL,NULL,12.0,Partial,No,No,SHEL011,Low,Partial,Wikipedia
+VC078,Matiltan,Swat,Bahrain,35.3500,72.7000,NULL,NULL,16.0,Partial,No,No,SHEL012,Low,Partial,Wikipedia
+VC079,Mankial,Swat,Bahrain,35.3000,72.6000,NULL,NULL,11.0,Yes,Yes,Yes,SHEL011,Low,Partial,Wikipedia
+VC080,Shagai,Swat,Bahrain,35.2500,72.6200,NULL,NULL,10.5,Yes,Yes,Yes,SHEL011,Low,Partial,Wikipedia
+VC081,Madyan,Swat,Bahrain,35.1000,72.4000,NULL,NULL,3.0,Yes,Yes,Yes,SHEL006,Medium,Partial,Wikipedia
+VC082,Bara Bandai,Swat,Bahrain,35.0500,72.3800,NULL,NULL,3.5,Yes,Partial,Yes,SHEL006,Medium,Partial,Wikipedia
+VC083,Khwazakhela,Swat,Khwazakhela,35.1000,72.4200,48016,2017,3.0,Yes,Yes,Yes,SHEL003,Medium,Verified,CityPopulation
+VC084,Shalpin,Swat,Khwazakhela,35.1500,72.4500,NULL,NULL,3.5,Yes,Yes,Yes,SHEL004,Medium,Partial,Wikipedia
+VC085,Faqira,Swat,Khwazakhela,35.1400,72.4400,NULL,NULL,4.0,Partial,Yes,Yes,SHEL004,Low,Partial,Wikipedia
+VC086,Banda,Swat,Khwazakhela,35.1300,72.4350,NULL,NULL,4.5,Partial,No,Yes,SHEL004,Low,Partial,Wikipedia
+VC087,Sholgara,Swat,Khwazakhela,35.1450,72.4450,NULL,NULL,3.8,Partial,Yes,Yes,SHEL004,Low,Partial,Wikipedia
+VC088,Karal,Swat,Khwazakhela,35.1550,72.4550,NULL,NULL,3.5,Partial,No,Yes,SHEL004,Low,Partial,Wikipedia
+VC089,Bawrai,Swat,Khwazakhela,35.1600,72.4600,NULL,NULL,3.2,Partial,No,Yes,SHEL004,Low,Partial,Wikipedia
+VC090,Jano,Swat,Khwazakhela,35.1000,72.4200,NULL,NULL,3.0,Yes,No,Yes,SHEL004,Medium,Partial,DBpedia
+VC091,Chamtalay,Swat,Khwazakhela,35.1100,72.4300,NULL,NULL,2.8,Yes,No,Yes,SHEL004,Medium,Partial,DBpedia
+VC092,Mashkomai,Swat,Khwazakhela,35.1200,72.4400,NULL,NULL,2.5,Yes,Partial,Yes,SHEL004,Medium,Partial,DBpedia
+VC093,Bihar,Swat,Khwazakhela,35.1300,72.4500,NULL,NULL,2.2,Yes,Yes,Yes,SHEL004,Medium,Partial,DBpedia
+VC094,Topasin,Swat,Khwazakhela,35.1400,72.4600,NULL,NULL,2.0,Yes,Partial,Yes,SHEL004,Medium,Partial,DBpedia
+VC095,Barikot,Swat,Barikot,34.8300,72.5300,94019,2017,4.5,Yes,Yes,Yes,SHEL009,Low,Verified,CityPopulation
+VC096,Manyar,Swat,Barikot,34.8000,72.5000,NULL,NULL,3.5,Yes,Partial,Yes,SHEL009,Medium,Partial,Wikipedia
+VC097,Ghaligay,Swat,Barikot,34.8100,72.5100,NULL,NULL,3.8,Yes,Partial,Yes,SHEL009,Medium,Partial,Wikipedia
+VC098,Tindodag,Swat,Barikot,34.8200,72.5200,NULL,NULL,4.0,Yes,Partial,Yes,SHEL009,Medium,Partial,Wikipedia
+VC099,Ghamjaba,Swat,Barikot,34.8400,72.5400,NULL,NULL,4.8,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC100,Loe Banr,Swat,Barikot,34.8500,72.5500,NULL,NULL,5.0,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC101,Cham Ghari,Swat,Barikot,34.8600,72.5600,NULL,NULL,5.2,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC102,Shinko,Swat,Barikot,34.8700,72.5700,NULL,NULL,5.5,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC103,Ambela,Swat,Barikot,34.8400,72.5200,NULL,NULL,4.2,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC104,Nawagai,Swat,Barikot,34.8550,72.5350,NULL,NULL,4.6,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC105,Kuz Abakhel,Swat,Barikot,34.8250,72.5150,NULL,NULL,4.0,Yes,Partial,Yes,SHEL009,Medium,Partial,Wikipedia
+VC106,Koz Abakhel,Swat,Barikot,34.8300,72.5180,NULL,NULL,4.2,Yes,Partial,Yes,SHEL009,Medium,Partial,Wikipedia
+VC107,Aliabad,Swat,Barikot,34.8450,72.5250,NULL,NULL,4.4,Yes,Partial,Yes,SHEL009,Low,Partial,Wikipedia
+VC108,Gulkada,Swat,Babuzai,34.8700,72.5000,6626,2017,1.0,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC109,Pangigram,Swat,Babuzai,34.8200,72.4500,5125,2017,1.0,Yes,Yes,Yes,SHEL005,High,Verified,GoharJageer.com
+VC110,Tindodag,Swat,Babuzai,34.8300,72.4600,5368,2017,1.2,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC111,Batorra,Swat,Babuzai,34.8400,72.4700,2436,2017,1.5,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC112,Guligram,Swat,Babuzai,34.8500,72.4800,6334,2017,1.8,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC113,Spalbandi,Swat,Babuzai,34.8300,72.4300,4751,2017,2.0,Yes,Partial,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC114,Sheratraf,Swat,Babuzai,34.8200,72.4200,2661,2017,1.8,Yes,Partial,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC115,Chongai,Swat,Babuzai,34.8100,72.4150,7398,2017,1.4,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC116,Dedawari,Swat,Babuzai,34.8200,72.4250,6091,2017,1.6,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC117,Tirang,Swat,Babuzai,34.8300,72.4350,5501,2017,1.8,Yes,Yes,Yes,SHEL008,Medium,Verified,GoharJageer.com
+VC118,Khazana,Swat,Babuzai,34.8400,72.4450,3602,2017,2.0,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC119,Shamozi,Swat,Babuzai,34.8500,72.4550,7960,2017,2.2,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC120,Nemogram,Swat,Babuzai,34.8700,72.4750,1945,2017,1.5,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC121,Aryany,Swat,Babuzai,34.8900,72.4950,6235,2017,2.0,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC122,Badi,Swat,Babuzai,34.9000,72.5050,3994,2017,2.2,Yes,Partial,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC123,Laykot,Swat,Babuzai,34.9100,72.5150,3419,2017,2.5,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC124,Pishmal,Swat,Babuzai,34.9200,72.5250,3941,2017,2.8,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC125,Bashigram,Swat,Babuzai,34.9300,72.5350,7985,2017,3.0,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC126,Chail,Swat,Babuzai,34.9400,72.5450,6051,2017,3.2,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC127,Balakot,Swat,Babuzai,34.9600,72.5650,3770,2017,3.8,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC128,Kaidam,Swat,Babuzai,34.9800,72.5850,2469,2017,4.5,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC129,Torwal,Swat,Babuzai,34.9900,72.5950,2850,2017,4.8,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC130,Darolay,Swat,Babuzai,35.0100,72.6150,2937,2017,5.2,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC131,Gorney,Swat,Babuzai,35.0200,72.6250,3797,2017,5.5,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC132,Ramate,Swat,Babuzai,35.0400,72.6450,5786,2017,6.0,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC133,Tirat,Swat,Babuzai,35.0600,72.6650,21847,2017,3.0,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC134,Baila,Swat,Babuzai,35.0700,72.6750,7405,2017,3.5,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC135,Jaba,Swat,Babuzai,35.0900,72.6950,6743,2017,4.5,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC136,Karin,Swat,Babuzai,35.1000,72.7050,4855,2017,5.0,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC137,Paloga,Swat,Babuzai,35.1100,72.7150,1356,2017,5.5,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC138,Buyun,Swat,Babuzai,35.1200,72.7250,1946,2017,6.0,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC139,Jalbanr,Swat,Babuzai,35.1300,72.7350,4217,2017,6.5,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC140,Shaho,Swat,Babuzai,35.1500,72.7550,4604,2017,7.5,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC141,Ashuran,Swat,Babuzai,35.1600,72.7650,5112,2017,8.0,Yes,Yes,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC142,Gorkin,Swat,Babuzai,35.1700,72.7750,2309,2017,8.5,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC143,Osho,Swat,Babuzai,35.1900,72.7950,4267,2017,9.5,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC144,Bahan,Swat,Babuzai,35.2000,72.8050,1374,2017,10.0,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC145,Kany,Swat,Babuzai,35.2100,72.8150,2518,2017,10.5,Partial,No,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC146,Sazgul,Swat,Babuzai,35.2200,72.8250,3610,2017,11.0,Yes,Partial,Yes,SHEL005,Low,Verified,GoharJageer.com
+VC147,Kokrrai,Swat,Babuzai,34.7950,72.3950,NULL,NULL,0.9,Yes,Yes,Yes,SHEL008,High,Partial,DBpedia
+VC148,Sahibabad,Swat,Babuzai,34.8400,72.4520,5331,2017,1.3,Yes,Yes,Yes,SHEL001,Medium,Verified,GoharJageer.com
+VC149,Qalagay,Swat,Babuzai,34.8900,72.5000,6611,2017,1.5,Yes,Yes,Yes,SHEL005,Medium,Verified,GoharJageer.com
+VC150,Rahimabad,Swat,Babuzai,34.7600,72.3700,8237,2017,1.6,Yes,Yes,Yes,SHEL007,Medium,Verified,GoharJageer.com

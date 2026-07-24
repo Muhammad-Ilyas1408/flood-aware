@@ -6,6 +6,66 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+---
+
+## [0.9.2] - 2026-07-24
+
+---
+
+### Added
+
+#### Sprint 9.2 – Runtime Tool Integration
+
+##### Sprint 9.2.0 – Production Dataset Projection
+
+- Added repository-boundary production dataset projection
+- Added explicit projection for production village datasets
+- Added explicit projection for production shelter datasets
+- Preserved immutable production CSV files
+- Preserved frozen DTO contracts
+- Preserved Application Layer contracts
+- Added production dataset projection tests
+- Enabled production datasets to be consumed without modifying services or DTOs
+
+##### Sprint 9.2.1 – Runtime Integration Validation
+
+- Added end-to-end runtime integration tests
+- Validated AIRuntime execution against production datasets
+- Validated VillageTool execution
+- Validated ShelterTool execution
+- Validated DatasetCatalogTool execution
+- Verified ToolRegistry registration
+- Verified sequential runtime execution
+- Verified DecisionContext preservation
+- Verified runtime failure handling for unknown tools
+- Removed dependency on mocked runtime execution for integration validation
+
+### Changed
+
+- Runtime now executes against real production datasets
+- Repository projection now adapts production CSV schema to frozen application contracts
+- Runtime validation now exercises the complete execution pipeline
+
+### Notes
+
+- No Decision Engine changes
+- No Planner changes
+- No AIRuntime changes
+- No Registry changes
+- No Executor changes
+- No Service changes
+- No DTO changes
+- No Use Case changes
+- No Protocol changes
+- No FastAPI changes
+- No AI behavior changes
+- Repository projection completed
+- Runtime integration completed
+- Architecture remains framework-independent
+- Ready for Sprint 9.3 – RAG Knowledge Tool
+
+---
+
 ## [0.9.0] - 2026-07-24
 
 ---

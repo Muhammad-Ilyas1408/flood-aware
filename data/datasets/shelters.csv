@@ -1,0 +1,52 @@
+shelter_id,shelter_name,district,tehsil,latitude,longitude,capacity,building_type,generator_available,water_available,medical_support,female_facility,wheelchair_access,road_access,contact_number,status,verification_status,last_updated,data_source
+SHEL001,Cadet College Swat,Swat,Charbagh,34.8200,72.4600,500,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Wikipedia/Charbagh Tehsil
+SHEL002,Govt Girls Degree College Kanju,Swat,Kabal,34.7900,72.2900,400,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL003,Govt Degree College Khwazakhela,Swat,Khwazakhela,35.1000,72.4200,300,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL004,University of Swat,Swat,Charbagh,34.8167,72.4500,800,University,Yes,Yes,Yes,Yes,Yes,Yes,+92-946-9240066,Operational,Verified,2024-01-15,Ilmkidunya.com
+SHEL005,Govt College of Technology Swat,Swat,Babuzai,34.7700,72.3600,350,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-9240198,Operational,Verified,2024-01-15,KPTEVTA
+SHEL006,Saidu Group of Teaching Hospitals,Swat,Babuzai,34.7500,72.3500,1100,Medical Facility,Yes,Yes,Yes,Yes,Yes,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,STH Official Website
+SHEL007,Govt Higher Secondary School Deolai,Swat,Babuzai,34.7600,72.3550,250,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Result.PK
+SHEL008,Govt College of Management Sciences Sangota,Swat,Babuzai,34.7800,72.3850,300,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL009,College of Home Sciences Saidu Sharif,Swat,Babuzai,34.7500,72.3550,200,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Ilmkidunya.com
+SHEL010,Community Hall Matta,Swat,Matta,34.9000,72.4000,150,Community Hall,NULL,Partial,NULL,Yes,No,Yes,+92-946-XXXXXX,Operational,Partial,2024-01-15,Wikipedia
+SHEL011,Sports Complex Mingora,Swat,Babuzai,34.7700,72.3650,300,Sports Complex,No,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Partial,2024-01-15,Mapcarta
+SHEL012,Govt Post Graduate Jahanzeb College,Swat,Babuzai,34.7550,72.3520,600,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Ilmkidunya.com
+SHEL013,Govt Girls Degree College II Saidu Sharif,Swat,Babuzai,34.7520,72.3540,450,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL014,Swat Public School and College Mingora,Swat,Babuzai,34.7720,72.3620,350,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL015,Al-Madina College,Swat,Babuzai,34.7600,72.3580,200,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HERAKP.GOV.PK
+SHEL016,Royal College of Nursing,Swat,Babuzai,34.7650,72.3550,150,Educational Institution,Yes,Yes,Yes,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HERAKP.GOV.PK
+SHEL017,Govt Degree College Baghdheri,Swat,Babuzai,34.7700,72.3700,250,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL018,Government Degree College Mingora,Swat,Babuzai,34.7750,72.3650,350,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL019,District Headquarters Hospital Swat,Swat,Babuzai,34.7500,72.3520,310,Medical Facility,Yes,Yes,Yes,Yes,Yes,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Dawn.com
+SHEL020,Swat Institute of Nuclear Medicine (SINOR),Swat,Babuzai,34.7580,72.3560,60,Medical Facility,Yes,Yes,Yes,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SWKPK.GOV.PK
+SHEL021,Govt High School Sersenai,Swat,Babuzai,34.7900,72.3900,150,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL022,Govt High School Sherpalam,Swat,Babuzai,34.7800,72.3800,150,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL023,Govt High School Baidara,Swat,Matta,34.9500,72.4500,200,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL024,Government Higher Secondary School Deolai,Swat,Babuzai,34.7600,72.3550,250,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Result.PK
+SHEL025,Community Centre DureshKhela,Swat,Matta,35.1000,72.4000,100,Community Hall,NULL,Partial,NULL,Yes,No,Yes,+92-946-XXXXXX,Operational,Partial,2024-01-15,Mapcarta
+SHEL026,Circuit House Saidu Sharif,Swat,Babuzai,34.7520,72.3530,80,Government Building,Yes,Yes,No,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Reliefweb
+SHEL027,Tehsil Municipal Administration Complex Matta,Swat,Matta,34.9000,72.4050,100,Government Building,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Brecorder.com
+SHEL028,Government Wadudia High School,Swat,Babuzai,34.7560,72.3520,200,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,IPFS.io
+SHEL029,Public Library Saidu Sharif,Swat,Babuzai,34.7570,72.3530,30,Government Building,No,Yes,No,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Mapcarta
+SHEL030,Wapda Office Mingora,Swat,Babuzai,34.7750,72.3620,40,Government Building,Yes,Yes,No,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Mapcarta
+SHEL031,Tahsil Office Kabal,Swat,Kabal,34.7900,72.2900,50,Government Building,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Mapcarta
+SHEL032,SPS College Rahimabad Mingora,Swat,Babuzai,34.7750,72.3650,300,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Alchetron
+SHEL033,Govt Girls Higher Secondary School Kabal,Swat,Kabal,34.7800,72.2900,250,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,Result.PK
+SHEL034,Government Degree College Kabal,Swat,Kabal,34.7850,72.2950,300,Educational Institution,Yes,Yes,Partial,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL035,Govt Degree College Barikot,Swat,Barikot,34.8300,72.5300,250,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HED.GKP.PK
+SHEL036,Govt High School Barikot,Swat,Barikot,34.8250,72.5250,150,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL037,Govt High School Khwazakhela,Swat,Khwazakhela,35.1000,72.4250,150,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL038,Basic Health Unit Khwazakhela,Swat,Khwazakhela,35.1050,72.4280,30,Medical Facility,No,Yes,Yes,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HCC.KP.GOV.PK
+SHEL039,Basic Health Unit Matta,Swat,Matta,34.8950,72.3950,30,Medical Facility,No,Yes,Yes,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HCC.KP.GOV.PK
+SHEL040,Relief Camp Jail Road Mingora,Swat,Babuzai,34.7700,72.3600,200,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-05-13,Nation.com.pk
+SHEL041,Relief Camp Regal Chowk Mingora,Swat,Babuzai,34.7720,72.3620,150,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-05-13,Nation.com.pk
+SHEL042,IDP Camp Shah Mansoor,Swat,Babuzai,34.7600,72.3580,300,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-07-29,Brecorder.com
+SHEL043,IDP Camp Yar Hussein,Swat,Babuzai,34.7620,72.3600,250,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-07-29,Brecorder.com
+SHEL044,Relief Camp Sheikh Shehzad,Swat,Babuzai,34.7650,72.3620,200,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-07-29,Brecorder.com
+SHEL045,Relief Camp Sheikh Yaseen,Swat,Babuzai,34.7680,72.3640,200,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-07-29,Brecorder.com
+SHEL046,Relief Camp Mazdoorabad,Swat,Babuzai,34.7700,72.3660,150,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Closed,Verified,2009-07-29,Brecorder.com
+SHEL047,NUST Relief Camp Madyan,Swat,Bahrain,35.1000,72.4000,100,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2022-10-06,NUST.EDU.PK
+SHEL048,ACD Relief Camp Makan Bagh Mingora,Swat,Babuzai,34.7750,72.3680,80,Relief Camp,No,Yes,Partial,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2022-09-01,ACD.ORG.PK
+SHEL049,Community Hall Bahrain,Swat,Bahrain,35.2000,72.6000,100,Community Hall,No,Partial,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Partial,2024-01-15,Wikipedia
+SHEL050,Govt High School Bahrain,Swat,Bahrain,35.1950,72.5950,120,Educational Institution,No,Yes,No,Yes,No,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,SED.EDU.PK
+SHEL051,Basic Health Unit Bahrain,Swat,Bahrain,35.1980,72.5980,20,Medical Facility,No,Yes,Yes,Yes,Partial,Yes,+92-946-XXXXXX,Operational,Verified,2024-01-15,HCC.KP.GOV.PK

@@ -1,7 +1,7 @@
 """Pure serializers between dataset contracts, CSV text, and GeoJSON models."""
 
 import csv
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from io import StringIO
 
@@ -115,6 +115,60 @@ def csv_to_dataset_table(csv_text: str, schema: DatasetSchema) -> DatasetTable:
         raise DatasetFormatError("CSV value does not match the supplied schema.") from error
 
     return _build_dataset_table(schema, rows)
+
+
+def row_mappings_to_dataset_table(
+    rows: Sequence[Mapping[str, str]],
+    schema: DatasetSchema,
+) -> DatasetTable:
+    """Deserialize parsed CSV row mappings into a validated dataset table.
+
+    Args:
+        rows: Parsed CSV rows keyed by the supplied schema's column names.
+        schema: The explicit schema that defines column order, types, and nullability.
+
+    Returns:
+        A validated dataset table containing the supplied rows in source order.
+
+    Raises:
+        DatasetFormatError: If a row contains an invalid scalar representation.
+        DatasetValidationError: If row fields do not match the supplied schema.
+    """
+
+    if not isinstance(schema, DatasetSchema):
+        raise DatasetValidationError("CSV deserialization requires a DatasetSchema model.")
+
+    expected_headers = tuple(column.name for column in schema.columns)
+    deserialized_rows: list[tuple[object, ...]] = []
+    try:
+        for row in rows:
+            if tuple(row) != expected_headers:
+                raise DatasetValidationError(
+                    "CSV row fields must match the supplied schema."
+                )
+
+            deserialized_row: list[object] = []
+            for column in schema.columns:
+                raw_value = row[column.name]
+                if column.data_type is DatasetColumnType.STRING:
+                    deserialized_row.append(raw_value)
+                elif raw_value == "":
+                    deserialized_row.append(None)
+                elif column.data_type is DatasetColumnType.INTEGER:
+                    deserialized_row.append(int(raw_value))
+                elif column.data_type is DatasetColumnType.FLOAT:
+                    deserialized_row.append(float(raw_value))
+                elif column.data_type is DatasetColumnType.BOOLEAN:
+                    if raw_value not in {"true", "false"}:
+                        raise ValueError
+                    deserialized_row.append(raw_value == "true")
+                else:
+                    deserialized_row.append(datetime.fromisoformat(raw_value))
+            deserialized_rows.append(tuple(deserialized_row))
+    except ValueError as error:
+        raise DatasetFormatError("CSV value does not match the supplied schema.") from error
+
+    return _build_dataset_table(schema, deserialized_rows)
 
 
 def dataset_table_to_feature_collection(
