@@ -71,6 +71,7 @@ data/vectorstore/
 data/cache/
 data/chroma/
 data/outputs/evaluation/
+data/glofas/
 
 # ==========================
 # AI Development Files

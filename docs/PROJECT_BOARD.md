@@ -719,3 +719,86 @@ Completed
 - [x] Unit tests
 - [x] Live verification script
 - [x] Documentation completed
+
+---
+
+## Sprint 9.6 – GloFAS Forecast Tool
+
+Status: Completed
+
+Completed: 2026-07-25
+
+---
+
+### Sprint 9.6.0 – Forecast Tool Foundation
+
+Status: Completed
+
+Completed: 2026-07-25
+
+Deliverables:
+
+- [x] Forecast package
+- [x] Forecast domain models
+- [x] Forecast settings
+- [x] Forecast exception hierarchy
+- [x] Forecast parser
+- [x] Forecast mapper
+- [x] Forecast tool
+- [x] Snapshot locator
+- [x] Forecast verification script
+
+---
+
+### Sprint 9.5.1 – Forecast Ingestion
+
+Status: Completed
+
+Completed: 2026-07-25
+
+Deliverables:
+
+- [x] GloFAS ingestion service
+- [x] CDS download client
+- [x] Deterministic snapshot naming
+- [x] Metadata persistence
+- [x] Snapshot storage
+- [x] Ingestion tests
+
+---
+
+### Sprint 9.5.2 – Forecast Processing
+
+Status: Completed
+
+Completed: 2026-07-25
+
+Deliverables:
+
+- [x] NetCDF parsing
+- [x] Coordinate extraction
+- [x] Time decoding
+- [x] Lead time decoding
+- [x] Discharge extraction
+- [x] Forecast mapping
+- [x] Immutable ForecastResult
+- [x] Forecast processing tests
+
+---
+
+### Sprint 9.5.3 – Forecast Architecture Refinement
+
+Status: Completed
+
+Completed: 2026-07-25
+
+Deliverables:
+
+- [x] SnapshotLocator introduced
+- [x] Filesystem traversal removed from Forecast Tool
+- [x] Parser fail-fast metadata validation
+- [x] Ingestion metadata annotation
+- [x] Forecast Tool verification
+- [x] Architecture refinement completed
+
+---

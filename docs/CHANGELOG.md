@@ -5,7 +5,70 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## [Unreleased]
+
 --- 
+
+## [0.9.5] - 2026-07-25
+
+---
+
+## Sprint 9.5 – GloFAS Forecast Tool (2026-07-25)
+
+### Added
+
+- Added dedicated Forecast package.
+- Added immutable forecast domain models.
+- Added NetCDF Forecast Parser.
+- Added Forecast Mapper.
+- Added GloFAS Forecast Tool.
+- Added Snapshot Locator.
+- Added Forecast Settings.
+- Added Forecast exception hierarchy.
+- Added forecast ingestion pipeline.
+- Added standalone forecast verification script.
+- Added comprehensive unit tests.
+- Added ingestion tests.
+
+### Improved
+
+- Snapshot discovery extracted into dedicated SnapshotLocator.
+- Forecast Tool now depends on SnapshotLocator instead of filesystem traversal.
+- Parser now validates required provenance metadata.
+- Parser now fails fast when required metadata is missing.
+- Forecast ingestion now writes request provenance into downloaded NetCDF snapshots.
+- Forecast Tool architecture simplified into:
+  - Tool
+  - Snapshot Locator
+  - Parser
+  - Mapper
+- Improved separation between ingestion, discovery, parsing, and mapping.
+
+### Verified
+
+- Forecast ingestion verified successfully.
+- Local snapshot verification completed successfully.
+- Parser metadata validation verified.
+- Snapshot discovery verified.
+- Unit tests passed.
+- Pytest suite passed.
+- Forecast verification script passed.
+
+### Notes
+
+- No AI Runtime changes.
+- No Planner changes.
+- No Registry changes.
+- No Decision Engine changes.
+- No Weather Tool changes.
+- No Government Knowledge Tool changes.
+- No Runtime execution changes.
+- No FastAPI changes.
+- No Agent orchestration changes.
+- Forecast Tool completed.
+- Sprint 9.6 frozen.
+- Ready for Sprint 9.6 – GIS Flood Analysis Tool.
+
+---
 
 ## [0.9.4] - 2026-07-24
 
