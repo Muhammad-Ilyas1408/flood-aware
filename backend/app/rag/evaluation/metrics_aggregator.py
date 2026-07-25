@@ -29,11 +29,21 @@ class MetricsAggregator:
     def _warnings(records: tuple[dict[str, object], ...]) -> tuple[str, ...]:
         warnings: list[str] = []
         if any(record["retrieval_metrics"]["hit_rate"] == 0.0 for record in records):
-            warnings.append("One or more benchmark questions did not retrieve expected evidence.")
-        if any(record["citation_metrics"]["invalid_citation_rate"] > 0.0 for record in records):
+            warnings.append(
+                "One or more benchmark questions did not retrieve expected evidence."
+            )
+        if any(
+            record["citation_metrics"]["invalid_citation_rate"] > 0.0
+            for record in records
+        ):
             warnings.append("One or more answers contained invalid citations.")
-        if any(record["citation_metrics"]["missing_citation_rate"] > 0.0 for record in records):
+        if any(
+            record["citation_metrics"]["missing_citation_rate"] > 0.0
+            for record in records
+        ):
             warnings.append("One or more answers were missing citations.")
         if any(not record["expected_citations_present"] for record in records):
-            warnings.append("One or more answers were missing expected benchmark citations.")
+            warnings.append(
+                "One or more answers were missing expected benchmark citations."
+            )
         return tuple(warnings)

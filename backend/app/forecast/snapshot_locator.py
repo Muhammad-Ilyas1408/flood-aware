@@ -29,12 +29,16 @@ class SnapshotLocator:
         """
 
         if not self._snapshot_directory.is_dir():
-            raise ForecastSnapshotNotFoundError("No local GloFAS snapshot directory exists.")
+            raise ForecastSnapshotNotFoundError(
+                "No local GloFAS snapshot directory exists."
+            )
         snapshots = tuple(
             path
             for path in self._snapshot_directory.glob("glofas_*.nc")
             if path.is_file()
         )
         if not snapshots:
-            raise ForecastSnapshotNotFoundError("No local GloFAS NetCDF snapshot is available.")
+            raise ForecastSnapshotNotFoundError(
+                "No local GloFAS NetCDF snapshot is available."
+            )
         return max(snapshots, key=lambda path: (path.stat().st_mtime_ns, path.name))

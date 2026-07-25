@@ -47,7 +47,9 @@ class ToolRegistry:
         if not metadata.name.strip():
             raise ToolRegistrationError("Tool metadata name cannot be blank.")
         if metadata.name in self._tools:
-            raise ToolRegistrationError(f"Tool {metadata.name!r} is already registered.")
+            raise ToolRegistrationError(
+                f"Tool {metadata.name!r} is already registered."
+            )
         self._tools[metadata.name] = _RegisteredTool(metadata=metadata, tool=tool)
 
     def remove(self, name: str) -> None:
@@ -83,4 +85,3 @@ class ToolRegistry:
         """Return metadata for all registered tools in stable name order."""
 
         return tuple(self._tools[name].metadata for name in sorted(self._tools))
-

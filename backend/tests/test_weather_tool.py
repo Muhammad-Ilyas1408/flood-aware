@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import unittest
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 WEATHER_DEPENDENCIES_AVAILABLE = False
@@ -92,17 +92,19 @@ class WeatherToolTests(unittest.TestCase):
             raise httpx.ReadTimeout("timeout", request=request)
 
         request = WeatherRequest(latitude=34.75, longitude=72.36)
-        timeout_client = httpx.Client(
-            transport=httpx.MockTransport(handler)
-        )
+        timeout_client = httpx.Client(transport=httpx.MockTransport(handler))
         with self.assertRaises(WeatherClientError):
-            OpenWeatherClient(_settings(), timeout_client).fetch_current_weather(request)
+            OpenWeatherClient(_settings(), timeout_client).fetch_current_weather(
+                request
+            )
         with self.assertRaises(WeatherConfigurationError):
             OpenWeatherClient(WeatherSettings(OPENWEATHER_API_KEY=None))
 
     def test_client_closes_only_internally_owned_http_client(self) -> None:
         owned_client = MagicMock()
-        with patch("backend.app.weather.client.httpx.Client", return_value=owned_client):
+        with patch(
+            "backend.app.weather.client.httpx.Client", return_value=owned_client
+        ):
             client = OpenWeatherClient(_settings())
         client.close()
         owned_client.close.assert_called_once_with()
@@ -132,7 +134,9 @@ class WeatherToolTests(unittest.TestCase):
 
     def test_tool_propagates_domain_client_errors(self) -> None:
         class FailingClient:
-            def fetch_current_weather(self, request: WeatherRequest) -> dict[str, object]:
+            def fetch_current_weather(
+                self, request: WeatherRequest
+            ) -> dict[str, object]:
                 raise WeatherClientError("network unavailable")
 
         with self.assertRaises(WeatherClientError):

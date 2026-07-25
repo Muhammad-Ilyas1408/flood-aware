@@ -6,7 +6,8 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Final
 
-from backend.app.data.exceptions import DatasetFormatError, DatasetRepositoryError
+from backend.app.data.exceptions import (DatasetFormatError,
+                                         DatasetRepositoryError)
 from backend.app.data.validation import validate_dataset_path
 
 

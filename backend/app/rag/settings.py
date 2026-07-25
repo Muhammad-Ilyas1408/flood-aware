@@ -9,7 +9,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class GovernmentKnowledgeSettings(BaseSettings):
     """Load production knowledge-engine settings from environment or `.env`."""
 
-    model_config = SettingsConfigDict(env_prefix="FLOOD_AWARE_RAG_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="FLOOD_AWARE_RAG_", env_file=".env", extra="ignore"
+    )
 
     pdf_directory: Path = Path("data/knowledge/raw")
     chroma_directory: Path = Path("data/chroma/government")

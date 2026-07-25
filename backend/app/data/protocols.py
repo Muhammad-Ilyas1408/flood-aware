@@ -5,7 +5,6 @@ from typing import Protocol, TypeVar
 
 from backend.app.data.models import DatasetMetadata, DatasetTable
 
-
 _ReadItemT = TypeVar("_ReadItemT", covariant=True)
 _WriteItemT = TypeVar("_WriteItemT")
 

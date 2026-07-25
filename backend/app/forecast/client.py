@@ -129,8 +129,12 @@ def _translate_cds_error(error: Exception) -> ForecastClientError:
     exception_name = type(error).__name__.lower()
     if "timeout" in message or "timeout" in exception_name:
         return ForecastTimeoutError("GloFAS request timed out.")
-    if any(token in message for token in ("401", "unauthor", "authentication", "api key")):
-        return ForecastAuthenticationError("EWDS rejected the configured GloFAS API key.")
+    if any(
+        token in message for token in ("401", "unauthor", "authentication", "api key")
+    ):
+        return ForecastAuthenticationError(
+            "EWDS rejected the configured GloFAS API key."
+        )
     if any(token in message for token in ("403", "forbidden", "permission", "terms")):
         return ForecastPermissionError(
             "EWDS access was denied. Accept the CEMS-FLOODS dataset terms and verify access."

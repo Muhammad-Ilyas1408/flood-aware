@@ -11,4 +11,7 @@ class PromptBuilder:
     def build(self, question: str, context: EvidenceContext) -> tuple[str, str]:
         """Return system and user prompt strings without provider coupling."""
 
-        return self.SYSTEM_PROMPT, f"Question:\n{question}\n\nGovernment evidence:\n{context.text}"
+        return (
+            self.SYSTEM_PROMPT,
+            f"Question:\n{question}\n\nGovernment evidence:\n{context.text}",
+        )

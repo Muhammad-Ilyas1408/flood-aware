@@ -4,7 +4,6 @@ import logging
 
 from backend.app.config.settings import LogLevel
 
-
 LOG_FORMAT = "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 
 

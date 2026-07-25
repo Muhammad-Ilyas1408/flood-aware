@@ -2,12 +2,7 @@
 
 from typing import Protocol
 
-from backend.app.dtos.datasets import (
-    DatasetCatalogDTO,
-    ShelterListDTO,
-    VillageListDTO,
-)
-
+from backend.app.dtos.datasets import DatasetCatalogDTO, ShelterListDTO, VillageListDTO
 
 __all__ = [
     "ViewVillagesUseCaseProtocol",

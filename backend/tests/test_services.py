@@ -1,11 +1,11 @@
 """Integration-style tests for repository, service, dependency, and API composition."""
 
 import asyncio
-from datetime import datetime, timezone
 import json
+import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 from fastapi import FastAPI, Request
 
@@ -28,6 +28,12 @@ from backend.app.data.models import (
 from backend.app.data.repositories import CSVRepository, GeoJSONRepository
 from backend.app.data.repository_config import FileRepositoryConfig
 from backend.app.dtos.datasets import ShelterListDTO, VillageListDTO
+from backend.app.main import create_application
+from backend.app.schemas.datasets import (
+    DatasetCatalogResponse,
+    ShelterListResponse,
+    VillageListResponse,
+)
 from backend.app.services.dependencies import (
     create_dataset_catalog_service,
     create_dataset_service,
@@ -40,13 +46,6 @@ from backend.app.services.services import (
     ShelterService,
     VillageService,
 )
-from backend.app.schemas.datasets import (
-    DatasetCatalogResponse,
-    ShelterListResponse,
-    VillageListResponse,
-)
-from backend.app.main import create_application
-
 
 FIXTURES_DIRECTORY = Path(__file__).parent / "fixtures"
 EXPECTED_RECORD_COUNT = 10
@@ -371,8 +370,12 @@ class DependencyFactoryTests(unittest.TestCase):
         catalog = service.load_catalog()
 
         self.assertIsInstance(service, DatasetCatalogService)
-        self.assertEqual(catalog.villages.statistics.record_count, EXPECTED_RECORD_COUNT)
-        self.assertEqual(catalog.shelters.statistics.record_count, EXPECTED_RECORD_COUNT)
+        self.assertEqual(
+            catalog.villages.statistics.record_count, EXPECTED_RECORD_COUNT
+        )
+        self.assertEqual(
+            catalog.shelters.statistics.record_count, EXPECTED_RECORD_COUNT
+        )
 
 
 class ApiSchemaTranslationTests(unittest.TestCase):
@@ -410,8 +413,12 @@ class ApiSchemaTranslationTests(unittest.TestCase):
 
         response = DatasetCatalogResponse.from_dto(catalog_dto)
 
-        self.assertEqual(response.villages.statistics.record_count, EXPECTED_RECORD_COUNT)
-        self.assertEqual(response.shelters.statistics.record_count, EXPECTED_RECORD_COUNT)
+        self.assertEqual(
+            response.villages.statistics.record_count, EXPECTED_RECORD_COUNT
+        )
+        self.assertEqual(
+            response.shelters.statistics.record_count, EXPECTED_RECORD_COUNT
+        )
 
 
 class CompositionRootTests(unittest.TestCase):
@@ -522,7 +529,9 @@ class ApiEndpointTests(unittest.TestCase):
 
         self._assert_configuration_failure("/shelters")
 
-    def test_get_dataset_catalog_returns_global_error_for_missing_configuration(self) -> None:
+    def test_get_dataset_catalog_returns_global_error_for_missing_configuration(
+        self,
+    ) -> None:
         """The catalog endpoint exposes the centralized configuration failure response."""
 
         self._assert_configuration_failure("/datasets/catalog")
@@ -606,7 +615,7 @@ class NegativeRepositoryTests(unittest.TestCase):
         with TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "malformed.csv"
             path.write_text(
-                "name,district,population\n\"unterminated,Swat,1000\n",
+                'name,district,population\n"unterminated,Swat,1000\n',
                 encoding="utf-8",
             )
             repository = CSVRepository(

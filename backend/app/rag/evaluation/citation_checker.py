@@ -16,7 +16,9 @@ def evaluate_citations(
     return {
         "citation_coverage": float(bool(citations)) if answer.text.strip() else 1.0,
         "missing_citation_rate": float(not citations) if answer.text.strip() else 0.0,
-        "invalid_citation_rate": (citation_count - valid_count) / citation_count if citation_count else 0.0,
+        "invalid_citation_rate": (
+            (citation_count - valid_count) / citation_count if citation_count else 0.0
+        ),
         "citation_accuracy": valid_count / citation_count if citation_count else 0.0,
     }
 

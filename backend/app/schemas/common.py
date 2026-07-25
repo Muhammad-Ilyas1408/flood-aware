@@ -6,7 +6,6 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.app.models.enums import ResponseStatus
 
-
 DataT = TypeVar("DataT")
 
 

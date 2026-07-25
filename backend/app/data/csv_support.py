@@ -5,11 +5,9 @@ from io import StringIO
 from pathlib import Path
 
 from backend.app.data.exceptions import DatasetFormatError
-from backend.app.data.file_support import (
-    DatasetFileFormat,
-    detect_supported_file,
-    read_dataset_text,
-)
+from backend.app.data.file_support import (DatasetFileFormat,
+                                           detect_supported_file,
+                                           read_dataset_text)
 
 
 def validate_csv_file(path: str | Path) -> None:

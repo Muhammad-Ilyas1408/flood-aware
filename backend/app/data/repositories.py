@@ -4,19 +4,17 @@ import csv
 from io import StringIO
 
 from backend.app.data.csv_support import validate_csv_file
-from backend.app.data.exceptions import DatasetFormatError, DatasetValidationError
+from backend.app.data.exceptions import (DatasetFormatError,
+                                         DatasetValidationError)
 from backend.app.data.file_support import DatasetFileFormat, read_dataset_text
-from backend.app.data.geojson_support import (
-    load_geojson_feature_collection,
-    validate_geojson_file,
-)
-from backend.app.data.models import DatasetMetadata, DatasetSchema, DatasetTable
+from backend.app.data.geojson_support import (load_geojson_feature_collection,
+                                              validate_geojson_file)
+from backend.app.data.models import (DatasetMetadata, DatasetSchema,
+                                     DatasetTable)
 from backend.app.data.repository_config import FileRepositoryConfig
 from backend.app.data.serialization import (
-    csv_to_dataset_table,
-    feature_collection_to_dataset_table,
-    row_mappings_to_dataset_table,
-)
+    csv_to_dataset_table, feature_collection_to_dataset_table,
+    row_mappings_to_dataset_table)
 
 
 class CSVRepository:

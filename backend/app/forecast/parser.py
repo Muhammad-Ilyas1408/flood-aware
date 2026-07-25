@@ -9,7 +9,6 @@ from netCDF4 import Dataset, Variable, num2date
 
 from backend.app.forecast.exceptions import ForecastParsingError
 
-
 _DISCHARGE_VARIABLE_NAMES = (
     "dis24",
     "river_discharge_in_the_last_24_hours",
@@ -56,7 +55,9 @@ class NetCDFForecastParser:
         """
 
         if not snapshot_path.is_file() or snapshot_path.suffix.lower() != ".nc":
-            raise ForecastParsingError("Forecast snapshot must be an existing .nc file.")
+            raise ForecastParsingError(
+                "Forecast snapshot must be an existing .nc file."
+            )
 
         try:
             with Dataset(snapshot_path, mode="r") as dataset:
@@ -64,9 +65,13 @@ class NetCDFForecastParser:
         except ForecastParsingError:
             raise
         except Exception as error:
-            raise ForecastParsingError("Unable to open GloFAS NetCDF snapshot.") from error
+            raise ForecastParsingError(
+                "Unable to open GloFAS NetCDF snapshot."
+            ) from error
 
-    def _parse_dataset(self, snapshot_path: Path, dataset: Dataset) -> ParsedForecastSnapshot:
+    def _parse_dataset(
+        self, snapshot_path: Path, dataset: Dataset
+    ) -> ParsedForecastSnapshot:
         """Extract required variables from an already opened NetCDF dataset."""
 
         latitude = _required_variable(dataset, _LATITUDE_VARIABLE_NAMES, "latitude")
@@ -77,11 +82,15 @@ class NetCDFForecastParser:
             "forecast reference time",
         )
         step = _required_variable(dataset, _STEP_VARIABLE_NAMES, "forecast lead time")
-        discharge = _required_variable(dataset, _DISCHARGE_VARIABLE_NAMES, "river discharge")
+        discharge = _required_variable(
+            dataset, _DISCHARGE_VARIABLE_NAMES, "river discharge"
+        )
 
         latitudes = _coordinate_values(latitude, "latitude")
         longitudes = _coordinate_values(longitude, "longitude")
-        forecast_reference_time = _single_time(reference_time, "forecast reference time")
+        forecast_reference_time = _single_time(
+            reference_time, "forecast reference time"
+        )
         lead_time_hours = _lead_time_hours(step)
         valid_time_variable = _optional_variable(dataset, _VALID_TIME_VARIABLE_NAMES)
         valid_times = (
@@ -119,7 +128,9 @@ class NetCDFForecastParser:
         )
 
 
-def _required_variable(dataset: Dataset, names: tuple[str, ...], label: str) -> Variable:
+def _required_variable(
+    dataset: Dataset, names: tuple[str, ...], label: str
+) -> Variable:
     """Return one required NetCDF variable or raise a clear parsing failure."""
 
     variable = _optional_variable(dataset, names)
@@ -131,17 +142,23 @@ def _required_variable(dataset: Dataset, names: tuple[str, ...], label: str) -> 
 def _optional_variable(dataset: Dataset, names: tuple[str, ...]) -> Variable | None:
     """Return the first provider-supported variable present in a dataset."""
 
-    return next((dataset.variables[name] for name in names if name in dataset.variables), None)
+    return next(
+        (dataset.variables[name] for name in names if name in dataset.variables), None
+    )
 
 
 def _coordinate_values(variable: Variable, label: str) -> tuple[float, ...]:
     """Read a non-empty, finite one-dimensional coordinate array."""
 
     if variable.ndim != 1:
-        raise ForecastParsingError(f"GloFAS {label} coordinates must be one-dimensional.")
+        raise ForecastParsingError(
+            f"GloFAS {label} coordinates must be one-dimensional."
+        )
     values = tuple(float(value) for value in variable[:])
     if not values or not all(isfinite(value) for value in values):
-        raise ForecastParsingError(f"GloFAS {label} coordinates must be finite and non-empty.")
+        raise ForecastParsingError(
+            f"GloFAS {label} coordinates must be finite and non-empty."
+        )
     return values
 
 
@@ -159,14 +176,20 @@ def _valid_times(variable: Variable, expected_count: int) -> tuple[datetime, ...
     values = variable[:]
     if variable.ndim == 0:
         if expected_count != 1:
-            raise ForecastParsingError("GloFAS valid_time does not match forecast lead times.")
+            raise ForecastParsingError(
+                "GloFAS valid_time does not match forecast lead times."
+            )
         return (_decode_time(variable, values.item()),)
     if variable.ndim == 2:
         if variable.shape[0] != 1:
-            raise ForecastParsingError("GloFAS valid_time supports one reference time only.")
+            raise ForecastParsingError(
+                "GloFAS valid_time supports one reference time only."
+            )
         values = values[0]
     if variable.ndim not in {1, 2} or len(values) != expected_count:
-        raise ForecastParsingError("GloFAS valid_time does not match forecast lead times.")
+        raise ForecastParsingError(
+            "GloFAS valid_time does not match forecast lead times."
+        )
     return tuple(_decode_time(variable, value) for value in values)
 
 
@@ -198,15 +221,21 @@ def _lead_time_hours(variable: Variable) -> tuple[int, ...]:
     """Read finite non-negative lead times in a supported CF duration unit."""
 
     if variable.ndim != 1:
-        raise ForecastParsingError("GloFAS forecast lead times must be one-dimensional.")
+        raise ForecastParsingError(
+            "GloFAS forecast lead times must be one-dimensional."
+        )
     unit = str(getattr(variable, "units", "hours")).lower()
     multiplier = _lead_time_multiplier(unit)
     values = tuple(float(value) for value in variable[:])
     if not values or not all(isfinite(value) and value >= 0 for value in values):
-        raise ForecastParsingError("GloFAS forecast lead times must be finite and non-negative.")
+        raise ForecastParsingError(
+            "GloFAS forecast lead times must be finite and non-negative."
+        )
     lead_times = tuple(int(value * multiplier) for value in values)
     if any(value * multiplier != int(value * multiplier) for value in values):
-        raise ForecastParsingError("GloFAS forecast lead times must resolve to whole hours.")
+        raise ForecastParsingError(
+            "GloFAS forecast lead times must resolve to whole hours."
+        )
     return lead_times
 
 
@@ -238,7 +267,10 @@ def _discharge_values(
         (reference_time_name, step_name),
         (step_name, reference_time_name),
     )
-    if dimensions[:2] not in expected_dimension_prefixes or dimensions[2:] != expected_dimension_suffix:
+    if (
+        dimensions[:2] not in expected_dimension_prefixes
+        or dimensions[2:] != expected_dimension_suffix
+    ):
         raise ForecastParsingError(
             "GloFAS river discharge must use forecast reference time, lead time, "
             "latitude, and longitude dimensions."
@@ -248,14 +280,14 @@ def _discharge_values(
         or variable.shape[dimensions.index(reference_time_name)] != 1
         or variable.shape[dimensions.index(step_name)] != step_count
     ):
-        raise ForecastParsingError("GloFAS river discharge dimensions do not match coordinates.")
+        raise ForecastParsingError(
+            "GloFAS river discharge dimensions do not match coordinates."
+        )
 
     values: list[tuple[tuple[float, ...], ...]] = []
     for step_index in range(step_count):
         temporal_indices = (
-            (0, step_index)
-            if dimensions[0] == reference_time_name
-            else (step_index, 0)
+            (0, step_index) if dimensions[0] == reference_time_name else (step_index, 0)
         )
         plane = tuple(
             tuple(
@@ -270,7 +302,9 @@ def _discharge_values(
             for latitude_index in range(latitude_count)
         )
         if not all(isfinite(value) and value >= 0 for row in plane for value in row):
-            raise ForecastParsingError("GloFAS river discharge contains invalid values.")
+            raise ForecastParsingError(
+                "GloFAS river discharge contains invalid values."
+            )
         values.append(plane)
     return tuple(values)
 

@@ -9,7 +9,6 @@ from starlette.middleware.base import RequestResponseEndpoint
 
 from backend.app.core.logger import get_logger
 
-
 logger = get_logger(__name__)
 
 

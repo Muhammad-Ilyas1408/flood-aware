@@ -3,7 +3,6 @@
 from backend.app.ai.models import DecisionContext, ToolResult
 from backend.app.use_cases.protocols import ViewSheltersUseCaseProtocol
 
-
 TOOL_NAME = "ShelterTool"
 
 

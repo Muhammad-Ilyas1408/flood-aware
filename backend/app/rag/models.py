@@ -23,7 +23,9 @@ class KnowledgePage:
 
     def __post_init__(self) -> None:
         if self.page_number < 1 or not isinstance(self.text, str):
-            raise KnowledgeDocumentError("Knowledge pages require a valid number and text.")
+            raise KnowledgeDocumentError(
+                "Knowledge pages require a valid number and text."
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +39,11 @@ class KnowledgeDocument:
     metadata: KnowledgeMetadata
 
     def __post_init__(self) -> None:
-        if not self.document_id or not self.name or not isinstance(self.source_path, Path):
+        if (
+            not self.document_id
+            or not self.name
+            or not isinstance(self.source_path, Path)
+        ):
             raise KnowledgeDocumentError("Knowledge document identity is invalid.")
         if not isinstance(self.metadata, KnowledgeMetadata):
             raise KnowledgeDocumentError("Knowledge document metadata is invalid.")
@@ -58,7 +64,9 @@ class GovernmentCorpus:
             raise KnowledgeDocumentError("Government corpus requires source documents.")
         identifiers = tuple(document.document_id for document in self.documents)
         if len(identifiers) != len(set(identifiers)):
-            raise KnowledgeDocumentError("Government corpus document identifiers must be unique.")
+            raise KnowledgeDocumentError(
+                "Government corpus document identifiers must be unique."
+            )
 
 
 @dataclass(frozen=True, slots=True)

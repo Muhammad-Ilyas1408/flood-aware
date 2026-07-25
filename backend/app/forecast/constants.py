@@ -4,7 +4,6 @@ from pathlib import Path
 
 from backend.app.gis.geometry import BoundingBox
 
-
 DEFAULT_DATASET_NAME = "cems-glofas-forecast"
 DEFAULT_PRODUCT_TYPE = "control_forecast"
 DEFAULT_PRODUCT_LABEL = "control"

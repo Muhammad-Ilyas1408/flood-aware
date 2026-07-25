@@ -6,8 +6,8 @@ from unittest.mock import create_autospec, patch
 
 from fastapi import Request
 
-from backend.app.ai.dependencies import get_ai_runtime
 from backend.app.ai.dataset_catalog_tool import DatasetCatalogTool
+from backend.app.ai.dependencies import get_ai_runtime
 from backend.app.ai.models import DecisionContext, ToolResult
 from backend.app.ai.shelter_tool import ShelterTool
 from backend.app.ai.tools.exceptions import ToolNotFoundError, ToolRegistrationError
@@ -24,18 +24,13 @@ from backend.app.data.models import (
     DatasetSchema,
 )
 from backend.app.data.repository_config import FileRepositoryConfig
-from backend.app.dtos.datasets import (
-    DatasetCatalogDTO,
-    ShelterListDTO,
-    VillageListDTO,
-)
+from backend.app.dtos.datasets import DatasetCatalogDTO, ShelterListDTO, VillageListDTO
 from backend.app.main import create_application
 from backend.app.use_cases.protocols import (
     ViewDatasetCatalogUseCaseProtocol,
     ViewSheltersUseCaseProtocol,
     ViewVillagesUseCaseProtocol,
 )
-
 
 DATASETS_DIRECTORY = Path(__file__).parents[2] / "data" / "datasets"
 
@@ -138,12 +133,16 @@ def test_registry_rejects_duplicate_registration() -> None:
 
 def test_executor_runs_village_tool_through_its_use_case() -> None:
     """The executor returns the canonical result produced by the canonical tool."""
-    use_case = create_autospec(ViewVillagesUseCaseProtocol, instance=True, spec_set=True)
+    use_case = create_autospec(
+        ViewVillagesUseCaseProtocol, instance=True, spec_set=True
+    )
     dto = VillageListDTO(villages=())
     use_case.execute.return_value = dto
     village_tool = VillageTool(use_case)
     registry = ToolRegistry()
-    registry.register(ToolMetadata("VillageTool", "Village data.", "1.0.0"), village_tool)
+    registry.register(
+        ToolMetadata("VillageTool", "Village data.", "1.0.0"), village_tool
+    )
 
     result = ToolExecutor(registry).execute("VillageTool", DecisionContext())
 
@@ -155,11 +154,15 @@ def test_executor_runs_village_tool_through_its_use_case() -> None:
 
 def test_executor_runs_shelter_tool_through_its_use_case() -> None:
     """The executor returns the canonical shelter result from its use case."""
-    use_case = create_autospec(ViewSheltersUseCaseProtocol, instance=True, spec_set=True)
+    use_case = create_autospec(
+        ViewSheltersUseCaseProtocol, instance=True, spec_set=True
+    )
     dto = ShelterListDTO(shelters=())
     use_case.execute.return_value = dto
     registry = ToolRegistry()
-    registry.register(ToolMetadata("ShelterTool", "Shelter data.", "1.0.0"), ShelterTool(use_case))
+    registry.register(
+        ToolMetadata("ShelterTool", "Shelter data.", "1.0.0"), ShelterTool(use_case)
+    )
 
     result = ToolExecutor(registry).execute("ShelterTool", DecisionContext())
 
@@ -197,9 +200,16 @@ def test_runtime_provider_registers_all_canonical_tools() -> None:
     catalog_tool = create_autospec(ExecutableToolProtocol, instance=True, spec_set=True)
 
     with (
-        patch("backend.app.ai.dependencies.get_village_tool", return_value=village_tool),
-        patch("backend.app.ai.dependencies.get_shelter_tool", return_value=shelter_tool),
-        patch("backend.app.ai.dependencies.get_dataset_catalog_tool", return_value=catalog_tool),
+        patch(
+            "backend.app.ai.dependencies.get_village_tool", return_value=village_tool
+        ),
+        patch(
+            "backend.app.ai.dependencies.get_shelter_tool", return_value=shelter_tool
+        ),
+        patch(
+            "backend.app.ai.dependencies.get_dataset_catalog_tool",
+            return_value=catalog_tool,
+        ),
     ):
         runtime = get_ai_runtime(object())  # type: ignore[arg-type]
 

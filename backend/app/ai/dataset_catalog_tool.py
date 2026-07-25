@@ -3,7 +3,6 @@
 from backend.app.ai.models import DecisionContext, ToolResult
 from backend.app.use_cases.protocols import ViewDatasetCatalogUseCaseProtocol
 
-
 TOOL_NAME = "DatasetCatalogTool"
 
 

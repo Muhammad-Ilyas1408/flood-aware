@@ -11,7 +11,10 @@ from backend.app.dtos.datasets import (
     VillageDTO,
     VillageListDTO,
 )
-from backend.app.services.protocols import ShelterServiceProtocol, VillageServiceProtocol
+from backend.app.services.protocols import (
+    ShelterServiceProtocol,
+    VillageServiceProtocol,
+)
 
 
 class DatasetService:
@@ -53,10 +56,7 @@ class VillageService:
         """Load and return application-ready village records."""
         table = self._dataset_service.load_dataset()
         return VillageListDTO(
-            villages=tuple(
-                VillageDTO(**row)
-                for row in _table_rows_as_mappings(table)
-            )
+            villages=tuple(VillageDTO(**row) for row in _table_rows_as_mappings(table))
         )
 
     def load_summary(self) -> DatasetSummaryDTO:
@@ -79,10 +79,7 @@ class ShelterService:
         """Load and return application-ready shelter records."""
         table = self._dataset_service.load_dataset()
         return ShelterListDTO(
-            shelters=tuple(
-                ShelterDTO(**row)
-                for row in _table_rows_as_mappings(table)
-            )
+            shelters=tuple(ShelterDTO(**row) for row in _table_rows_as_mappings(table))
         )
 
     def load_summary(self) -> DatasetSummaryDTO:
@@ -118,6 +115,4 @@ class DatasetCatalogService:
 def _table_rows_as_mappings(table: DatasetTable) -> tuple[dict[str, object], ...]:
     """Return ordered row mappings keyed by the table's declared schema columns."""
     column_names = tuple(column.name for column in table.dataset_schema.columns)
-    return tuple(
-        dict(zip(column_names, row.values, strict=True)) for row in table.rows
-    )
+    return tuple(dict(zip(column_names, row.values, strict=True)) for row in table.rows)

@@ -11,7 +11,6 @@ from backend.app.rag.evaluation.retrieval_metrics import evaluate_retrieval
 from backend.app.rag.knowledge_tool import KnowledgeTool
 from backend.app.rag.models import Citation, KnowledgeChunk
 
-
 _LOGGER = logging.getLogger(__name__)
 Retriever = Callable[[str, int], tuple[KnowledgeChunk, ...]]
 
@@ -72,5 +71,7 @@ class EvaluationRunner:
     ) -> bool:
         """Check benchmark-required citations without altering citation integrity metrics."""
 
-        present = {(item.document_name, item.page_number, item.section) for item in citations}
+        present = {
+            (item.document_name, item.page_number, item.section) for item in citations
+        }
         return all(item in present for item in expected)

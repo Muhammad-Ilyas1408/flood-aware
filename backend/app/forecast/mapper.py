@@ -17,7 +17,9 @@ from backend.app.gis.geometry import DistanceResult, Point
 class ForecastMapper:
     """Map parsed GloFAS data without downloading, parsing, or interpreting flood risk."""
 
-    def map(self, snapshot: ParsedForecastSnapshot, requested_point: Point) -> ForecastResult:
+    def map(
+        self, snapshot: ParsedForecastSnapshot, requested_point: Point
+    ) -> ForecastResult:
         """Select the nearest grid cell and build a validated immutable forecast result.
 
         Args:
@@ -32,15 +34,19 @@ class ForecastMapper:
         """
 
         if not isinstance(snapshot, ParsedForecastSnapshot):
-            raise ForecastMappingError("Forecast mapping requires a parsed GloFAS snapshot.")
+            raise ForecastMappingError(
+                "Forecast mapping requires a parsed GloFAS snapshot."
+            )
         if not isinstance(requested_point, Point):
             raise ForecastMappingError("Forecast mapping requires a GIS Point.")
 
         try:
-            latitude_index, longitude_index, grid_point, grid_distance = _nearest_grid_point(
-                requested_point,
-                snapshot.latitudes,
-                snapshot.longitudes,
+            latitude_index, longitude_index, grid_point, grid_distance = (
+                _nearest_grid_point(
+                    requested_point,
+                    snapshot.latitudes,
+                    snapshot.longitudes,
+                )
             )
             location = ForecastLocation(
                 requested_point=requested_point,
@@ -60,9 +66,9 @@ class ForecastMapper:
                 ForecastPoint(
                     valid_time=valid_time,
                     lead_time_hours=lead_time_hours,
-                    discharge_m3_per_second=snapshot.discharge_values[index][latitude_index][
-                        longitude_index
-                    ],
+                    discharge_m3_per_second=snapshot.discharge_values[index][
+                        latitude_index
+                    ][longitude_index],
                 )
                 for index, (valid_time, lead_time_hours) in enumerate(
                     zip(snapshot.valid_times, snapshot.lead_time_hours, strict=True)
@@ -76,7 +82,9 @@ class ForecastMapper:
         except ForecastMappingError:
             raise
         except (GISException, IndexError, ValueError) as error:
-            raise ForecastMappingError("Parsed GloFAS data cannot form a forecast result.") from error
+            raise ForecastMappingError(
+                "Parsed GloFAS data cannot form a forecast result."
+            ) from error
 
 
 def _nearest_grid_point(
@@ -99,7 +107,9 @@ def _nearest_grid_point(
         raise ForecastMappingError("GloFAS snapshot has no available grid coordinates.")
     latitude_index, longitude_index, grid_point = min(
         candidates,
-        key=lambda candidate: haversine_distance(requested_point, candidate[2]).kilometers,
+        key=lambda candidate: haversine_distance(
+            requested_point, candidate[2]
+        ).kilometers,
     )
     return (
         latitude_index,

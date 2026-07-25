@@ -38,7 +38,9 @@ class VillageListResponse(SuccessResponse[tuple[VillageResponse, ...]]):
     @classmethod
     def from_dto(cls, dto: VillageListDTO) -> "VillageListResponse":
         """Translate an application village-list DTO into an API response model."""
-        return cls(data=tuple(VillageResponse.from_dto(village) for village in dto.villages))
+        return cls(
+            data=tuple(VillageResponse.from_dto(village) for village in dto.villages)
+        )
 
 
 class ShelterResponse(BaseModel):
@@ -64,7 +66,9 @@ class ShelterListResponse(SuccessResponse[tuple[ShelterResponse, ...]]):
     @classmethod
     def from_dto(cls, dto: ShelterListDTO) -> "ShelterListResponse":
         """Translate an application shelter-list DTO into an API response model."""
-        return cls(data=tuple(ShelterResponse.from_dto(shelter) for shelter in dto.shelters))
+        return cls(
+            data=tuple(ShelterResponse.from_dto(shelter) for shelter in dto.shelters)
+        )
 
 
 class DatasetSummaryResponse(BaseResponse):

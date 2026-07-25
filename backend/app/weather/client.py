@@ -69,8 +69,12 @@ class OpenWeatherClient:
         if response.status_code == httpx.codes.UNAUTHORIZED:
             raise WeatherAuthenticationError("OpenWeatherMap rejected the API key.")
         if response.status_code == httpx.codes.NOT_FOUND:
-            raise WeatherNotFoundError("OpenWeatherMap could not find the requested location.")
+            raise WeatherNotFoundError(
+                "OpenWeatherMap could not find the requested location."
+            )
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as error:
-            raise WeatherClientError("OpenWeatherMap returned an unsuccessful response.") from error
+            raise WeatherClientError(
+                "OpenWeatherMap returned an unsuccessful response."
+            ) from error

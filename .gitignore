@@ -74,6 +74,32 @@ data/outputs/evaluation/
 data/glofas/
 
 # ==========================
+# GIS / Hydrology Data
+# ==========================
+
+data/
+
+*.tif
+*.tiff
+*.nc
+*.grib
+*.grb
+*.pbf
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.aux.xml
+
+# ==========================
+# Generated GIS outputs
+# ==========================
+outputs/
+cache/
+
+# ==========================
 # AI Development Files
 # ==========================
 AI_CONTEXT.md

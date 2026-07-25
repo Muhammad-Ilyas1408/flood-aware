@@ -8,7 +8,6 @@ from backend.app.config.settings import Settings, get_settings
 from backend.app.core.logger import get_logger
 from backend.app.schemas.health import HealthResponse
 
-
 logger = get_logger(__name__)
 router = APIRouter(tags=["Health"])
 

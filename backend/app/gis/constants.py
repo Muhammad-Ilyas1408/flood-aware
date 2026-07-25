@@ -2,7 +2,6 @@
 
 from typing import Final
 
-
 WGS84_EPSG: Final[int] = 4326
 WGS84_NAME: Final[str] = "WGS 84"
 

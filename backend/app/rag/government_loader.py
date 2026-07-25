@@ -3,7 +3,12 @@
 from pathlib import Path
 
 from backend.app.rag.exceptions import KnowledgeLoaderError
-from backend.app.rag.models import GovernmentCorpus, KnowledgeDocument, KnowledgeMetadata, KnowledgePage
+from backend.app.rag.models import (
+    GovernmentCorpus,
+    KnowledgeDocument,
+    KnowledgeMetadata,
+    KnowledgePage,
+)
 
 
 class GovernmentLoader:
@@ -25,7 +30,9 @@ class GovernmentLoader:
                 )
                 metadata = pdf.metadata or {}
         except Exception as error:
-            raise KnowledgeLoaderError(f"Unable to load government PDF: {path}") from error
+            raise KnowledgeLoaderError(
+                f"Unable to load government PDF: {path}"
+            ) from error
         return KnowledgeDocument(
             document_id=path.stem,
             name=path.name,
@@ -42,6 +49,8 @@ class GovernmentLoader:
 
         directory = Path(source_directory)
         if not directory.is_dir():
-            raise KnowledgeLoaderError(f"Government corpus directory is unavailable: {directory}")
+            raise KnowledgeLoaderError(
+                f"Government corpus directory is unavailable: {directory}"
+            )
         documents = tuple(self.load(path) for path in sorted(directory.glob("*.pdf")))
         return GovernmentCorpus(documents)

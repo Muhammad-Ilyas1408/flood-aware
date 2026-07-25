@@ -21,6 +21,14 @@ class ContextBuilder:
             seen.add(chunk.chunk_id)
             selected.append(chunk)
             total += len(chunk.text)
-        citations = tuple(Citation(c.metadata.document_name, c.metadata.page_number, c.metadata.section) for c in selected)
-        text = "\n\n".join(f"[{citation.document_name}, p. {citation.page_number}]\n{chunk.text}" for chunk, citation in zip(selected, citations, strict=True))
+        citations = tuple(
+            Citation(
+                c.metadata.document_name, c.metadata.page_number, c.metadata.section
+            )
+            for c in selected
+        )
+        text = "\n\n".join(
+            f"[{citation.document_name}, p. {citation.page_number}]\n{chunk.text}"
+            for chunk, citation in zip(selected, citations, strict=True)
+        )
         return EvidenceContext(text, tuple(selected), citations)

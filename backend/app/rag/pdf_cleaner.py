@@ -12,15 +12,24 @@ class PDFCleaner:
         """Return a page-preserving cleaned document."""
 
         repeated = self._repeated_edge_lines(document)
-        pages = tuple(KnowledgePage(page.page_number, self._clean(page.text, repeated)) for page in document.pages)
-        return KnowledgeDocument(document.document_id, document.name, document.source_path, pages, document.metadata)
+        pages = tuple(
+            KnowledgePage(page.page_number, self._clean(page.text, repeated))
+            for page in document.pages
+        )
+        return KnowledgeDocument(
+            document.document_id,
+            document.name,
+            document.source_path,
+            pages,
+            document.metadata,
+        )
 
     @staticmethod
     def _repeated_edge_lines(document: KnowledgeDocument) -> set[str]:
         edges: dict[str, int] = {}
         for page in document.pages:
             lines = [line.strip() for line in page.text.splitlines() if line.strip()]
-            for line in (lines[:2] + lines[-2:]):
+            for line in lines[:2] + lines[-2:]:
                 edges[line] = edges.get(line, 0) + 1
         return {line for line, count in edges.items() if count >= 2}
 

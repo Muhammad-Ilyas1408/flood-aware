@@ -17,7 +17,9 @@ class VectorStore(ABC):
     """Persist and search embedded government knowledge passages."""
 
     @abstractmethod
-    def index(self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]) -> None: ...
+    def index(
+        self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]
+    ) -> None: ...
 
     @abstractmethod
     def search(

@@ -10,7 +10,13 @@ from backend.app.rag.retriever import GovernmentRetriever
 class KnowledgeTool:
     """Answer a question exclusively from retrieved government disaster evidence."""
 
-    def __init__(self, retriever: GovernmentRetriever, context_builder: ContextBuilder, prompt_builder: PromptBuilder, generator: ResponseGenerator) -> None:
+    def __init__(
+        self,
+        retriever: GovernmentRetriever,
+        context_builder: ContextBuilder,
+        prompt_builder: PromptBuilder,
+        generator: ResponseGenerator,
+    ) -> None:
         self._retriever = retriever
         self._context_builder = context_builder
         self._prompt_builder = prompt_builder
@@ -21,4 +27,6 @@ class KnowledgeTool:
 
         context = self._context_builder.build(self._retriever.retrieve(question, top_k))
         system, user = self._prompt_builder.build(question, context)
-        return GroundedAnswer(self._generator.generate(system, user).strip(), context.citations)
+        return GroundedAnswer(
+            self._generator.generate(system, user).strip(), context.citations
+        )

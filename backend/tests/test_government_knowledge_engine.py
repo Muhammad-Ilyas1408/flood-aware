@@ -1,12 +1,13 @@
 """Production-facing tests for the Government Disaster Knowledge Engine."""
 
-from pathlib import Path
+import importlib.util
 import os
 import tempfile
 import unittest
-import importlib.util
+from pathlib import Path
 
 from backend.app.rag.context_builder import ContextBuilder
+from backend.app.rag.government_loader import GovernmentLoader
 from backend.app.rag.knowledge_tool import KnowledgeTool
 from backend.app.rag.models import ChunkMetadata, KnowledgeChunk
 from backend.app.rag.pdf_cleaner import PDFCleaner
@@ -14,17 +15,29 @@ from backend.app.rag.prompt_builder import PromptBuilder
 from backend.app.rag.protocols import EmbeddingService, ResponseGenerator, VectorStore
 from backend.app.rag.retriever import GovernmentRetriever
 from backend.app.rag.semantic_chunker import SemanticChunker
-from backend.app.rag.government_loader import GovernmentLoader
 from backend.app.rag.vector_store import ChromaVectorStore
 
 
-def _chunk(identifier: str, text: str = "Flood preparedness guidance.") -> KnowledgeChunk:
+def _chunk(
+    identifier: str, text: str = "Flood preparedness guidance."
+) -> KnowledgeChunk:
     """Build one authoritative evidence passage for isolated tests."""
 
-    return KnowledgeChunk(identifier, "ndma-plan", text, ChunkMetadata(
-        document_name="NDMA Plan", authority="NDMA", agency="NDMA", document_type="National plan",
-        publication_year=None, page_number=4, section="Preparedness", heading="Preparedness",
-    ))
+    return KnowledgeChunk(
+        identifier,
+        "ndma-plan",
+        text,
+        ChunkMetadata(
+            document_name="NDMA Plan",
+            authority="NDMA",
+            agency="NDMA",
+            document_type="National plan",
+            publication_year=None,
+            page_number=4,
+            section="Preparedness",
+            heading="Preparedness",
+        ),
+    )
 
 
 class FakeEmbeddings(EmbeddingService):
@@ -37,10 +50,18 @@ class FakeStore(VectorStore):
         self.chunks = chunks
         self.calls: list[tuple[tuple[float, ...], int, object]] = []
 
-    def index(self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]) -> None:
+    def index(
+        self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]
+    ) -> None:
         self.chunks = chunks
 
-    def search(self, vector: tuple[float, ...], top_k: int, filters: object = None, score_threshold: float | None = None) -> tuple[KnowledgeChunk, ...]:
+    def search(
+        self,
+        vector: tuple[float, ...],
+        top_k: int,
+        filters: object = None,
+        score_threshold: float | None = None,
+    ) -> tuple[KnowledgeChunk, ...]:
         self.calls.append((vector, top_k, filters))
         return self.chunks[:top_k]
 
@@ -56,8 +77,23 @@ class FakeGenerator(ResponseGenerator):
 
 class GovernmentKnowledgeEngineTests(unittest.TestCase):
     def test_semantic_chunking_preserves_heading_page_and_provenance(self) -> None:
-        from backend.app.rag.models import KnowledgeDocument, KnowledgeMetadata, KnowledgePage
-        document = KnowledgeDocument("swat", "Swat Risk Map.pdf", Path("Swat Risk Map.pdf"), (KnowledgePage(1, "1. FLOOD RISK\n\nFlood preparedness protects communities."),), KnowledgeMetadata("NDMA", "Risk mapping"))
+        from backend.app.rag.models import (
+            KnowledgeDocument,
+            KnowledgeMetadata,
+            KnowledgePage,
+        )
+
+        document = KnowledgeDocument(
+            "swat",
+            "Swat Risk Map.pdf",
+            Path("Swat Risk Map.pdf"),
+            (
+                KnowledgePage(
+                    1, "1. FLOOD RISK\n\nFlood preparedness protects communities."
+                ),
+            ),
+            KnowledgeMetadata("NDMA", "Risk mapping"),
+        )
         chunks = SemanticChunker().chunk(document)
         self.assertEqual(chunks[0].metadata.page_number, 1)
         self.assertEqual(chunks[0].metadata.heading, "1. FLOOD RISK")
@@ -73,7 +109,12 @@ class GovernmentKnowledgeEngineTests(unittest.TestCase):
     def test_knowledge_tool_runs_grounded_pipeline_with_citations(self) -> None:
         store = FakeStore((_chunk("one"),))
         generator = FakeGenerator()
-        tool = KnowledgeTool(GovernmentRetriever(FakeEmbeddings(), store), ContextBuilder(), PromptBuilder(), generator)
+        tool = KnowledgeTool(
+            GovernmentRetriever(FakeEmbeddings(), store),
+            ContextBuilder(),
+            PromptBuilder(),
+            generator,
+        )
         answer = tool.answer("How should communities prepare?")
         self.assertEqual(answer.text, "Use the preparedness guidance.")
         self.assertEqual(answer.citations[0].page_number, 4)
@@ -88,8 +129,12 @@ class GovernmentKnowledgeEngineTests(unittest.TestCase):
         self.assertEqual(len(corpus.documents), 4)
         self.assertTrue(all(document.pages for document in corpus.documents))
 
-    @unittest.skipUnless(importlib.util.find_spec("chromadb"), "ChromaDB is not installed.")
-    @unittest.skipIf(os.name == "nt", "ChromaDB retains HNSW files on Windows until process exit.")
+    @unittest.skipUnless(
+        importlib.util.find_spec("chromadb"), "ChromaDB is not installed."
+    )
+    @unittest.skipIf(
+        os.name == "nt", "ChromaDB retains HNSW files on Windows until process exit."
+    )
     def test_persistent_index_rehydrates_chunks_after_store_restart(self) -> None:
         """A fresh store instance retrieves a persisted canonical chunk."""
 

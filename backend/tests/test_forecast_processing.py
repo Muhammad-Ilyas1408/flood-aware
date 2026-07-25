@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
 import os
+import unittest
+from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 
 NETCDF_DEPENDENCY_AVAILABLE = False
 
@@ -42,7 +42,9 @@ class ForecastProcessingTests(unittest.TestCase):
         """A supported control-forecast fixture becomes typed raw parser output."""
 
         with TemporaryDirectory() as temporary_directory:
-            snapshot_path = _create_snapshot_fixture(Path(temporary_directory) / "valid.nc")
+            snapshot_path = _create_snapshot_fixture(
+                Path(temporary_directory) / "valid.nc"
+            )
             parsed = NetCDFForecastParser().parse(snapshot_path)
 
         self.assertEqual(parsed.dataset_name, "cems-glofas-forecast")
@@ -75,7 +77,9 @@ class ForecastProcessingTests(unittest.TestCase):
         """Mapping reuses GIS distance logic and preserves valid-time ordering."""
 
         with TemporaryDirectory() as temporary_directory:
-            snapshot_path = _create_snapshot_fixture(Path(temporary_directory) / "valid.nc")
+            snapshot_path = _create_snapshot_fixture(
+                Path(temporary_directory) / "valid.nc"
+            )
             parsed = NetCDFForecastParser().parse(snapshot_path)
             result = ForecastMapper().map(
                 parsed,
@@ -136,7 +140,10 @@ class ForecastProcessingTests(unittest.TestCase):
             "hydrological_model",
             "system_version",
         ):
-            with self.subTest(attribute=attribute), TemporaryDirectory() as temporary_directory:
+            with (
+                self.subTest(attribute=attribute),
+                TemporaryDirectory() as temporary_directory,
+            ):
                 snapshot_path = _create_snapshot_fixture(
                     Path(temporary_directory) / f"missing_{attribute}.nc",
                     missing_metadata_attribute=attribute,
@@ -327,7 +334,9 @@ def _create_snapshot_fixture(
             if glofas_layout:
                 discharge[:] = [[[[10.0, 20.0], [30.0, 40.0]]]]
             elif supported_dimensions:
-                discharge[:] = [[[[10.0, 20.0], [30.0, 40.0]], [[50.0, 60.0], [70.0, 80.0]]]]
+                discharge[:] = [
+                    [[[10.0, 20.0], [30.0, 40.0]], [[50.0, 60.0], [70.0, 80.0]]]
+                ]
             else:
                 discharge[:] = [[[10.0, 20.0], [30.0, 40.0]]]
     return snapshot_path

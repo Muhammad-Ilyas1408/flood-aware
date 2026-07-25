@@ -3,29 +3,21 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import (
-    AwareDatetime,
-    BaseModel,
-    ConfigDict,
-    ValidationInfo,
-    field_validator,
-    model_validator,
-)
+from pydantic import (AwareDatetime, BaseModel, ConfigDict, ValidationInfo,
+                      field_validator, model_validator)
 
-from backend.app.data.exceptions import DatasetMetadataError, DatasetValidationError
-from backend.app.data.validation import (
-    validate_dataset_bounds,
-    validate_dataset_description,
-    validate_dataset_name,
-    validate_dataset_path,
-    validate_dataset_source,
-    validate_dataset_version,
-)
+from backend.app.data.exceptions import (DatasetMetadataError,
+                                         DatasetValidationError)
+from backend.app.data.validation import (validate_dataset_bounds,
+                                         validate_dataset_description,
+                                         validate_dataset_name,
+                                         validate_dataset_path,
+                                         validate_dataset_source,
+                                         validate_dataset_version)
 from backend.app.gis.crs import CRS
 from backend.app.gis.exceptions import CRSError
 from backend.app.gis.geometry import BoundingBox
 from backend.app.gis.validation import validate_crs
-
 
 DatasetScalar = str | int | float | bool | datetime | None
 

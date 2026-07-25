@@ -6,7 +6,6 @@ from backend.app.ai.models import DecisionContext, ToolResult
 from backend.app.ai.tools.exceptions import ToolExecutionError
 from backend.app.ai.tools.registry import ToolRegistry
 
-
 LOGGER = logging.getLogger(__name__)
 
 

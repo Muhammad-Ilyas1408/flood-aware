@@ -8,7 +8,9 @@ from backend.app.weather.protocols import WeatherClientProtocol
 class WeatherTool:
     """Retrieve immutable current weather through injected infrastructure dependencies."""
 
-    def __init__(self, client: WeatherClientProtocol, mapper: WeatherMapper | None = None) -> None:
+    def __init__(
+        self, client: WeatherClientProtocol, mapper: WeatherMapper | None = None
+    ) -> None:
         """Initialize the tool with its provider client and payload mapper."""
 
         self._client = client
@@ -19,4 +21,6 @@ class WeatherTool:
 
         if not isinstance(request, WeatherRequest):
             raise ValueError("Weather Tool requires a WeatherRequest.")
-        return self._mapper.map_current_weather(self._client.fetch_current_weather(request))
+        return self._mapper.map_current_weather(
+            self._client.fetch_current_weather(request)
+        )

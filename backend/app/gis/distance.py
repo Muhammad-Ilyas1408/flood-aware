@@ -19,7 +19,9 @@ def haversine_distance(origin: Point, destination: Point) -> DistanceResult:
     """
 
     origin_latitude, origin_longitude = _validated_point_coordinates(origin)
-    destination_latitude, destination_longitude = _validated_point_coordinates(destination)
+    destination_latitude, destination_longitude = _validated_point_coordinates(
+        destination
+    )
 
     latitude_difference = radians(destination_latitude - origin_latitude)
     longitude_difference = radians(destination_longitude - origin_longitude)
@@ -61,7 +63,9 @@ def bearing(origin: Point, destination: Point) -> float:
     """
 
     origin_latitude, origin_longitude = _validated_point_coordinates(origin)
-    destination_latitude, destination_longitude = _validated_point_coordinates(destination)
+    destination_latitude, destination_longitude = _validated_point_coordinates(
+        destination
+    )
     longitude_difference = radians(destination_longitude - origin_longitude)
     origin_latitude_radians = radians(origin_latitude)
     destination_latitude_radians = radians(destination_latitude)

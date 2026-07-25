@@ -6,6 +6,67 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+---
+
+## [0.9.6] - 2026-07-26
+
+---
+
+## Sprint 9.6 – GIS Flood Analysis Tool (2026-07-26)
+
+### Added
+
+- Added deterministic GIS processing package.
+- Added GIS configuration and shared type aliases.
+- Added RasterCache with deterministic lifecycle management.
+- Added raster utility helpers.
+- Added DEM loader.
+- Added deterministic Flood Zone Generator.
+- Added WorldPop loader.
+- Added Population Exposure Calculator.
+- Added OSM loader.
+- Added Infrastructure Impact Calculator.
+- Added immutable FloodEvidence model.
+- Added FloodEvidenceBuilder.
+- Added comprehensive GIS processing tests.
+- Added Flood Evidence tests.
+- Added GIS processing documentation.
+
+### Improved
+
+- Established deterministic GIS processing pipeline.
+- Established immutable spatial evidence generation.
+- Enforced strict separation between GIS processing and AI Runtime.
+- GIS evidence now aggregates existing forecast and spatial facts without recalculation.
+- Improved documentation describing GIS architecture and AI-first evidence generation.
+
+### Verified
+
+- DEM processing verified.
+- Flood zone generation verified.
+- Raster cache verified.
+- Raster utilities verified.
+- Population exposure verified.
+- OSM infrastructure extraction verified.
+- Infrastructure impact verified.
+- Flood evidence generation verified.
+- GIS unit tests passed.
+- Pytest suite passed.
+
+### Notes
+
+- No AI Runtime changes.
+- No Planner changes.
+- No Tool Registry changes.
+- No Agent orchestration changes.
+- No FastAPI changes.
+- No Forecast Tool changes.
+- No Government Knowledge Tool changes.
+- No Runtime execution changes.
+- GIS Flood Analysis Tool completed.
+- Sprint 9.6 frozen.
+- Ready for Sprint 9.7 – AI Runtime Integration.
+
 --- 
 
 ## [0.9.5] - 2026-07-25

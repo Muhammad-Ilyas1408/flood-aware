@@ -40,4 +40,3 @@ class SequentialPlanner:
             if metadata.available and not memory.has_executed(metadata.name):
                 return metadata.name
         return None
-

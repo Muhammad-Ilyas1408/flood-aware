@@ -14,7 +14,11 @@ def evaluate_retrieval(
     retrieved_documents = tuple(chunk.metadata.document_name for chunk in chunks)
     expected_chunks = set(relevant_chunk_ids)
     expected_documents = set(relevant_documents)
-    chunk_matches = [identifier for identifier in retrieved_chunk_ids if identifier in expected_chunks]
+    chunk_matches = [
+        identifier
+        for identifier in retrieved_chunk_ids
+        if identifier in expected_chunks
+    ]
     unique_retrieved_documents = set(retrieved_documents)
     document_matches = unique_retrieved_documents & expected_documents
     first_relevant_rank = next(

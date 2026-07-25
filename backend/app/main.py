@@ -25,7 +25,6 @@ from backend.app.core.logger import get_logger
 from backend.app.core.validation_exceptions import ValidationException
 from backend.app.middleware.request_logging import log_request
 
-
 logger = get_logger(__name__)
 
 
@@ -75,7 +74,9 @@ def create_application(
     if dataset_catalog_config is not None:
         configure_dataset_dependencies(application, dataset_catalog_config)
     application.add_exception_handler(HTTPException, handle_http_exception)
-    application.add_exception_handler(RequestValidationError, handle_request_validation_error)
+    application.add_exception_handler(
+        RequestValidationError, handle_request_validation_error
+    )
     application.add_exception_handler(ValidationException, handle_validation_exception)
     application.add_exception_handler(ApplicationError, handle_application_exception)
     application.add_exception_handler(Exception, handle_unexpected_exception)

@@ -4,7 +4,6 @@ import json
 import logging
 from pathlib import Path
 
-
 _LOGGER = logging.getLogger(__name__)
 _DIFFICULTIES = frozenset({"easy", "medium", "hard"})
 _OPTIONAL_METADATA = ("category", "hazard", "agency")
@@ -36,8 +35,15 @@ class BenchmarkLoader:
             raise ValueError("Each benchmark question must be an object.")
         identifier = question.get("id")
         text = question.get("question")
-        if not isinstance(identifier, str) or not identifier.strip() or not isinstance(text, str) or not text.strip():
-            raise ValueError("Each benchmark question requires non-blank 'id' and 'question'.")
+        if (
+            not isinstance(identifier, str)
+            or not identifier.strip()
+            or not isinstance(text, str)
+            or not text.strip()
+        ):
+            raise ValueError(
+                "Each benchmark question requires non-blank 'id' and 'question'."
+            )
         fields = ("relevant_chunk_ids", "relevant_documents", "expected_citations")
         if any(not isinstance(question.get(field, []), list) for field in fields):
             raise ValueError("Benchmark relevance and citation fields must be lists.")
@@ -48,7 +54,9 @@ class BenchmarkLoader:
             or not isinstance(value.get("page_number"), int)
             for value in expected
         ):
-            raise ValueError("Expected citations require document_name and integer page_number.")
+            raise ValueError(
+                "Expected citations require document_name and integer page_number."
+            )
         difficulty = question.get("difficulty")
         if difficulty is not None and difficulty not in _DIFFICULTIES:
             raise ValueError("Benchmark difficulty must be easy, medium, or hard.")
@@ -58,10 +66,18 @@ class BenchmarkLoader:
         return {
             "id": identifier,
             "question": text,
-            "relevant_chunk_ids": tuple(str(value) for value in question.get("relevant_chunk_ids", [])),
-            "relevant_documents": tuple(str(value) for value in question.get("relevant_documents", [])),
+            "relevant_chunk_ids": tuple(
+                str(value) for value in question.get("relevant_chunk_ids", [])
+            ),
+            "relevant_documents": tuple(
+                str(value) for value in question.get("relevant_documents", [])
+            ),
             "expected_citations": tuple(
-                (str(value["document_name"]), int(value["page_number"]), value.get("section"))
+                (
+                    str(value["document_name"]),
+                    int(value["page_number"]),
+                    value.get("section"),
+                )
                 for value in expected
             ),
             "difficulty": difficulty,

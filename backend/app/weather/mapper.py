@@ -45,7 +45,9 @@ class WeatherMapper:
                 source="OpenWeatherMap",
             )
         except (KeyError, TypeError, ValueError, ValidationError) as error:
-            raise WeatherMappingError("OpenWeatherMap payload is missing required weather data.") from error
+            raise WeatherMappingError(
+                "OpenWeatherMap payload is missing required weather data."
+            ) from error
 
 
 def _mapping(value: object) -> Mapping[str, object]:

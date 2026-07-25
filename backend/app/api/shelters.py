@@ -7,7 +7,6 @@ from backend.app.schemas.datasets import ShelterListResponse
 from backend.app.schemas.errors import ErrorResponse
 from backend.app.use_cases.protocols import ViewSheltersUseCaseProtocol
 
-
 router = APIRouter(tags=["Shelters"])
 
 

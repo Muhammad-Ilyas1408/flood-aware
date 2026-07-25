@@ -7,7 +7,6 @@ from backend.app.schemas.datasets import DatasetCatalogResponse
 from backend.app.schemas.errors import ErrorResponse
 from backend.app.use_cases.protocols import ViewDatasetCatalogUseCaseProtocol
 
-
 router = APIRouter(tags=["Datasets"])
 
 
@@ -27,9 +26,7 @@ router = APIRouter(tags=["Datasets"])
     },
 )
 def get_dataset_catalog(
-    use_case: ViewDatasetCatalogUseCaseProtocol = Depends(
-        get_dataset_catalog_use_case
-    ),
+    use_case: ViewDatasetCatalogUseCaseProtocol = Depends(get_dataset_catalog_use_case),
 ) -> DatasetCatalogResponse:
     """Return configured dataset summaries translated from the use-case DTO."""
     return DatasetCatalogResponse.from_dto(use_case.execute())

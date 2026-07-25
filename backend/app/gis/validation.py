@@ -9,7 +9,7 @@ from backend.app.gis.constants import (
     MIN_LONGITUDE,
 )
 from backend.app.gis.crs import CRS, get_crs_by_epsg
-from backend.app.gis.exceptions import CRSError, CoordinateError
+from backend.app.gis.exceptions import CoordinateError, CRSError
 
 
 def validate_latitude(latitude: float) -> float:
@@ -19,7 +19,9 @@ def validate_latitude(latitude: float) -> float:
         CoordinateError: If latitude is non-numeric, non-finite, or outside valid bounds.
     """
 
-    return _validate_numeric_coordinate(latitude, MIN_LATITUDE, MAX_LATITUDE, "Latitude")
+    return _validate_numeric_coordinate(
+        latitude, MIN_LATITUDE, MAX_LATITUDE, "Latitude"
+    )
 
 
 def validate_longitude(longitude: float) -> float:
@@ -29,7 +31,9 @@ def validate_longitude(longitude: float) -> float:
         CoordinateError: If longitude is non-numeric, non-finite, or outside valid bounds.
     """
 
-    return _validate_numeric_coordinate(longitude, MIN_LONGITUDE, MAX_LONGITUDE, "Longitude")
+    return _validate_numeric_coordinate(
+        longitude, MIN_LONGITUDE, MAX_LONGITUDE, "Longitude"
+    )
 
 
 def validate_coordinate_pair(latitude: float, longitude: float) -> tuple[float, float]:

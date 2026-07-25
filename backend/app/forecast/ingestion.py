@@ -21,7 +21,6 @@ from backend.app.forecast.exceptions import ForecastDownloadError
 from backend.app.forecast.settings import ForecastSettings
 from backend.app.gis.geometry import BoundingBox
 
-
 _SNAPSHOT_METADATA_ATTRIBUTES = (
     "dataset_name",
     "product_type",
@@ -84,7 +83,9 @@ class GloFASIngestionService:
         self._write_snapshot_metadata(saved_path, request)
         return saved_path
 
-    def _build_request(self, forecast_date: date, bounds: BoundingBox) -> dict[str, object]:
+    def _build_request(
+        self, forecast_date: date, bounds: BoundingBox
+    ) -> dict[str, object]:
         """Build the smallest supported control-forecast request for one lead time."""
 
         lead_time_hours = self._settings.glofas_default_forecast_days * 24
@@ -111,9 +112,7 @@ class GloFASIngestionService:
         """Return the deterministic raw-snapshot path for an ingestion timestamp."""
 
         utc_timestamp = ingested_at.astimezone(UTC)
-        filename = (
-            f"glofas_{DEFAULT_PRODUCT_LABEL}_{utc_timestamp:%Y%m%dT%H%M%SZ}.nc"
-        )
+        filename = f"glofas_{DEFAULT_PRODUCT_LABEL}_{utc_timestamp:%Y%m%dT%H%M%SZ}.nc"
         return self._storage_directory / filename
 
     def _write_snapshot_metadata(

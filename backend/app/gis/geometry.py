@@ -49,7 +49,10 @@ class BoundingBox(BaseModel):
 
         validate_coordinate_pair(self.min_latitude, self.min_longitude)
         validate_coordinate_pair(self.max_latitude, self.max_longitude)
-        if self.min_latitude > self.max_latitude or self.min_longitude > self.max_longitude:
+        if (
+            self.min_latitude > self.max_latitude
+            or self.min_longitude > self.max_longitude
+        ):
             raise GeometryError(
                 "Bounding box minimum coordinates must not exceed maximum coordinates."
             )

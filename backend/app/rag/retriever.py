@@ -28,5 +28,5 @@ class GovernmentRetriever:
             raise ValueError("top_k must be positive.")
         if score_threshold is not None and score_threshold < 0:
             raise ValueError("score_threshold cannot be negative.")
-        vector, = self._embeddings.embed((question,))
+        (vector,) = self._embeddings.embed((question,))
         return self._vector_store.search(vector, top_k, filters, score_threshold)

@@ -5,13 +5,10 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from io import StringIO
 
-from backend.app.data.exceptions import DatasetFormatError, DatasetValidationError
-from backend.app.data.models import (
-    DatasetColumnType,
-    DatasetRow,
-    DatasetSchema,
-    DatasetTable,
-)
+from backend.app.data.exceptions import (DatasetFormatError,
+                                         DatasetValidationError)
+from backend.app.data.models import (DatasetColumnType, DatasetRow,
+                                     DatasetSchema, DatasetTable)
 from backend.app.gis.geojson import Feature, FeatureCollection, GeoJSONPoint
 
 

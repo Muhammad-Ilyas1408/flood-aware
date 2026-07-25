@@ -12,4 +12,3 @@ class DecisionState(str, Enum):
     WAITING = "waiting"
     COMPLETED = "completed"
     FAILED = "failed"
-

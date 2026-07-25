@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import unittest
 from datetime import UTC, date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import unittest
 from unittest.mock import MagicMock, patch
 
 FORECAST_DEPENDENCIES_AVAILABLE = False
@@ -53,7 +53,9 @@ class GloFASIngestionTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             ForecastSettings(GLOFAS_DEFAULT_FORECAST_DAYS=31)
         with self.assertRaises(ValidationError):
-            ForecastSettings(GLOFAS_BASE_URL="url: https://ewds.climate.copernicus.eu/api")
+            ForecastSettings(
+                GLOFAS_BASE_URL="url: https://ewds.climate.copernicus.eu/api"
+            )
 
     def test_client_requires_api_key(self) -> None:
         """Client construction rejects missing EWDS authentication."""
@@ -158,7 +160,9 @@ class GloFASIngestionTests(unittest.TestCase):
 
         owned_client = MagicMock()
         owned_client.session = MagicMock()
-        with patch("backend.app.forecast.client.cdsapi.Client", return_value=owned_client):
+        with patch(
+            "backend.app.forecast.client.cdsapi.Client", return_value=owned_client
+        ):
             client = GloFASClient(_settings())
         client.close()
         owned_client.session.close.assert_called_once_with()

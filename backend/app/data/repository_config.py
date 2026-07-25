@@ -3,7 +3,8 @@
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from backend.app.data.exceptions import DatasetValidationError
-from backend.app.data.file_support import DatasetFileFormat, detect_supported_file
+from backend.app.data.file_support import (DatasetFileFormat,
+                                           detect_supported_file)
 from backend.app.data.models import DatasetMetadata, DatasetSchema
 from backend.app.data.validation import validate_dataset_path
 

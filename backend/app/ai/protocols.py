@@ -4,7 +4,6 @@ from typing import Protocol
 
 from backend.app.ai.models import DecisionContext, ToolResult
 
-
 __all__ = [
     "VillageToolProtocol",
     "ShelterToolProtocol",

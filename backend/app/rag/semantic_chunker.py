@@ -1,7 +1,7 @@
 """Section-aware semantic chunking for government disaster documents."""
 
-from hashlib import sha256
 import re
+from hashlib import sha256
 
 from backend.app.rag.models import ChunkMetadata, KnowledgeChunk, KnowledgeDocument
 
@@ -25,14 +25,32 @@ class SemanticChunker:
                     continue
                 for text in self._split_paragraph(candidate):
                     index = len(chunks)
-                    identifier = sha256(f"{document.document_id}|{page.page_number}|{index}|{text}".encode()).hexdigest()
-                    chunks.append(KnowledgeChunk(identifier, document.document_id, text, ChunkMetadata(
-                        document_name=document.name, authority=document.metadata.authority,
-                        agency=document.metadata.authority, document_type=document.metadata.document_type,
-                        publication_year=None, page_number=page.page_number, section=heading,
-                        heading=heading, keywords=tuple(sorted(set(re.findall(r"[A-Za-z]{5,}", text.lower()))))[:12],
-                        source_path=str(document.source_path),
-                    )))
+                    identifier = sha256(
+                        f"{document.document_id}|{page.page_number}|{index}|{text}".encode()
+                    ).hexdigest()
+                    chunks.append(
+                        KnowledgeChunk(
+                            identifier,
+                            document.document_id,
+                            text,
+                            ChunkMetadata(
+                                document_name=document.name,
+                                authority=document.metadata.authority,
+                                agency=document.metadata.authority,
+                                document_type=document.metadata.document_type,
+                                publication_year=None,
+                                page_number=page.page_number,
+                                section=heading,
+                                heading=heading,
+                                keywords=tuple(
+                                    sorted(
+                                        set(re.findall(r"[A-Za-z]{5,}", text.lower()))
+                                    )
+                                )[:12],
+                                source_path=str(document.source_path),
+                            ),
+                        )
+                    )
         return tuple(chunks)
 
     def _split_paragraph(self, paragraph: str) -> tuple[str, ...]:
@@ -53,4 +71,6 @@ class SemanticChunker:
 
     @staticmethod
     def _is_heading(text: str) -> bool:
-        return len(text) <= 160 and (text.isupper() or bool(re.match(r"^\d+(?:\.\d+)*[.)]?\s+", text)))
+        return len(text) <= 160 and (
+            text.isupper() or bool(re.match(r"^\d+(?:\.\d+)*[.)]?\s+", text))
+        )

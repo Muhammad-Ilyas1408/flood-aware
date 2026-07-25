@@ -2,9 +2,9 @@
 
 import io
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from backend.app.rag.context_builder import ContextBuilder
@@ -15,7 +15,12 @@ from backend.app.rag.evaluation.evaluation_runner import EvaluationRunner
 from backend.app.rag.evaluation.metrics_aggregator import MetricsAggregator
 from backend.app.rag.evaluation.retrieval_metrics import evaluate_retrieval
 from backend.app.rag.knowledge_tool import KnowledgeTool
-from backend.app.rag.models import ChunkMetadata, Citation, GroundedAnswer, KnowledgeChunk
+from backend.app.rag.models import (
+    ChunkMetadata,
+    Citation,
+    GroundedAnswer,
+    KnowledgeChunk,
+)
 from backend.app.rag.prompt_builder import PromptBuilder
 from backend.app.rag.protocols import EmbeddingService, ResponseGenerator, VectorStore
 from backend.app.rag.retriever import GovernmentRetriever
@@ -27,7 +32,9 @@ def _chunk(identifier: str, document: str = "NDMA Plan.pdf") -> KnowledgeChunk:
         identifier,
         "ndma-plan",
         "Government guidance recommends flood preparedness.",
-        ChunkMetadata(document, "NDMA", "NDMA", "National plan", 2025, 4, "Preparedness"),
+        ChunkMetadata(
+            document, "NDMA", "NDMA", "National plan", 2025, 4, "Preparedness"
+        ),
     )
 
 
@@ -40,10 +47,14 @@ class _Store(VectorStore):
     def __init__(self, chunks: tuple[KnowledgeChunk, ...]) -> None:
         self._chunks = chunks
 
-    def index(self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]) -> None:
+    def index(
+        self, chunks: tuple[KnowledgeChunk, ...], vectors: tuple[tuple[float, ...], ...]
+    ) -> None:
         self._chunks = chunks
 
-    def search(self, vector: tuple[float, ...], top_k: int, filters=None, score_threshold=None) -> tuple[KnowledgeChunk, ...]:
+    def search(
+        self, vector: tuple[float, ...], top_k: int, filters=None, score_threshold=None
+    ) -> tuple[KnowledgeChunk, ...]:
         return self._chunks[:top_k]
 
 
@@ -121,30 +132,45 @@ class GovernmentKnowledgeEvaluationTests(unittest.TestCase):
         retriever = GovernmentRetriever(_Embeddings(), _Store((self.chunk,)))
         tool = KnowledgeTool(retriever, ContextBuilder(), PromptBuilder(), _Generator())
         benchmark = {
-            "questions": [{
-                "id": "preparedness",
-                "question": "What does the government recommend?",
-                "relevant_chunk_ids": ["chunk-1"],
-                "relevant_documents": ["NDMA Plan.pdf"],
-                "expected_citations": [{
-                    "document_name": "NDMA Plan.pdf", "page_number": 4, "section": "Preparedness"
-                }],
-            }]
+            "questions": [
+                {
+                    "id": "preparedness",
+                    "question": "What does the government recommend?",
+                    "relevant_chunk_ids": ["chunk-1"],
+                    "relevant_documents": ["NDMA Plan.pdf"],
+                    "expected_citations": [
+                        {
+                            "document_name": "NDMA Plan.pdf",
+                            "page_number": 4,
+                            "section": "Preparedness",
+                        }
+                    ],
+                }
+            ]
         }
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "benchmark.json"
             path.write_text(json.dumps(benchmark), encoding="utf-8")
             summary = EvaluationRunner(tool, retriever.retrieve).run(path)
-            json_path, markdown_path = EvaluationReportWriter().write(summary, directory)
+            json_path, markdown_path = EvaluationReportWriter().write(
+                summary, directory
+            )
             self.assertTrue(summary["pass"])
             self.assertEqual(json_path.name, "evaluation.json")
-            self.assertEqual(json.loads(json_path.read_text(encoding="utf-8"))["benchmark_count"], 1)
-            self.assertIn("chunk_precision_at_k", markdown_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                json.loads(json_path.read_text(encoding="utf-8"))["benchmark_count"], 1
+            )
+            self.assertIn(
+                "chunk_precision_at_k", markdown_path.read_text(encoding="utf-8")
+            )
 
     def test_cli_returns_success_with_injected_runner(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             benchmark = Path(directory) / "benchmark.json"
-            benchmark.write_text(json.dumps({"questions": [{"id": "q", "question": "Q?"}]}), encoding="utf-8")
+            benchmark.write_text(
+                json.dumps({"questions": [{"id": "q", "question": "Q?"}]}),
+                encoding="utf-8",
+            )
             summary = {
                 "benchmark_count": 1,
                 "retrieval_metrics": {},
@@ -155,8 +181,12 @@ class GovernmentKnowledgeEvaluationTests(unittest.TestCase):
             }
             runner = unittest.mock.Mock()
             runner.run.return_value = summary
-            with patch.object(evaluation_cli, "build_runner", return_value=(runner, _ClosableStore())):
+            with patch.object(
+                evaluation_cli, "build_runner", return_value=(runner, _ClosableStore())
+            ):
                 with patch("sys.stdout", new_callable=io.StringIO) as output:
-                    code = evaluation_cli.main(["--benchmark", str(benchmark), "--output-directory", directory])
+                    code = evaluation_cli.main(
+                        ["--benchmark", str(benchmark), "--output-directory", directory]
+                    )
             self.assertEqual(code, 0)
             self.assertIn("Evaluation passed", output.getvalue())

@@ -20,4 +20,3 @@ class ToolMetadata:
     version: str
     capabilities: tuple[str, ...] = ()
     available: bool = True
-

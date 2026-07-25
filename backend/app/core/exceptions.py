@@ -13,7 +13,6 @@ from backend.app.core.logger import get_logger
 from backend.app.core.validation_exceptions import ValidationException
 from backend.app.schemas.errors import ErrorResponse, ValidationIssue
 
-
 logger = get_logger(__name__)
 
 
@@ -51,7 +50,9 @@ async def handle_http_exception(
         request.url.path,
         exception.status_code,
     )
-    detail = exception.detail if isinstance(exception.detail, str) else "Request failed."
+    detail = (
+        exception.detail if isinstance(exception.detail, str) else "Request failed."
+    )
     return _error_response(request, exception.status_code, detail)
 
 
@@ -73,7 +74,10 @@ async def handle_request_validation_error(
         "Request validation failed.",
         [
             ValidationIssue(
-                location=[str(part) if not isinstance(part, int) else part for part in error["loc"]],
+                location=[
+                    str(part) if not isinstance(part, int) else part
+                    for part in error["loc"]
+                ],
                 message=error["msg"],
                 error_type=error["type"],
             )

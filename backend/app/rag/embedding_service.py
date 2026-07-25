@@ -12,11 +12,17 @@ class _Embedder(Protocol):
 class OpenAIEmbeddingService(EmbeddingService):
     """Use LangChain's maintained OpenAI embedding client behind a local contract."""
 
-    def __init__(self, client: _Embedder | None = None, api_key: str | None = None, model: str = "text-embedding-3-small") -> None:
+    def __init__(
+        self,
+        client: _Embedder | None = None,
+        api_key: str | None = None,
+        model: str = "text-embedding-3-small",
+    ) -> None:
         if client is None:
             if not api_key:
                 raise ValueError("An explicit OpenAI API key is required.")
             from langchain_openai import OpenAIEmbeddings
+
             client = OpenAIEmbeddings(api_key=api_key, model=model)
         self._client = client
 
@@ -25,4 +31,6 @@ class OpenAIEmbeddingService(EmbeddingService):
 
         if not texts:
             return ()
-        return tuple(tuple(vector) for vector in self._client.embed_documents(list(texts)))
+        return tuple(
+            tuple(vector) for vector in self._client.embed_documents(list(texts))
+        )

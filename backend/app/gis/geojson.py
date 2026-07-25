@@ -10,7 +10,6 @@ from backend.app.gis.exceptions import GeoJSONError
 from backend.app.gis.geometry import Point
 from backend.app.gis.validation import validate_coordinate_pair
 
-
 GeoJSONModelT = TypeVar("GeoJSONModelT", "GeoJSONPoint", "Feature", "FeatureCollection")
 GEOJSON_POINT_TYPE: Final[str] = "Point"
 GEOJSON_FEATURE_TYPE: Final[str] = "Feature"
@@ -37,7 +36,9 @@ class GeoJSONPoint(BaseModel):
         )
         coordinates = data.get("coordinates")
         if not isinstance(coordinates, (list, tuple)) or len(coordinates) != 2:
-            raise GeoJSONError("GeoJSON Point coordinates must contain longitude and latitude.")
+            raise GeoJSONError(
+                "GeoJSON Point coordinates must contain longitude and latitude."
+            )
 
         longitude, latitude = coordinates
         validate_coordinate_pair(latitude, longitude)
@@ -71,7 +72,9 @@ class Feature(BaseModel):
         if not isinstance(properties, dict) or not all(
             isinstance(key, str) for key in properties
         ):
-            raise GeoJSONError("GeoJSON Feature properties must be an object with string keys.")
+            raise GeoJSONError(
+                "GeoJSON Feature properties must be an object with string keys."
+            )
         _validate_json_serializable(properties)
         return data
 
@@ -149,7 +152,9 @@ def feature_collection_to_dict(collection: FeatureCollection) -> dict[str, Any]:
     """
 
     if not isinstance(collection, FeatureCollection):
-        raise GeoJSONError("FeatureCollection serialization requires a FeatureCollection model.")
+        raise GeoJSONError(
+            "FeatureCollection serialization requires a FeatureCollection model."
+        )
     return collection.model_dump(mode="json")
 
 
@@ -226,7 +231,9 @@ def feature_collection_to_json(
 ) -> str:
     """Serialize a GeoJSON FeatureCollection to JSON, optionally using indentation."""
 
-    return json.dumps(feature_collection_to_dict(collection), ensure_ascii=False, indent=indent)
+    return json.dumps(
+        feature_collection_to_dict(collection), ensure_ascii=False, indent=indent
+    )
 
 
 def _require_geojson_object(
@@ -270,7 +277,9 @@ def _validate_json_serializable(value: object) -> None:
     try:
         json.dumps(value)
     except (TypeError, ValueError) as error:
-        raise GeoJSONError("GeoJSON Feature properties must be JSON serializable.") from error
+        raise GeoJSONError(
+            "GeoJSON Feature properties must be JSON serializable."
+        ) from error
 
 
 def _coerce_geojson_point(geometry: GeoJSONPoint | Mapping[str, Any]) -> GeoJSONPoint:

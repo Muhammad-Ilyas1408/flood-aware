@@ -3,13 +3,12 @@
 from pathlib import Path
 
 from backend.app.data.exceptions import DatasetFormatError
-from backend.app.data.file_support import (
-    DatasetFileFormat,
-    detect_supported_file,
-    read_dataset_text,
-)
+from backend.app.data.file_support import (DatasetFileFormat,
+                                           detect_supported_file,
+                                           read_dataset_text)
 from backend.app.gis.exceptions import GeoJSONError
-from backend.app.gis.geojson import FeatureCollection, feature_collection_from_json
+from backend.app.gis.geojson import (FeatureCollection,
+                                     feature_collection_from_json)
 
 
 def validate_geojson_file(path: str | Path) -> None:
