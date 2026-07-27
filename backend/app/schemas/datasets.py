@@ -22,7 +22,7 @@ class VillageResponse(BaseModel):
 
     name: str = Field(min_length=1)
     district: str = Field(min_length=1)
-    population: int = Field(ge=0)
+    population: int | None = Field(default=None, ge=0)
 
     @classmethod
     def from_dto(cls, dto: VillageDTO) -> "VillageResponse":

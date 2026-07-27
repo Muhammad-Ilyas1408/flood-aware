@@ -10,7 +10,10 @@ from starlette.exceptions import HTTPException
 
 from backend.app.api.router import api_router
 from backend.app.composition import configure_dataset_dependencies
-from backend.app.config.datasets import DatasetCatalogConfig
+from backend.app.config.datasets import (
+    DatasetCatalogConfig,
+    create_production_dataset_catalog_config,
+)
 from backend.app.config.logging import configure_logging
 from backend.app.config.settings import Settings, get_settings
 from backend.app.core.application_exceptions import ApplicationError
@@ -39,6 +42,14 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
         settings.version,
         settings.environment.value,
     )
+    if not isinstance(
+        getattr(application.state, "dataset_catalog_config", None),
+        DatasetCatalogConfig,
+    ):
+        configure_dataset_dependencies(
+            application,
+            create_production_dataset_catalog_config(),
+        )
     try:
         yield
     finally:

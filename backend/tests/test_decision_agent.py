@@ -1,0 +1,355 @@
+"""Behavioral tests for the evidence-only structured decision agent."""
+
+import asyncio
+import json
+from types import SimpleNamespace
+
+import pytest
+from pydantic import ValidationError
+
+from backend.app.decision.exceptions import (
+    DecisionCircuitOpenError,
+    DecisionGenerationError,
+    DecisionParsingError,
+    DecisionProviderTimeoutError,
+    LLMOutputValidationError,
+)
+from backend.app.decision.models import (
+    ActionRecommendation,
+    Decision,
+    DecisionConfidence,
+    DecisionReason,
+    Priority,
+    Recommendation,
+    RiskAssessment,
+    RiskLevel,
+)
+from backend.app.decision.agent import OpenAIDecisionAgent, OpenAIDecisionProvider
+from backend.app.decision.parser import DecisionParser
+from backend.app.decision.prompt_builder import PromptBuilder
+from backend.app.decision.resilience import (
+    DecisionCircuitBreaker,
+    DecisionRuntimeConfig,
+)
+from backend.app.graph.nodes import RecommendationNode
+from backend.tests.graph_test_support import state_factory
+
+
+def _decision() -> Decision:
+    """Create a complete valid decision for deterministic test scenarios."""
+    return Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.HIGH, rationale="High discharge."
+        ),
+        recommendation=Recommendation(
+            summary="Prepare local response.",
+            actions=(
+                ActionRecommendation(
+                    action="Notify response teams.",
+                    priority=Priority.HIGH,
+                    evidence_references=("gis",),
+                ),
+            ),
+            citations=("NDMA Plan:p4",),
+            supporting_evidence=("gis",),
+            missing_evidence=("shelter occupancy",),
+        ),
+        reasons=(DecisionReason(statement="GIS exposure is elevated."),),
+        confidence=DecisionConfidence.HIGH,
+    )
+
+
+class _Completions:
+    """Return deterministic structured responses while retaining request input."""
+
+    def __init__(self, content: str | None) -> None:
+        self.content = content
+        self.requests: list[dict[str, object]] = []
+
+    async def create(self, **kwargs: object) -> object:
+        """Return one OpenAI-compatible completion shape."""
+        self.requests.append(kwargs)
+        return SimpleNamespace(
+            choices=(SimpleNamespace(message=SimpleNamespace(content=self.content)),),
+            usage=SimpleNamespace(total_tokens=42),
+        )
+
+
+class _TransientProviderError(Exception):
+    """Represent a deterministic temporary provider failure for tests."""
+
+    status_code = 503
+
+
+class _RateLimitedProviderError(Exception):
+    """Represent a deterministic provider rate-limit response for tests."""
+
+    status_code = 429
+
+
+class _Client:
+    """Expose the narrow injected chat-completions surface used by the agent."""
+
+    def __init__(self, completions: _Completions) -> None:
+        self.chat = SimpleNamespace(completions=completions)
+
+
+class _DecisionAgent:
+    """Return one fixed decision while retaining the supplied evidence bundle."""
+
+    def __init__(self, decision: Decision) -> None:
+        self.decision = decision
+        self.evidence = None
+        self.execution_context = None
+
+    async def decide(self, evidence, *, execution_context=None):
+        """Capture the canonical bundle and return the configured decision."""
+        self.evidence = evidence
+        self.execution_context = execution_context
+        return self.decision
+
+
+def test_decision_contract_is_frozen_and_rejects_unknown_fields() -> None:
+    """Canonical decisions must remain strict immutable Pydantic contracts."""
+    decision = _decision()
+
+    with pytest.raises(ValidationError):
+        decision.confidence = DecisionConfidence.LOW
+    with pytest.raises(ValidationError):
+        Decision.model_validate({**decision.model_dump(), "unexpected": True})
+
+
+def test_parser_validates_structured_decision_json() -> None:
+    """Parser should return the canonical decision for valid JSON only."""
+    parsed = DecisionParser().parse(_decision().model_dump_json())
+
+    assert parsed == _decision()
+
+
+@pytest.mark.parametrize("response", ("not-json", "[]", '{"confidence":"high"}'))
+def test_parser_rejects_malformed_or_invalid_decisions(response: str) -> None:
+    """Malformed JSON and schema failures must be domain-specific failures."""
+    with pytest.raises((DecisionParsingError, LLMOutputValidationError)):
+        DecisionParser().parse(response)
+
+
+def test_prompt_builder_is_deterministic_and_contains_only_bundle_and_schema() -> None:
+    """Prompt construction should be repeatable with no provider interaction."""
+    evidence = state_factory().create().evidence_bundle
+    builder = PromptBuilder()
+
+    first = builder.build(evidence)
+
+    assert first == builder.build(evidence)
+    assert "Decision schema" in first[0]
+    assert "EvidenceBundle" in first[1]
+    assert builder.PROMPT_VERSION == "v1.0.0"
+    assert builder.SYSTEM_PROMPT_VERSION == "v1.0.0"
+
+
+def test_openai_agent_name_remains_a_compatible_provider_alias() -> None:
+    """Existing imports must resolve to the provider-oriented implementation."""
+    assert OpenAIDecisionAgent is OpenAIDecisionProvider
+
+
+def test_openai_agent_parses_mocked_schema_constrained_output(caplog) -> None:
+    """The provider adapter should return a parser-validated decision."""
+    completions = _Completions(_decision().model_dump_json())
+    caplog.set_level("INFO", logger="backend.app.decision.agent")
+    agent = OpenAIDecisionProvider(
+        client=_Client(completions),
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+    )
+
+    decision = asyncio.run(agent.decide(state_factory().create().evidence_bundle))
+
+    assert decision == _decision()
+    request = completions.requests[0]
+    assert request["temperature"] == 0.0
+    assert request["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "flood_aware_decision",
+            "strict": True,
+            "schema": Decision.model_json_schema(),
+        },
+    }
+    completion_log = next(
+        record
+        for record in caplog.records
+        if record.message == "decision_provider_request_finished"
+    )
+    assert completion_log.provider == "openai"
+    assert completion_log.model == "gpt-4.1-mini"
+    assert completion_log.retry_count == 0
+    assert completion_log.timeout is False
+
+
+def test_openai_agent_translates_provider_and_parser_failures() -> None:
+    """Blank provider output and malformed decisions must never leak SDK failures."""
+    blank_agent = OpenAIDecisionProvider(
+        client=_Client(_Completions(None)),
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+    )
+    malformed_agent = OpenAIDecisionProvider(
+        client=_Client(_Completions(json.dumps({"confidence": "high"}))),
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+    )
+    evidence = state_factory().create().evidence_bundle
+
+    with pytest.raises(DecisionGenerationError):
+        asyncio.run(blank_agent.decide(evidence))
+    with pytest.raises(LLMOutputValidationError):
+        asyncio.run(malformed_agent.decide(evidence))
+
+
+def test_provider_retries_transient_failure_then_returns_decision() -> None:
+    """A transient transport failure should retry without changing valid output."""
+    completions = _Completions(_decision().model_dump_json())
+    successful_create = completions.create
+    calls = 0
+
+    async def create(**kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise _TransientProviderError()
+        return await successful_create(**kwargs)
+
+    client = _Client(completions)
+    client.chat.completions.create = create
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=DecisionRuntimeConfig(retry_count=1, jitter_seconds=0),
+        sleep=lambda _: asyncio.sleep(0),
+    )
+
+    assert (
+        asyncio.run(provider.decide(state_factory().create().evidence_bundle))
+        == _decision()
+    )
+    assert calls == 2
+
+
+def test_provider_translates_timeout_and_recommendation_node_falls_back() -> None:
+    """Timeout failures should be domain-safe and never terminate the graph path."""
+
+    async def never_returns(**kwargs: object) -> object:
+        await asyncio.sleep(1)
+        raise AssertionError("unreachable")
+
+    client = _Client(_Completions(_decision().model_dump_json()))
+    client.chat.completions.create = never_returns
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=DecisionRuntimeConfig(
+            timeout_seconds=0.001, retry_count=0, jitter_seconds=0
+        ),
+    )
+    state = state_factory().create()
+
+    with pytest.raises(DecisionProviderTimeoutError):
+        asyncio.run(provider.decide(state.evidence_bundle))
+    updated = asyncio.run(RecommendationNode(provider).execute(state))
+
+    assert updated.recommendation.recommendation == "Decision generation unavailable."
+    assert updated.recommendation.risk_level == "unknown"
+    assert updated.recommendation.confidence == 0
+
+
+def test_provider_opens_circuit_after_retry_exhaustion_and_recovers() -> None:
+    """Circuit opens after final transient failures and permits a recovery probe."""
+    current_time = [0.0]
+    config = DecisionRuntimeConfig(
+        retry_count=0,
+        jitter_seconds=0,
+        circuit_breaker_threshold=1,
+        circuit_recovery_seconds=10,
+    )
+    breaker = DecisionCircuitBreaker(config, clock=lambda: current_time[0])
+    client = _Client(_Completions(_decision().model_dump_json()))
+
+    async def unavailable(**kwargs: object) -> object:
+        raise _RateLimitedProviderError()
+
+    client.chat.completions.create = unavailable
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=config,
+        circuit_breaker=breaker,
+    )
+    evidence = state_factory().create().evidence_bundle
+
+    with pytest.raises(DecisionGenerationError):
+        asyncio.run(provider.decide(evidence))
+    with pytest.raises(DecisionCircuitOpenError):
+        asyncio.run(provider.decide(evidence))
+
+    current_time[0] = 10.0
+    client.chat.completions.create = _Completions(_decision().model_dump_json()).create
+    assert asyncio.run(provider.decide(evidence)) == _decision()
+
+
+@pytest.mark.parametrize(
+    "configuration",
+    (
+        {"timeout_seconds": 0},
+        {"retry_count": -1},
+        {"circuit_breaker_threshold": 0},
+    ),
+)
+def test_runtime_configuration_rejects_invalid_resilience_settings(
+    configuration: dict[str, int],
+) -> None:
+    """Invalid resilience settings must fail before a provider is invoked."""
+    with pytest.raises(ValueError):
+        DecisionRuntimeConfig(**configuration)
+
+
+def test_recommendation_node_consumes_only_bundle_and_updates_owned_section() -> None:
+    """The graph node should project one agent decision without mutating state."""
+    state = state_factory().create()
+    agent = _DecisionAgent(_decision())
+
+    updated = asyncio.run(RecommendationNode(agent).execute(state))
+
+    assert agent.evidence is state.evidence_bundle
+    assert agent.execution_context.execution_id == state.runtime.execution_id
+    assert updated is not state
+    assert updated.weather is state.weather
+    assert updated.recommendation.recommendation == "Prepare local response."
+    assert updated.recommendation.recommended_actions == ("Notify response teams.",)
+    assert updated.recommendation.missing_evidence == ("shelter occupancy",)
+
+
+def test_evidence_bundle_to_agent_to_recommendation_evidence_flow() -> None:
+    """Structured provider output should reach graph recommendation evidence intact."""
+    state = state_factory().create()
+    agent = OpenAIDecisionProvider(
+        client=_Client(_Completions(_decision().model_dump_json())),
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+    )
+
+    updated = asyncio.run(RecommendationNode(agent).execute(state))
+
+    assert updated.recommendation.risk_level == "high"
+    assert updated.recommendation.recommendation == "Prepare local response."
+    assert updated.recommendation.citations == ("NDMA Plan:p4",)
+    assert updated.recommendation.supporting_evidence == ("gis",)

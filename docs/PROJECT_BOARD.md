@@ -874,3 +874,147 @@ Deliverables:
 - [x] GIS evidence aggregation
 - [x] Flood evidence tests
 - [x] Architecture refinement completed
+
+---
+
+# Sprint 10 – LangGraph Decision Agent
+
+Status: Completed
+
+Completed: 2026-07-27
+
+---
+
+## Sprint 10.1 – Graph Definition
+
+Status: Completed
+
+Deliverables:
+
+- [x] LangGraph foundation
+- [x] Graph runtime
+- [x] Graph builder
+- [x] Immutable graph state
+- [x] Dependency injection boundaries
+
+---
+
+## Sprint 10.2 – Evidence Infrastructure
+
+Status: Completed
+
+Deliverables:
+
+- [x] Weather Tool node
+- [x] Forecast Tool node
+- [x] GIS Tool node
+- [x] Village Tool node
+- [x] Shelter Tool node
+- [x] Dataset Catalog node
+- [x] Government Knowledge node
+
+---
+
+## Sprint 10.2.4 – Architecture Cleanup
+
+Status: Completed
+
+Deliverables:
+
+- [x] Dependency cleanup
+- [x] Graph composition cleanup
+- [x] Node standardisation
+- [x] Documentation updates
+
+---
+
+## Sprint 10.3 – Conditional Routing
+
+Status: Completed
+
+Deliverables:
+
+- [x] Forecast severity routing
+- [x] Graph branching
+- [x] Deterministic routing policies
+
+---
+
+## Sprint 10.4 – Evidence Aggregation
+
+Status: Completed
+
+Deliverables:
+
+- [x] Immutable evidence aggregation
+- [x] Provenance tracking
+- [x] Duplicate detection
+- [x] Conflict detection
+- [x] Execution trace integration
+
+---
+
+## Sprint 10.5 – LLM Decision Agent
+
+Status: Completed
+
+Deliverables:
+
+- [x] Decision contracts
+- [x] Prompt builder
+- [x] Response parser
+- [x] Provider abstraction
+- [x] OpenAI provider
+- [x] Recommendation mapper
+
+---
+
+## Sprint 10.5.1 – Architecture Refinement
+
+Status: Completed
+
+Deliverables:
+
+- [x] Provider boundary cleanup
+- [x] Prompt metadata
+- [x] Naming improvements
+- [x] Documentation improvements
+
+---
+
+## Sprint 10.6 – Failure Recovery
+
+Status: Completed
+
+Deliverables:
+
+- [x] Timeout handling
+- [x] Retry policy
+- [x] Circuit breaker
+- [x] Typed failures
+- [x] Health monitoring
+- [x] Deterministic fallback
+
+---
+
+## Sprint 10.7 – Observability & Production Hardening
+
+Status: Completed
+
+Deliverables:
+
+- [x] Correlation context
+- [x] Structured logging
+- [x] Timing utilities
+- [x] Metrics abstraction
+- [x] Version metadata
+- [x] Provider health reporting
+- [x] Production dataset bootstrap
+- [x] Startup dataset initialization
+- [x] Runtime validation
+- [x] Swagger verification
+- [x] OpenAPI verification
+
+---
+
+Ready for Sprint 11 – LLM Reasoning & Grounded Recommendation

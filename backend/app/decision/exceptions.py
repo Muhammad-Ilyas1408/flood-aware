@@ -1,0 +1,67 @@
+"""Domain failures for structured LLM decision generation."""
+
+from enum import Enum
+
+
+class DecisionError(Exception):
+    """Base exception for decision-agent failures."""
+
+
+class DecisionParsingError(DecisionError):
+    """Raised when a provider response is not valid structured JSON."""
+
+
+class LLMOutputValidationError(DecisionParsingError):
+    """Raised when structured JSON does not satisfy the decision contract."""
+
+
+class DecisionGenerationError(DecisionError):
+    """Raised when the LLM provider cannot generate a decision."""
+
+
+class DecisionFailureKind(str, Enum):
+    """Classify failures without exposing provider-specific exception details."""
+
+    PROVIDER_TIMEOUT = "provider_timeout"
+    PROVIDER_UNAVAILABLE = "provider_unavailable"
+    RATE_LIMITED = "rate_limited"
+    INVALID_RESPONSE = "invalid_response"
+    INVALID_JSON = "invalid_json"
+    SCHEMA_VALIDATION_FAILED = "schema_validation_failed"
+    UNKNOWN_FAILURE = "unknown_failure"
+
+
+class DecisionProviderError(DecisionGenerationError):
+    """Base class for translated provider failures with a stable classification."""
+
+    failure_kind: DecisionFailureKind
+
+
+class DecisionProviderTimeoutError(DecisionProviderError):
+    """Raised when a provider request exceeds its configured timeout."""
+
+    failure_kind = DecisionFailureKind.PROVIDER_TIMEOUT
+
+
+class DecisionProviderUnavailableError(DecisionProviderError):
+    """Raised when a transient provider outage prevents decision generation."""
+
+    failure_kind = DecisionFailureKind.PROVIDER_UNAVAILABLE
+
+
+class DecisionRateLimitedError(DecisionProviderError):
+    """Raised when the provider rejects a request because of rate limiting."""
+
+    failure_kind = DecisionFailureKind.RATE_LIMITED
+
+
+class DecisionCircuitOpenError(DecisionProviderError):
+    """Raised when the provider circuit is open during a recovery interval."""
+
+    failure_kind = DecisionFailureKind.PROVIDER_UNAVAILABLE
+
+
+class DecisionUnknownProviderError(DecisionProviderError):
+    """Raised for non-transient provider failures without leaking SDK details."""
+
+    failure_kind = DecisionFailureKind.UNKNOWN_FAILURE

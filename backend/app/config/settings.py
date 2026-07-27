@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     host: IPvAnyAddress = Field(default=IPv4Address("127.0.0.1"))
     port: int = Field(default=8000, ge=1, le=65535)
     log_level: LogLevel = LogLevel.INFO
+    flood_moderate_discharge: float = Field(default=250.0, ge=0)
+    flood_major_discharge: float = Field(default=500.0, ge=0)
+    flood_extreme_discharge: float = Field(default=1000.0, ge=0)
 
 
 @lru_cache(maxsize=1)

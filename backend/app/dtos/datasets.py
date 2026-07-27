@@ -11,7 +11,7 @@ class VillageDTO:
 
     name: str
     district: str
-    population: int
+    population: int | None
 
 
 @dataclass(frozen=True, slots=True)

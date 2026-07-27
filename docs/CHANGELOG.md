@@ -8,6 +8,169 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.0.0] - 2026-07-27
+
+---
+
+## Sprint 10 – LangGraph Decision Agent (2026-07-27)
+
+### Sprint 10.1 — Graph Definition
+
+#### Added
+
+- Added LangGraph foundation.
+- Added immutable graph state.
+- Added graph runtime.
+- Added graph builder.
+- Added graph container.
+- Added dependency injection boundaries.
+- Preserved the existing sequential runtime as the production default.
+
+---
+
+### Sprint 10.2 — Evidence Infrastructure
+
+#### Added
+
+- Added production Weather Tool node.
+- Added Forecast Tool node.
+- Added GIS Flood Analysis node.
+- Added Village Tool node.
+- Added Shelter Tool node.
+- Added Dataset Catalog node.
+- Added Government Knowledge Tool node.
+- Added immutable graph node interfaces.
+
+---
+
+### Sprint 10.2.4 — Architecture Cleanup
+
+#### Improved
+
+- Simplified graph composition.
+- Improved dependency boundaries.
+- Removed unnecessary coupling.
+- Standardised graph node interfaces.
+- Improved maintainability of graph execution.
+
+---
+
+### Sprint 10.3 — Conditional Routing
+
+#### Added
+
+- Added deterministic conditional routing.
+- Added forecast severity routing.
+- Added graph branching rules.
+- Added routing policies for evidence execution.
+
+---
+
+### Sprint 10.4 — Evidence Aggregation
+
+#### Added
+
+- Added immutable evidence aggregation.
+- Added evidence provenance.
+- Added duplicate detection.
+- Added evidence conflict handling.
+- Added execution trace support.
+- Added unified evidence container.
+
+---
+
+### Sprint 10.5 — LLM Decision & Recommendation Agent
+
+#### Added
+
+- Added structured LLM decision layer.
+- Added decision contracts.
+- Added prompt builder.
+- Added response parser.
+- Added provider abstraction.
+- Added OpenAI provider adapter.
+- Added recommendation mapping.
+
+---
+
+### Sprint 10.5.1 — LLM Architecture Refinement
+
+#### Improved
+
+- Improved provider dependency boundaries.
+- Improved prompt version metadata.
+- Improved naming consistency.
+- Improved documentation.
+- Simplified provider integration.
+
+---
+
+### Sprint 10.6 — Failure Recovery & Resilience
+
+#### Added
+
+- Added request timeout handling.
+- Added transient retry mechanism.
+- Added circuit breaker.
+- Added typed provider failures.
+- Added provider health monitoring.
+- Added deterministic fallback recommendations.
+
+---
+
+### Sprint 10.7 — Observability & Production Hardening
+
+#### Added
+
+- Added execution correlation context.
+- Added structured runtime logging.
+- Added timing utilities.
+- Added metrics abstraction.
+- Added runtime version metadata.
+- Added provider health reporting.
+- Added production dataset bootstrap configuration.
+- Added automatic startup dataset initialization.
+
+#### Improved
+
+- Improved runtime dependency injection.
+- Improved production dataset compatibility.
+- Improved nullable production dataset handling.
+- Preserved explicit runtime configuration for tests.
+
+---
+
+### Verified
+
+- LangGraph graph compilation verified.
+- Evidence pipeline verified.
+- Conditional routing verified.
+- Evidence aggregation verified.
+- LLM provider abstraction verified.
+- Failure recovery verified.
+- Observability verified.
+- Swagger UI verified.
+- OpenAPI specification verified.
+- Production dataset loading verified.
+- `/health` endpoint verified.
+- `/villages` endpoint verified.
+- `/shelters` endpoint verified.
+- `/datasets/catalog` endpoint verified.
+- Pytest suite passed (27 tests).
+
+---
+
+### Notes
+
+- Legacy sequential runtime remains the production default.
+- LangGraph runtime introduced without breaking existing runtime.
+- Deterministic evidence pipeline established.
+- Production-ready LLM decision boundary completed.
+- Sprint 10 completed.
+- Ready for Sprint 11 – LLM Reasoning & Grounded Recommendation
+
+---
+
 ## [0.9.6] - 2026-07-26
 
 ---

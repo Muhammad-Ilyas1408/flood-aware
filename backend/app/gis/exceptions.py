@@ -5,6 +5,10 @@ class GISException(Exception):
     """Base exception for GIS foundation failures."""
 
 
+class GISAnalysisError(GISException):
+    """Raised when the production GIS analysis orchestration cannot complete."""
+
+
 class CRSError(GISException):
     """Raised when a coordinate reference system is invalid or unsupported."""
 
