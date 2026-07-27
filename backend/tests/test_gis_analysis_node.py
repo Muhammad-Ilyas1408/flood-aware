@@ -16,10 +16,6 @@ from backend.app.forecast.models import (
     ForecastSeries,
 )
 from backend.app.graph.factory import GraphStateFactory
-from backend.app.graph.exceptions import (
-    MissingCoordinatesError,
-    MissingForecastResultError,
-)
 from backend.app.graph.mappers import FloodEvidenceMapper, GraphCoordinateMapper
 from backend.app.graph.nodes import GISAnalysisNode
 from backend.app.graph.state import Coordinate
@@ -197,29 +193,30 @@ def test_node_returns_new_state_without_mutating_unowned_sections() -> None:
     assert updated.user_request is state.user_request
 
 
-def test_node_rejects_missing_forecast_before_invoking_dependencies() -> None:
-    """GIS analysis must not run without the canonical forecast result."""
+def test_node_skips_missing_forecast_without_invoking_dependencies() -> None:
+    """GIS skips expected requests that lack the canonical forecast result."""
     node, classifier, spatial_policy, request_factory, domain_service, _ = _node()
     state = GraphStateFactory().create(
         coordinates=Coordinate(latitude=34.0151, longitude=71.5249)
     )
 
-    with pytest.raises(MissingForecastResultError, match="ForecastResult"):
-        asyncio.run(node.execute(state))
+    updated = asyncio.run(node.execute(state))
 
+    assert updated is state
     classifier.classify.assert_not_called()
     spatial_policy.analysis_bounds.assert_not_called()
     request_factory.build.assert_not_called()
     domain_service.execute.assert_not_called()
 
 
-def test_node_rejects_missing_coordinates_before_invoking_dependencies() -> None:
-    """GIS analysis must not run without a request location."""
+def test_node_skips_missing_coordinates_without_invoking_dependencies() -> None:
+    """GIS skips expected requests that lack a request location."""
     node, classifier, spatial_policy, request_factory, domain_service, _ = _node()
+    state = _state()
 
-    with pytest.raises(MissingCoordinatesError, match="coordinates"):
-        asyncio.run(node.execute(_state()))
+    updated = asyncio.run(node.execute(state))
 
+    assert updated is state
     classifier.classify.assert_not_called()
     spatial_policy.analysis_bounds.assert_not_called()
     request_factory.build.assert_not_called()
@@ -229,10 +226,10 @@ def test_node_rejects_missing_coordinates_before_invoking_dependencies() -> None
 @pytest.mark.parametrize(
     "dependency_name", ("classifier", "spatial", "factory", "service")
 )
-def test_dependency_failures_propagate_without_later_execution(
+def test_dependency_failures_become_recoverable_graph_errors(
     dependency_name: str,
 ) -> None:
-    """Dependency errors should remain visible and halt only this node call."""
+    """GIS dependency failures should become recoverable graph-state errors."""
     node, classifier, spatial_policy, request_factory, domain_service, _ = _node()
     failures = {
         "classifier": classifier.classify,
@@ -242,12 +239,17 @@ def test_dependency_failures_propagate_without_later_execution(
     }
     failures[dependency_name].side_effect = RuntimeError(dependency_name)
 
-    with pytest.raises(RuntimeError, match=dependency_name):
-        asyncio.run(
-            node.execute(
-                _state(coordinates=Coordinate(latitude=34.0151, longitude=71.5249))
-            )
+    updated = asyncio.run(
+        node.execute(
+            _state(coordinates=Coordinate(latitude=34.0151, longitude=71.5249))
         )
+    )
+
+    assert updated.gis == updated.gis.__class__()
+    assert updated.errors[-1].error_type == "RuntimeError"
+    assert updated.errors[-1].message == dependency_name
+    assert updated.errors[-1].recoverable is True
+    assert updated.errors[-1].source_node == "gis"
 
 
 def test_node_requires_all_constructor_dependencies() -> None:

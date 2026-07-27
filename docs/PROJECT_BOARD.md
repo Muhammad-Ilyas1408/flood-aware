@@ -1056,4 +1056,66 @@ Deliverables:
 
 ---
 
-Ready for Sprint 12 – Reliable Multi-Tool Agent Behavior
+## Sprint 12 – Reliable Multi-Tool Agent Behavior
+
+Status: Completed
+Completed: 2026-07-28
+
+---
+
+### Sprint 12.1 – Routing Audit & Baseline Verification
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Real-runtime routing test suite (5 query-intent scenarios)
+- [x] docs/routing-decision-table.md
+- [x] Verified: routing is severity-based, not query-intent-based
+- [x] Query-intent selection explicitly scoped out, documented as future work
+
+---
+
+### Sprint 12.2 – Graceful Tool-Failure Degradation
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Shared `_record_tool_failure` helper
+- [x] All 7 evidence nodes wrapped in failure-recovery path
+- [x] FAILED vs. SKIPPED trace distinction at point of execution
+- [x] Existing node-failure tests updated to assert recoverable-error behavior
+
+---
+
+### Sprint 12.3 – Precondition-Skip Handling
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Identity-based SKIPPED classification in GraphRuntime
+- [x] Weather/Forecast/GIS/Knowledge nodes skip gracefully on missing precondition
+- [x] Dormant-node COMPLETED mislabeling incidentally corrected
+- [x] Coordinate-less end-to-end graph run verified (no crash)
+- [x] Confirmed skip detection is identity-based, not value-equality-based
+
+---
+
+### Sprint 12.4 – Concurrency Verification
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Concurrent dual-request regression test
+- [x] Verified no shared-state leakage across concurrent graph executions
+
+---
+
+Ready for Sprint 13 – Multi-Turn Conversation & Follow-Up Questions

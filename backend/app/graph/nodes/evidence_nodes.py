@@ -16,12 +16,6 @@ from backend.app.gis.domain.models import PreparedFloodContext
 from backend.app.gis.domain.protocols import ForecastProvider
 from backend.app.gis.domain.service import GISDomainService
 from backend.app.gis.domain.spatial_policy_service import SpatialPolicyService
-from backend.app.graph.exceptions import (
-    MissingCoordinatesError,
-    MissingForecastResultError,
-    MissingKnowledgeContextError,
-    MissingWeatherCoordinatesError,
-)
 from backend.app.graph.mappers import (
     DatasetEvidenceMapper,
     DecisionFallbackMapper,
@@ -35,7 +29,7 @@ from backend.app.graph.mappers import (
     WeatherEvidenceMapper,
     WeatherRequestMapper,
 )
-from backend.app.graph.state import GraphState
+from backend.app.graph.state import ErrorInfo, GraphState
 from backend.app.observability.context import ExecutionContext
 from backend.app.observability.logging import log_event
 from backend.app.observability.metrics import DecisionMetricsCollector
@@ -57,16 +51,18 @@ class WeatherNode:
         """Retrieve weather and update only graph-owned weather evidence."""
         coordinates = state.user_request.coordinates
         if coordinates is None:
-            raise MissingWeatherCoordinatesError(
-                "Weather retrieval requires request coordinates."
+            _log_precondition_skip(state, "weather", "request coordinates are absent")
+            return state
+        try:
+            request = WeatherRequestMapper.to_domain(coordinates)
+            result = await asyncio.to_thread(
+                self._weather_tool.get_current_weather, request
             )
-        request = WeatherRequestMapper.to_domain(coordinates)
-        result = await asyncio.to_thread(
-            self._weather_tool.get_current_weather, request
-        )
-        return state.model_copy(
-            update={"weather": WeatherEvidenceMapper.to_graph(result)}
-        )
+            return state.model_copy(
+                update={"weather": WeatherEvidenceMapper.to_graph(result)}
+            )
+        except Exception as error:
+            return _record_tool_failure(state, "weather", error)
 
 
 class ForecastNode:
@@ -81,17 +77,20 @@ class ForecastNode:
         """Store the provider's canonical result without deriving new facts."""
         coordinates = state.user_request.coordinates
         if coordinates is None:
-            raise MissingCoordinatesError("Forecast retrieval requires coordinates.")
+            _log_precondition_skip(state, "forecast", "request coordinates are absent")
+            return state
 
-        forecast_result = await asyncio.to_thread(
-            self._forecast_provider.get_forecast,
-            coordinates.latitude,
-            coordinates.longitude,
-        )
-        if not isinstance(forecast_result, ForecastResult):
-            raise TypeError("Forecast provider must return a ForecastResult.")
-
-        return state.model_copy(update={"forecast_result": forecast_result})
+        try:
+            forecast_result = await asyncio.to_thread(
+                self._forecast_provider.get_forecast,
+                coordinates.latitude,
+                coordinates.longitude,
+            )
+            if not isinstance(forecast_result, ForecastResult):
+                raise TypeError("Forecast provider must return a ForecastResult.")
+            return state.model_copy(update={"forecast_result": forecast_result})
+        except Exception as error:
+            return _record_tool_failure(state, "forecast", error)
 
 
 class GISAnalysisNode:
@@ -115,26 +114,31 @@ class GISAnalysisNode:
         """Execute the GIS domain service from canonical graph facts."""
         forecast = state.forecast_result
         if forecast is None:
-            raise MissingForecastResultError(
-                "GIS analysis requires a canonical ForecastResult."
-            )
+            _log_precondition_skip(state, "gis", "canonical forecast is absent")
+            return state
         graph_coordinates = state.user_request.coordinates
         if graph_coordinates is None:
-            raise MissingCoordinatesError("GIS analysis requires request coordinates.")
+            _log_precondition_skip(state, "gis", "request coordinates are absent")
+            return state
 
-        coordinates = GraphCoordinateMapper.to_domain(graph_coordinates)
-        severity = self._classification_service.classify(forecast)
-        bounds = self._spatial_policy_service.analysis_bounds(coordinates)
-        request = self._gis_request_factory.build(
-            PreparedFloodContext(
-                forecast=forecast,
-                severity=severity,
-                bounds=bounds,
-                coordinates=coordinates,
+        try:
+            coordinates = GraphCoordinateMapper.to_domain(graph_coordinates)
+            severity = self._classification_service.classify(forecast)
+            bounds = self._spatial_policy_service.analysis_bounds(coordinates)
+            request = self._gis_request_factory.build(
+                PreparedFloodContext(
+                    forecast=forecast,
+                    severity=severity,
+                    bounds=bounds,
+                    coordinates=coordinates,
+                )
             )
-        )
-        evidence = await self._gis_domain_service.execute(request)
-        return state.model_copy(update={"gis": FloodEvidenceMapper.to_graph(evidence)})
+            evidence = await self._gis_domain_service.execute(request)
+            return state.model_copy(
+                update={"gis": FloodEvidenceMapper.to_graph(evidence)}
+            )
+        except Exception as error:
+            return _record_tool_failure(state, "gis", error)
 
 
 class DormantGISAnalysisNode:
@@ -162,11 +166,14 @@ class VillageNode:
 
     async def execute(self, state: GraphState) -> GraphState:
         """Retrieve villages and update only graph-owned village evidence."""
-        context = ToolContextMapper.to_domain(state)
-        result = await asyncio.to_thread(self._village_tool.execute, context)
-        return state.model_copy(
-            update={"villages": VillageEvidenceMapper.to_graph(result.data)}
-        )
+        try:
+            context = ToolContextMapper.to_domain(state)
+            result = await asyncio.to_thread(self._village_tool.execute, context)
+            return state.model_copy(
+                update={"villages": VillageEvidenceMapper.to_graph(result.data)}
+            )
+        except Exception as error:
+            return _record_tool_failure(state, "village", error)
 
 
 class ShelterNode:
@@ -178,11 +185,14 @@ class ShelterNode:
 
     async def execute(self, state: GraphState) -> GraphState:
         """Retrieve shelters and update only graph-owned shelter evidence."""
-        context = ToolContextMapper.to_domain(state)
-        result = await asyncio.to_thread(self._shelter_tool.execute, context)
-        return state.model_copy(
-            update={"shelters": ShelterEvidenceMapper.to_graph(result.data)}
-        )
+        try:
+            context = ToolContextMapper.to_domain(state)
+            result = await asyncio.to_thread(self._shelter_tool.execute, context)
+            return state.model_copy(
+                update={"shelters": ShelterEvidenceMapper.to_graph(result.data)}
+            )
+        except Exception as error:
+            return _record_tool_failure(state, "shelter", error)
 
 
 class DatasetCatalogNode:
@@ -194,11 +204,14 @@ class DatasetCatalogNode:
 
     async def execute(self, state: GraphState) -> GraphState:
         """Retrieve catalog metadata and update only dataset graph evidence."""
-        context = ToolContextMapper.to_domain(state)
-        result = await asyncio.to_thread(self._dataset_catalog_tool.execute, context)
-        return state.model_copy(
-            update={"datasets": DatasetEvidenceMapper.to_graph(result.data)}
-        )
+        try:
+            context = ToolContextMapper.to_domain(state)
+            result = await asyncio.to_thread(self._dataset_catalog_tool.execute, context)
+            return state.model_copy(
+                update={"datasets": DatasetEvidenceMapper.to_graph(result.data)}
+            )
+        except Exception as error:
+            return _record_tool_failure(state, "dataset", error)
 
 
 class GovernmentKnowledgeNode:
@@ -212,13 +225,55 @@ class GovernmentKnowledgeNode:
         """Retrieve grounded knowledge and update only knowledge evidence."""
         question = state.user_request.request_text
         if not question.strip():
-            raise MissingKnowledgeContextError(
-                "Government knowledge retrieval requires a user question."
+            _log_precondition_skip(state, "knowledge", "request text is absent")
+            return state
+        try:
+            answer = await asyncio.to_thread(self._knowledge_tool.answer, question)
+            return state.model_copy(
+                update={"knowledge": KnowledgeEvidenceMapper.to_graph(answer)}
             )
-        answer = await asyncio.to_thread(self._knowledge_tool.answer, question)
-        return state.model_copy(
-            update={"knowledge": KnowledgeEvidenceMapper.to_graph(answer)}
-        )
+        except Exception as error:
+            return _record_tool_failure(state, "knowledge", error)
+
+
+def _record_tool_failure(
+    state: GraphState, node_name: str, error: Exception
+) -> GraphState:
+    """Log one tool failure and retain a recoverable graph-state error."""
+    context = ExecutionContext.from_graph_state(state)
+    log_event(
+        _LOGGER,
+        logging.WARNING,
+        "graph_evidence_node_failed",
+        context,
+        node=node_name,
+        failure_type=type(error).__name__,
+    )
+    return state.model_copy(
+        update={
+            "errors": state.errors
+            + (
+                ErrorInfo(
+                    error_type=type(error).__name__,
+                    message=str(error),
+                    recoverable=True,
+                    source_node=node_name,
+                ),
+            )
+        }
+    )
+
+
+def _log_precondition_skip(state: GraphState, node_name: str, reason: str) -> None:
+    """Log one expected graph-node skip without recording a dependency error."""
+    log_event(
+        _LOGGER,
+        logging.INFO,
+        "graph_evidence_node_skipped",
+        ExecutionContext.from_graph_state(state),
+        node=node_name,
+        reason=reason,
+    )
 
 
 class RecommendationNode:

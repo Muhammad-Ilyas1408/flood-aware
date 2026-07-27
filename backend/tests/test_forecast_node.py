@@ -43,3 +43,14 @@ def test_forecast_node_requires_constructor_injection() -> None:
     """Forecast orchestration must not select or create a provider internally."""
     with pytest.raises(TypeError):
         ForecastNode()
+
+
+def test_forecast_node_skips_missing_coordinates_without_provider_execution() -> None:
+    """Forecast skips expected coordinate-less requests without calling its provider."""
+    provider = FakeForecastProvider(forecast_result())
+    state = state_factory().create()
+
+    updated = asyncio.run(ForecastNode(provider).execute(state))
+
+    assert updated is state
+    assert provider.calls == []

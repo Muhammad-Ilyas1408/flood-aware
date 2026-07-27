@@ -8,6 +8,85 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.2.0] - 2026-07-28
+
+---
+
+## Sprint 12 – Reliable Multi-Tool Agent Behavior (2026-07-28)
+
+### Sprint 12.1 — Routing Audit & Baseline Verification
+
+#### Added
+
+- Added `backend/tests/graph/test_tool_invocation_routing.py`, exercising the real `GraphRuntime` and `FloodSeverityRoutingPolicy` (not mocked) against five representative query-intent scenarios.
+- Added `docs/routing-decision-table.md`, documenting verified current routing behavior for FYP System Design reference.
+
+#### Verified
+
+- Confirmed current routing is deterministic and severity-based, computed after forecast/GIS evidence collection — not query-intent-based.
+- Confirmed `UserRequest`'s text and location fields are not consulted by `FloodSeverityRoutingPolicy`; forecast-only, GIS-impact, shelter, and policy-question queries with identical severity follow identical tool paths today.
+- Documented this explicitly as current, tested baseline behavior; query-intent-based tool selection identified and recorded as a scoped future design decision (TODO marker in test suite), not undertaken this sprint.
+
+---
+
+### Sprint 12.2 — Graceful Tool-Failure Degradation
+
+#### Added
+
+- Added `_record_tool_failure`, a shared helper wrapping genuine evidence-tool dependency failures into a recoverable, immutable `ErrorInfo` appended to graph state, with structured WARNING-level logging.
+- Wrapped all seven evidence node tool calls (`Weather`, `Forecast`, `GIS`, `Village`, `Shelter`, `DatasetCatalog`, `GovernmentKnowledge`) in this shared failure-recovery path.
+
+#### Improved
+
+- `GraphRuntime`'s trace-recording now distinguishes `FAILED` (genuine dependency error, `ErrorInfo` recorded) from `SKIPPED` (node did not run) at the point of execution, rather than only inferring skips at trace finalization.
+
+#### Verified
+
+- A single failing evidence tool no longer aborts the graph; other evidence sections, aggregation, and the recommendation step complete normally around the failure.
+- Full existing test suite (232 tests at this point) passes with all direct node-failure tests updated to assert recoverable-error behavior instead of propagated exceptions.
+
+---
+
+### Sprint 12.3 — Precondition-Skip Handling
+
+#### Added
+
+- Extended `GraphRuntime`'s trace wrapper to classify any node returning its input state unchanged (identity-based, via `model_copy`-free passthrough) as `NodeStatus.SKIPPED`, reusing the same status semantics already used for severity-based routing skips rather than introducing a parallel mechanism.
+- `WeatherNode`, `ForecastNode`, `GISAnalysisNode`, and `GovernmentKnowledgeNode` now return unchanged state (with an INFO-level `graph_evidence_node_skipped` log event) instead of raising an uncaught exception when a required precondition (coordinates, request text) is absent.
+
+#### Fixed
+
+- Corrected an incidental pre-existing mislabeling: `Dormant*` placeholder nodes were previously recorded as `COMPLETED`; they now correctly show as `SKIPPED`, since they always return state unchanged by design.
+
+#### Verified
+
+- A real graph run for a coordinate-less policy/knowledge-only query completes end-to-end without crashing; weather, forecast, and GIS correctly marked `SKIPPED` (not `FAILED`); knowledge, dataset, and recommendation complete normally.
+- Confirmed the skip-detection mechanism is identity-based (`result is state`), not value-equality-based, so a genuine successful tool call that legitimately returns an empty result cannot be misclassified as skipped.
+
+---
+
+### Sprint 12.4 — Concurrency Verification
+
+#### Added
+
+- Added a concurrent-execution regression test running two distinct real graph states through one shared `GraphRuntime` instance via `asyncio.gather`.
+
+#### Verified
+
+- Confirmed no shared-state leakage between concurrent requests; each result's evidence corresponds correctly to its own input, consistent with `GraphState`'s frozen/immutable design.
+
+### Notes
+
+- No changes to GIS, Forecast, Weather, or RAG subsystem internals — only their graph-node boundaries.
+- No changes to `prompt_builder.py`, `parser.py`, or any Sprint 11 grounding/reasoning file.
+- Query-intent-based tool selection remains explicitly out of scope, documented as a future design decision.
+- No dashboard, chat, or deployment work — out of scope for this sprint.
+- Full test suite (234 tests) passes.
+- Sprint 12 completed.
+- Ready for Sprint 13 – Multi-Turn Conversation & Follow-Up Questions.
+
+---
+
 ## [1.1.0] - 2026-07-28
 
 ---

@@ -36,8 +36,8 @@ def test_graph_runtime_executes_without_legacy_runtime_integration() -> None:
     assert isinstance(state, GraphState)
 
 
-def test_graph_runtime_records_completed_and_skipped_steps() -> None:
-    """Runtime-owned trace should expose deterministic routed execution facts."""
+def test_graph_runtime_records_skipped_noop_and_routed_steps() -> None:
+    """Runtime-owned trace should classify unchanged node results as skipped."""
     timestamp = state_factory().create().runtime.started_at
     state = asyncio.run(
         GraphRuntime(
@@ -46,22 +46,25 @@ def test_graph_runtime_records_completed_and_skipped_steps() -> None:
         ).execute(state_factory().create())
     )
 
-    assert state.runtime.completed_nodes == (
+    assert state.runtime.completed_nodes == ()
+    assert state.runtime.skipped_nodes == (
         "weather",
         "forecast",
+        "gis",
+        "village",
+        "shelter",
         "knowledge",
         "dataset",
-        "aggregate",
         "recommendation",
+        "aggregate",
     )
-    assert state.runtime.skipped_nodes == ("gis", "village", "shelter")
     assert [trace.status for trace in state.execution_trace] == [
-        NodeStatus.COMPLETED,
-        NodeStatus.COMPLETED,
-        NodeStatus.COMPLETED,
-        NodeStatus.COMPLETED,
-        NodeStatus.COMPLETED,
-        NodeStatus.COMPLETED,
+        NodeStatus.SKIPPED,
+        NodeStatus.SKIPPED,
+        NodeStatus.SKIPPED,
+        NodeStatus.SKIPPED,
+        NodeStatus.SKIPPED,
+        NodeStatus.SKIPPED,
         NodeStatus.SKIPPED,
         NodeStatus.SKIPPED,
         NodeStatus.SKIPPED,

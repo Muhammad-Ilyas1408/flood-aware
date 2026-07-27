@@ -17,10 +17,6 @@ from backend.app.dtos.datasets import (
     VillageDTO,
     VillageListDTO,
 )
-from backend.app.graph.exceptions import (
-    MissingKnowledgeContextError,
-    MissingWeatherCoordinatesError,
-)
 from backend.app.graph.factory import GraphStateFactory
 from backend.app.graph.mappers import (
     DatasetEvidenceMapper,
@@ -93,13 +89,14 @@ def test_weather_node_uses_mappers_and_updates_only_weather() -> None:
     assert updated is not state
 
 
-def test_weather_node_rejects_missing_coordinates_without_tool_execution() -> None:
-    """Weather input failures must be deterministic graph-node exceptions."""
+def test_weather_node_skips_missing_coordinates_without_tool_execution() -> None:
+    """Weather skips expected coordinate-less requests without invoking its tool."""
     weather_tool = Mock(spec=WeatherTool)
+    state = _state()
 
-    with pytest.raises(MissingWeatherCoordinatesError):
-        asyncio.run(WeatherNode(weather_tool).execute(_state()))
+    updated = asyncio.run(WeatherNode(weather_tool).execute(state))
 
+    assert updated is state
     weather_tool.get_current_weather.assert_not_called()
 
 
@@ -216,15 +213,14 @@ def test_knowledge_node_maps_grounded_citations_only() -> None:
     assert updated.datasets is state.datasets
 
 
-def test_knowledge_node_rejects_missing_question_without_tool_execution() -> None:
-    """Knowledge retrieval requires a concrete user question."""
+def test_knowledge_node_skips_missing_question_without_tool_execution() -> None:
+    """Knowledge skips an empty question without invoking its tool."""
     knowledge_tool = Mock(spec=KnowledgeTool)
+    state = _state(question=" ")
 
-    with pytest.raises(MissingKnowledgeContextError):
-        asyncio.run(
-            GovernmentKnowledgeNode(knowledge_tool).execute(_state(question=" "))
-        )
+    updated = asyncio.run(GovernmentKnowledgeNode(knowledge_tool).execute(state))
 
+    assert updated is state
     knowledge_tool.answer.assert_not_called()
 
 
@@ -245,24 +241,29 @@ def test_production_nodes_require_constructor_injection(node: type) -> None:
 
 
 @pytest.mark.parametrize(
-    "node,tool,method",
+    "node,tool,method,node_name",
     (
-        (WeatherNode, WeatherTool, "get_current_weather"),
-        (VillageNode, VillageTool, "execute"),
-        (ShelterNode, ShelterTool, "execute"),
-        (DatasetCatalogNode, DatasetCatalogTool, "execute"),
-        (GovernmentKnowledgeNode, KnowledgeTool, "answer"),
+        (WeatherNode, WeatherTool, "get_current_weather", "weather"),
+        (VillageNode, VillageTool, "execute", "village"),
+        (ShelterNode, ShelterTool, "execute", "shelter"),
+        (DatasetCatalogNode, DatasetCatalogTool, "execute", "dataset"),
+        (GovernmentKnowledgeNode, KnowledgeTool, "answer", "knowledge"),
     ),
 )
-def test_node_dependency_failures_propagate(
+def test_node_dependency_failures_become_recoverable_graph_errors(
     node: type,
     tool: type,
     method: str,
+    node_name: str,
 ) -> None:
-    """Production dependency failures must not be swallowed by graph adapters."""
+    """Production dependency failures must become recoverable graph errors."""
     dependency = Mock(spec=tool)
     getattr(dependency, method).side_effect = LookupError("dependency failure")
     state = _state(coordinates=Coordinate(latitude=34.0151, longitude=71.5249))
 
-    with pytest.raises(LookupError, match="dependency failure"):
-        asyncio.run(node(dependency).execute(state))
+    updated = asyncio.run(node(dependency).execute(state))
+
+    assert updated.errors[-1].error_type == "LookupError"
+    assert updated.errors[-1].message == "dependency failure"
+    assert updated.errors[-1].recoverable is True
+    assert updated.errors[-1].source_node == node_name

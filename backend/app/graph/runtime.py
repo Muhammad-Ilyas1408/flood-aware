@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 import logging
 
 from backend.app.graph.graph import GraphBuilder, GraphStep
-from backend.app.graph.state import ExecutionTrace, GraphState, NodeStatus
+from backend.app.graph.state import ErrorInfo, ExecutionTrace, GraphState, NodeStatus
 from backend.app.core.logger import get_logger
 from backend.app.observability.context import ExecutionContext
 from backend.app.observability.logging import log_event
@@ -64,10 +64,10 @@ class GraphRuntime:
         return result
 
     def _trace_step(self, node_name: str, step: GraphStep) -> GraphStep:
-        """Wrap one graph callback with completed-step trace recording."""
+        """Wrap one graph callback with immutable execution-trace recording."""
 
         async def traced(state: GraphState) -> GraphState:
-            """Execute one step and append an immutable completed trace record."""
+            """Execute one step and append completed, skipped, or failure trace data."""
             started_at = self._clock()
             context = ExecutionContext.from_graph_state(state)
             timer = OperationTimer.start()
@@ -92,14 +92,27 @@ class GraphRuntime:
                 )
                 raise
             finished_at = self._clock()
+            node_error = _node_error(state, result, node_name)
+            skipped = result is state
             trace = ExecutionTrace(
                 node_name=node_name,
                 started_at=started_at,
                 finished_at=finished_at,
                 duration_ms=(finished_at - started_at).total_seconds() * 1_000,
-                status=NodeStatus.COMPLETED,
+                status=(
+                    NodeStatus.FAILED
+                    if node_error is not None
+                    else NodeStatus.SKIPPED if skipped else NodeStatus.COMPLETED
+                ),
                 retries=0,
-                skipped=False,
+                skipped=skipped,
+                error=(
+                    node_error.message
+                    if node_error is not None
+                    else "Node precondition was unavailable; execution was skipped."
+                    if skipped
+                    else None
+                ),
             )
             log_event(
                 _LOGGER,
@@ -122,7 +135,17 @@ class GraphRuntime:
             for trace in state.execution_trace
             if trace.status is NodeStatus.COMPLETED
         )
-        skipped = tuple(name for name in self._step_names if name not in completed)
+        failed = {
+            trace.node_name
+            for trace in state.execution_trace
+            if trace.status is NodeStatus.FAILED
+        }
+        recorded = {trace.node_name for trace in state.execution_trace}
+        skipped = tuple(
+            name
+            for name in self._step_names
+            if name not in completed and name not in failed
+        )
         finished_at = self._clock()
         skipped_traces = tuple(
             ExecutionTrace(
@@ -135,6 +158,7 @@ class GraphRuntime:
                 skipped=True,
             )
             for name in skipped
+            if name not in recorded
         )
         runtime = state.runtime.model_copy(
             update={
@@ -156,3 +180,14 @@ class GraphRuntime:
         if isinstance(output, GraphState):
             return output
         return GraphState.model_validate(output)
+
+
+def _node_error(
+    previous: GraphState, current: GraphState, node_name: str
+) -> ErrorInfo | None:
+    """Return the recoverable error recorded by the current node, if any."""
+    new_errors = current.errors[len(previous.errors) :]
+    return next(
+        (error for error in reversed(new_errors) if error.source_node == node_name),
+        None,
+    )
