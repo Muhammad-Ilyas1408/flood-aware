@@ -8,6 +8,79 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.1.0] - 2026-07-28
+
+---
+
+## Sprint 11 – LLM Reasoning & Grounded Recommendation (2026-07-28)
+
+### Sprint 11.1 — Grounded Prompt & Citation Enforcement
+
+#### Added
+
+- Added `EvidenceReferenceIndex`, computing the closed vocabulary of valid citation strings from an `EvidenceBundle` (provenance-level, knowledge citations, dataset provenance, named villages/shelters).
+- Rebuilt `PromptBuilder` system instructions to enforce: exact-match citation vocabulary, non-empty grounding when evidence exists, explicit conflict-handling with confidence downgrade, explicit naming of entirely-absent evidence categories in `missing_evidence`, single-source confidence capping, and preference for named entities over generic tool-level references.
+- Added `DecisionGroundingError`, validated in `DecisionParser` against `EvidenceReferenceIndex`, rejecting decisions that cite evidence absent from the bundle.
+- Added a strict-schema transform (`_to_strict_openai_schema`) in the OpenAI provider adapter, recursively enforcing `additionalProperties: false` and complete `required` arrays across `Decision`'s nested schema, resolving an OpenAI strict-structured-output rejection.
+- Registered `DecisionGroundingError` as a retryable/transient failure, reusing the existing retry/backoff budget rather than a new fallback path.
+
+#### Improved
+
+- Clarified prompt instructions so evidence categories listed as "entirely absent" are never mistaken for citable references, preventing false-positive grounding rejections.
+
+---
+
+### Sprint 11.2 — Golden-Set Evaluation
+
+#### Added
+
+- Added `backend/tests/golden/`, a real (non-mocked) OpenAI evaluation suite of 12 hand-crafted evidence scenarios: severe forecast+GIS, calm baseline, conflicting severity, empty bundle, shelter recommendation, knowledge-only, extreme exposure, weather-only, multiple villages, capacity shortfall, duplicate evidence, and a full multi-section bundle.
+- Added `build_openai_decision_provider()` production factory (`backend/app/decision/dependencies.py`), constructing a live `OpenAIDecisionProvider` from application settings.
+- Added `backend/app/decision/settings.py` for decision-provider configuration.
+- Added a shared `_all_references()` test helper, consolidating citation/evidence-reference aggregation across golden-set tests to eliminate inconsistent partial-field checks.
+- Gated the golden-set suite behind `RUN_GOLDEN_SET=1` to avoid unintended API cost during normal test runs.
+
+#### Improved
+
+- Replaced brittle exact-substring and literal-keyword test assertions with structural, grounding-aware, and keyword-tolerant checks, addressing false failures caused by legitimate LLM wording variance under `temperature=0`.
+
+#### Verified
+
+- All 12 golden-set scenarios pass consistently across repeated runs against the live OpenAI API.
+- Grounding validation correctly rejects citations not present in the evidence bundle and correctly accepts valid entity-level, tool-level, and document-level citations.
+- Confidence is correctly downgraded in the presence of detected evidence conflicts.
+- Absent evidence categories are correctly surfaced in `missing_evidence` rather than fabricated.
+
+---
+
+### Sprint 11.3 — Fallback Regression & Housekeeping
+
+#### Added
+
+- Added `test_provider_raises_after_persistent_rate_limit`, confirming `OpenAIDecisionProvider` exhausts its retry budget and raises correctly under persistent transient failure.
+- Added `test_recommendation_node_maps_decision_error_to_fallback`, confirming `RecommendationNode` maps any `DecisionError` to `DecisionFallbackMapper.unavailable()`.
+
+#### Changed
+
+- Renamed `backend/app/graph/nodes/skeletons.py` to `backend/app/graph/nodes/evidence_nodes.py` to accurately reflect its contents (fully-implemented production node classes, not stubs), matching existing descriptive module-naming conventions in `graph/`. No behavioral change; import updated at the package boundary (`graph/nodes/__init__.py`) only.
+
+#### Verified
+
+- Full existing test suite (225 tests) passes unchanged after the rename and all Sprint 11 additions.
+- Reasoning-trace content (`Decision.reasons`) confirmed present and grounded in returned decisions; confirmed intentionally excluded from structured logs, consistent with this project's existing safe-logging discipline (no prompts, evidence, or full model output in logs).
+- Manual qualitative review of real LLM output across three representative scenarios (severe forecast+GIS, shelter recommendation, conflicting evidence) confirmed coherent, non-generic, evidence-specific reasoning and recommendations.
+
+### Notes
+
+- No changes to GIS, Forecast, Weather, or RAG subsystems.
+- No changes to graph routing, evidence aggregation, or dataset/service layers.
+- No dashboard, chat, or deployment work — out of scope for this sprint.
+- LLM decision boundary is now grounded, citation-validated, conflict-aware, and regression-tested against both mocked failure modes and live API behavior.
+- Sprint 11 completed.
+- Ready for Sprint 12 – Reliable Multi-Tool Agent Behavior.
+
+---
+
 ## [1.0.0] - 2026-07-27
 
 ---
@@ -153,10 +226,9 @@ All notable changes to this project will be documented in this file.
 - OpenAPI specification verified.
 - Production dataset loading verified.
 - `/health` endpoint verified.
-- `/villages` endpoint verified.
 - `/shelters` endpoint verified.
 - `/datasets/catalog` endpoint verified.
-- Pytest suite passed (27 tests).
+- Dataset service suite passed (27 tests).
 
 ---
 
@@ -289,7 +361,7 @@ All notable changes to this project will be documented in this file.
 - No FastAPI changes.
 - No Agent orchestration changes.
 - Forecast Tool completed.
-- Sprint 9.6 frozen.
+- Sprint 9.5 frozen.
 - Ready for Sprint 9.6 – GIS Flood Analysis Tool.
 
 ---
@@ -298,7 +370,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## Sprint 9.4 – Weather Tool (2026-07-25)
+## Sprint 9.4 – Weather Tool (2026-07-24)
 
 ### Added
 - Introduced isolated Weather Tool package.

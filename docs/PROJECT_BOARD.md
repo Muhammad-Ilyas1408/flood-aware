@@ -576,20 +576,6 @@ Deliverables:
 
 ---
 
-### Sprint 9.2 – Runtime AI Tools
-
-Status: Not Started
-
-Deliverables:
-
-- [ ] Weather Tool
-- [ ] RAG Tool
-- [ ] Routing Tool
-- [ ] Runtime Tool Registration
-- [ ] Runtime Tool Tests
-
----
-
 # Sprint 9.2 – Runtime Tool Integration
 
 Status: Completed
@@ -722,7 +708,7 @@ Completed
 
 ---
 
-## Sprint 9.6 – GloFAS Forecast Tool
+## Sprint 9.5 – GloFAS Forecast Tool
 
 Status: Completed
 
@@ -730,7 +716,7 @@ Completed: 2026-07-25
 
 ---
 
-### Sprint 9.6.0 – Forecast Tool Foundation
+### Sprint 9.5.0 – Forecast Tool Foundation
 
 Status: Completed
 
@@ -1017,4 +1003,57 @@ Deliverables:
 
 ---
 
-Ready for Sprint 11 – LLM Reasoning & Grounded Recommendation
+## Sprint 11 – LLM Reasoning & Grounded Recommendation
+
+Status: Completed
+Completed: 2026-07-28
+
+---
+
+### Sprint 11.1 – Grounded Prompt & Citation Enforcement
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] EvidenceReferenceIndex (closed citation vocabulary)
+- [x] Rebuilt grounded, citation-aware, conflict-aware prompt instructions
+- [x] DecisionGroundingError + parser-level grounding validation
+- [x] Strict OpenAI structured-output schema transform
+- [x] Grounding failures integrated into existing retry budget
+
+---
+
+### Sprint 11.2 – Golden-Set Evaluation
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] 12-scenario real-API golden-set suite
+- [x] Production decision-provider composition factory
+- [x] Shared reference-aggregation test helper
+- [x] RUN_GOLDEN_SET-gated execution (no incidental API cost)
+- [x] 12/12 scenarios passing, confirmed across repeated runs
+
+---
+
+### Sprint 11.3 – Fallback Regression & Housekeeping
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Persistent-failure retry-exhaustion regression test
+- [x] RecommendationNode fallback-mapping regression test
+- [x] evidence_nodes.py rename (was skeletons.py) — naming accuracy only, no behavior change
+- [x] Full suite (225 tests) verified passing post-rename
+- [x] Logging-discipline review (reasoning trace intentionally excluded from logs)
+- [x] Manual qualitative review of real LLM output
+
+---
+
+Ready for Sprint 12 – Reliable Multi-Tool Agent Behavior

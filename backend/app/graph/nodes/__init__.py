@@ -1,6 +1,6 @@
 """Empty node skeletons for the LangGraph foundation."""
 
-from backend.app.graph.nodes.skeletons import (
+from backend.app.graph.nodes.evidence_nodes import (
     DatasetCatalogNode,
     DormantGraphNode,
     DormantGISAnalysisNode,

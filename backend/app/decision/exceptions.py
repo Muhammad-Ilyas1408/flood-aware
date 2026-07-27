@@ -65,3 +65,7 @@ class DecisionUnknownProviderError(DecisionProviderError):
     """Raised for non-transient provider failures without leaking SDK details."""
 
     failure_kind = DecisionFailureKind.UNKNOWN_FAILURE
+
+
+class DecisionGroundingError(DecisionGenerationError, LLMOutputValidationError):
+    """Raised when a decision's citations are not grounded in its evidence."""

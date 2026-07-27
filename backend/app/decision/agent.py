@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Sequence
 import asyncio
+from copy import deepcopy
 import logging
 from random import random
 from typing import Callable, Protocol
@@ -11,6 +12,7 @@ from backend.app.decision.exceptions import (
     DecisionCircuitOpenError,
     DecisionError,
     DecisionGenerationError,
+    DecisionGroundingError,
     DecisionParsingError,
     DecisionProviderTimeoutError,
     DecisionProviderUnavailableError,
@@ -165,7 +167,7 @@ class OpenAIDecisionProvider:
                     timeout=self._runtime_config.timeout_seconds,
                 )
                 parser_timer = OperationTimer.start()
-                decision = self._parser.parse(_completion_content(response))
+                decision = self._parser.parse(_completion_content(response), evidence)
                 log_event(
                     _LOGGER,
                     logging.INFO,
@@ -181,6 +183,8 @@ class OpenAIDecisionProvider:
                     "Decision provider request timed out."
                 )
                 failure.__cause__ = error
+            except DecisionGroundingError as error:
+                failure = error
             except (DecisionParsingError, LLMOutputValidationError) as failure:
                 self._log_failure(
                     timer,
@@ -263,7 +267,7 @@ class OpenAIDecisionProvider:
                 "json_schema": {
                     "name": "flood_aware_decision",
                     "strict": True,
-                    "schema": Decision.model_json_schema(),
+                    "schema": _to_strict_openai_schema(Decision.model_json_schema()),
                 },
             },
         )
@@ -338,6 +342,26 @@ def _completion_content(response: _CompletionProtocol) -> str:
     return content
 
 
+def _to_strict_openai_schema(schema: dict[str, object]) -> dict[str, object]:
+    """Return a copied schema compatible with OpenAI strict structured output."""
+    normalized = deepcopy(schema)
+
+    def normalize(value: object) -> None:
+        if isinstance(value, dict):
+            properties = value.get("properties")
+            if isinstance(properties, dict):
+                value.setdefault("additionalProperties", False)
+                value["required"] = list(properties)
+            for child in value.values():
+                normalize(child)
+        elif isinstance(value, list):
+            for child in value:
+                normalize(child)
+
+    normalize(normalized)
+    return normalized
+
+
 def _total_tokens(response: _CompletionProtocol) -> int | None:
     """Return optional provider token usage for observability only."""
     usage = response.usage
@@ -352,6 +376,7 @@ def _is_transient(error: DecisionGenerationError) -> bool:
             DecisionProviderTimeoutError,
             DecisionProviderUnavailableError,
             DecisionRateLimitedError,
+            DecisionGroundingError,
         ),
     )
 

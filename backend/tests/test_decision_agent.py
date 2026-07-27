@@ -12,6 +12,7 @@ from backend.app.decision.exceptions import (
     DecisionGenerationError,
     DecisionParsingError,
     DecisionProviderTimeoutError,
+    DecisionRateLimitedError,
     LLMOutputValidationError,
 )
 from backend.app.decision.models import (
@@ -24,7 +25,11 @@ from backend.app.decision.models import (
     RiskAssessment,
     RiskLevel,
 )
-from backend.app.decision.agent import OpenAIDecisionAgent, OpenAIDecisionProvider
+from backend.app.decision.agent import (
+    OpenAIDecisionAgent,
+    OpenAIDecisionProvider,
+    _to_strict_openai_schema,
+)
 from backend.app.decision.parser import DecisionParser
 from backend.app.decision.prompt_builder import PromptBuilder
 from backend.app.decision.resilience import (
@@ -32,6 +37,13 @@ from backend.app.decision.resilience import (
     DecisionRuntimeConfig,
 )
 from backend.app.graph.nodes import RecommendationNode
+from backend.app.graph.mappers import DecisionFallbackMapper
+from backend.app.graph.state import (
+    EvidenceBundle,
+    EvidenceProvenance,
+    GISEvidence,
+    KnowledgeEvidence,
+)
 from backend.tests.graph_test_support import state_factory
 
 
@@ -109,6 +121,18 @@ class _DecisionAgent:
         return self.decision
 
 
+@pytest.fixture
+def parser_evidence() -> EvidenceBundle:
+    """Provide citable evidence for parser schema-validation tests."""
+    return EvidenceBundle(
+        gis=GISEvidence(flood_zone="test-flood-zone"),
+        knowledge=KnowledgeEvidence(citations=("NDMA Plan:p4",)),
+        provenance=(
+            EvidenceProvenance(evidence_type="gis", tool_name="GISAnalysisTool"),
+        ),
+    )
+
+
 def test_decision_contract_is_frozen_and_rejects_unknown_fields() -> None:
     """Canonical decisions must remain strict immutable Pydantic contracts."""
     decision = _decision()
@@ -119,18 +143,34 @@ def test_decision_contract_is_frozen_and_rejects_unknown_fields() -> None:
         Decision.model_validate({**decision.model_dump(), "unexpected": True})
 
 
-def test_parser_validates_structured_decision_json() -> None:
+def test_strict_openai_schema_requires_all_object_properties() -> None:
+    """OpenAI strict schemas must require every declared object property."""
+    strict_schema = _to_strict_openai_schema(Decision.model_json_schema())
+    object_schemas = (strict_schema, *strict_schema["$defs"].values())
+
+    for schema in object_schemas:
+        if "properties" not in schema:
+            continue
+        assert schema["additionalProperties"] is False
+        assert set(schema["required"]) == set(schema["properties"])
+
+
+def test_parser_validates_structured_decision_json(
+    parser_evidence: EvidenceBundle,
+) -> None:
     """Parser should return the canonical decision for valid JSON only."""
-    parsed = DecisionParser().parse(_decision().model_dump_json())
+    parsed = DecisionParser().parse(_decision().model_dump_json(), parser_evidence)
 
     assert parsed == _decision()
 
 
 @pytest.mark.parametrize("response", ("not-json", "[]", '{"confidence":"high"}'))
-def test_parser_rejects_malformed_or_invalid_decisions(response: str) -> None:
+def test_parser_rejects_malformed_or_invalid_decisions(
+    response: str, parser_evidence: EvidenceBundle
+) -> None:
     """Malformed JSON and schema failures must be domain-specific failures."""
     with pytest.raises((DecisionParsingError, LLMOutputValidationError)):
-        DecisionParser().parse(response)
+        DecisionParser().parse(response, parser_evidence)
 
 
 def test_prompt_builder_is_deterministic_and_contains_only_bundle_and_schema() -> None:
@@ -152,7 +192,9 @@ def test_openai_agent_name_remains_a_compatible_provider_alias() -> None:
     assert OpenAIDecisionAgent is OpenAIDecisionProvider
 
 
-def test_openai_agent_parses_mocked_schema_constrained_output(caplog) -> None:
+def test_openai_agent_parses_mocked_schema_constrained_output(
+    caplog, parser_evidence: EvidenceBundle
+) -> None:
     """The provider adapter should return a parser-validated decision."""
     completions = _Completions(_decision().model_dump_json())
     caplog.set_level("INFO", logger="backend.app.decision.agent")
@@ -163,7 +205,7 @@ def test_openai_agent_parses_mocked_schema_constrained_output(caplog) -> None:
         model="gpt-4.1-mini",
     )
 
-    decision = asyncio.run(agent.decide(state_factory().create().evidence_bundle))
+    decision = asyncio.run(agent.decide(parser_evidence))
 
     assert decision == _decision()
     request = completions.requests[0]
@@ -173,7 +215,7 @@ def test_openai_agent_parses_mocked_schema_constrained_output(caplog) -> None:
         "json_schema": {
             "name": "flood_aware_decision",
             "strict": True,
-            "schema": Decision.model_json_schema(),
+                "schema": _to_strict_openai_schema(Decision.model_json_schema()),
         },
     }
     completion_log = next(
@@ -209,7 +251,9 @@ def test_openai_agent_translates_provider_and_parser_failures() -> None:
         asyncio.run(malformed_agent.decide(evidence))
 
 
-def test_provider_retries_transient_failure_then_returns_decision() -> None:
+def test_provider_retries_transient_failure_then_returns_decision(
+    parser_evidence: EvidenceBundle,
+) -> None:
     """A transient transport failure should retry without changing valid output."""
     completions = _Completions(_decision().model_dump_json())
     successful_create = completions.create
@@ -234,9 +278,36 @@ def test_provider_retries_transient_failure_then_returns_decision() -> None:
     )
 
     assert (
-        asyncio.run(provider.decide(state_factory().create().evidence_bundle))
+        asyncio.run(provider.decide(parser_evidence))
         == _decision()
     )
+    assert calls == 2
+
+
+def test_provider_raises_after_persistent_rate_limit(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """A persistent rate limit should fail after the configured retry budget."""
+    calls = 0
+
+    async def rate_limited(**kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        raise _RateLimitedProviderError()
+
+    client = _Client(_Completions(_decision().model_dump_json()))
+    client.chat.completions.create = rate_limited
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=DecisionRuntimeConfig(retry_count=1, jitter_seconds=0),
+        sleep=lambda _: asyncio.sleep(0),
+    )
+
+    with pytest.raises(DecisionRateLimitedError):
+        asyncio.run(provider.decide(parser_evidence))
     assert calls == 2
 
 
@@ -269,7 +340,9 @@ def test_provider_translates_timeout_and_recommendation_node_falls_back() -> Non
     assert updated.recommendation.confidence == 0
 
 
-def test_provider_opens_circuit_after_retry_exhaustion_and_recovers() -> None:
+def test_provider_opens_circuit_after_retry_exhaustion_and_recovers(
+    parser_evidence: EvidenceBundle,
+) -> None:
     """Circuit opens after final transient failures and permits a recovery probe."""
     current_time = [0.0]
     config = DecisionRuntimeConfig(
@@ -293,7 +366,7 @@ def test_provider_opens_circuit_after_retry_exhaustion_and_recovers() -> None:
         runtime_config=config,
         circuit_breaker=breaker,
     )
-    evidence = state_factory().create().evidence_bundle
+    evidence = parser_evidence
 
     with pytest.raises(DecisionGenerationError):
         asyncio.run(provider.decide(evidence))
@@ -337,9 +410,27 @@ def test_recommendation_node_consumes_only_bundle_and_updates_owned_section() ->
     assert updated.recommendation.missing_evidence == ("shelter occupancy",)
 
 
-def test_evidence_bundle_to_agent_to_recommendation_evidence_flow() -> None:
-    """Structured provider output should reach graph recommendation evidence intact."""
+def test_recommendation_node_maps_decision_error_to_fallback() -> None:
+    """A decision-agent failure should return the deterministic fallback evidence."""
+
+    class _FailingDecisionAgent:
+        async def decide(self, evidence, *, execution_context=None):
+            del evidence, execution_context
+            raise DecisionRateLimitedError("Decision provider rate limit exceeded.")
+
     state = state_factory().create()
+    updated = asyncio.run(RecommendationNode(_FailingDecisionAgent()).execute(state))
+
+    assert updated.recommendation == DecisionFallbackMapper.unavailable()
+
+
+def test_evidence_bundle_to_agent_to_recommendation_evidence_flow(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """Structured provider output should reach graph recommendation evidence intact."""
+    state = state_factory().create().model_copy(
+        update={"evidence_bundle": parser_evidence}
+    )
     agent = OpenAIDecisionProvider(
         client=_Client(_Completions(_decision().model_dump_json())),
         prompt_builder=PromptBuilder(),
