@@ -8,6 +8,233 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.3.1] - 2026-07-29
+
+---
+
+## Hotfix – Live Verification & Reasoning-Quality Hardening (2026-07-29)
+
+### Context
+
+Following Sprint 13's automated verification, this session performed live,
+adversarial manual testing of the full conversational pipeline
+(`scripts/manual_chat.py`) against real production tools and real evidence
+data for the first time. This surfaced several defects invisible to mocked
+test coverage, and led to a substantive reasoning-quality improvement
+beyond Sprint 13's original scope.
+
+---
+
+### Hotfix 1 — Dataset Catalog Provenance Crash
+
+#### Fixed
+
+- Fixed a real `AttributeError` in `DatasetEvidenceMapper.to_graph()`
+  (`graph/mappers/configured_data_mappers.py`), which assumed
+  `DatasetCatalogDTO` carried PDF-document provenance fields
+  (`document_name`, `page_number`, `section`) that do not exist on it.
+  Silently caught by Sprint 12's graceful tool-failure degradation in
+  production, meaning Dataset citations were missing from every real
+  recommendation without any visible error.
+- Rebuilt citation format from real `DatasetMetadata`/`DatasetStatistics`
+  fields (`name`, `version`, `source`) instead.
+
+#### Verified
+
+- Confirmed live in `manual_chat.py`: real dataset citations now appear
+  in production output (e.g. `"Flood-Aware production villages:v1.0.0
+  (source: Flood-Aware checked-in dataset: villages.csv)"`).
+
+---
+
+### Hotfix 2 — RAG Citation Corruption
+
+#### Fixed
+
+- Fixed `SemanticChunker._is_heading()` (`rag/semantic_chunker.py`)
+  incorrectly classifying numeric table rows (e.g. `"450.00 Lai Nullah"`)
+  as document section headings, corrupting downstream `Citation.section`
+  values with concatenated table data.
+- Strengthened the numbered-heading heuristic to reject multi-number,
+  number-dominant lines while preserving legitimate numbered headings
+  (`"1. Introduction"`, `"3.2 Evacuation Procedures"`, `"12) Overview"`).
+- Rebuilt the persistent Chroma government-knowledge index
+  (`scripts/build_government_index.py`) to purge previously-corrupted
+  chunks (4 documents, 1,384 chunks re-indexed).
+
+#### Verified
+
+- Confirmed live: previously garbled `National_Disaster_Management_Plan`
+  citations now render as clean `document:page` references.
+
+---
+
+### Hotfix 3 — Developer Tooling & Observability
+
+#### Added
+
+- Added `scripts/manual_chat.py`: a real, end-to-end interactive
+  conversation script composing real Village/Shelter/DatasetCatalog/GIS/
+  Knowledge tools with deterministic Weather/Forecast stand-ins, for live
+  qualitative verification ahead of Sprint 14.
+- Added `ExtraFieldsFormatter` (`config/logging.py`), rendering structured
+  `log_event` fields (node, failure_type, duration_ms, etc.) in console
+  output — previously captured but invisible under the default formatter.
+
+#### Fixed
+
+- Fixed `conversation/__init__.py` re-exporting submodule names instead of
+  the actual `ConversationOrchestrator`/`ConversationSessionStore`/
+  `ConversationTurn`/`ConversationSession` classes.
+
+---
+
+### Feature — Reasoning Specificity
+
+#### Added
+
+- Added `_key_figures()` (`decision/prompt_builder.py`), surfacing real
+  quantitative evidence values (discharge, population exposed,
+  infrastructure count, rainfall, shelter capacity, per-village
+  population) directly in the prompt as a labeled "Key quantitative
+  figures" section.
+- Added a SPECIFICITY instruction to `PromptBuilder._SYSTEM_INSTRUCTIONS`
+  with an explicit weak/strong contrast example, requiring
+  `risk_assessment.rationale` and reasoning to incorporate real evidence
+  figures rather than generic boilerplate.
+- Added `DecisionSpecificityError` and `DecisionParser._validate_specificity`,
+  enforcing that generated reasoning engages with real quantitative
+  evidence when flood-severity-relevant figures are available.
+
+#### Fixed (post-deployment corrections, same session)
+
+- **Citation/figure-label collision:** the "Key quantitative figures"
+  section's dict-key labels (e.g. `"village.Kabal.population"`) were
+  mistaken by the model for valid citations, causing repeated
+  `DecisionGroundingError` and, in one case, full retry-budget
+  exhaustion. Fixed with an explicit prompt boundary distinguishing
+  reasoning-only figure labels from the closed citation vocabulary.
+- **Retry-with-feedback resilience upgrade:** rather than patch each new
+  invented citation-format pattern individually (a second, structurally
+  different hallucination — an invented `"type:entity_name"` hybrid
+  format — was found immediately after the first fix), implemented a
+  general self-correction mechanism. `DecisionGroundingError` now carries
+  `invalid_references`; on a grounding failure, the retry loop appends the
+  model's invalid response plus a targeted correction message naming the
+  exact bad citations, rather than resending an identical prompt. Scoped
+  strictly to `DecisionGroundingError` retries; all other failure types
+  (timeout, rate limit, provider unavailable, non-grounding validation)
+  retry unchanged, within the existing retry budget.
+- **Over-broad enforcement correction:** `_validate_specificity` originally
+  required citing figures from the full `_key_figures()` set, incorrectly
+  forcing citation of bare village population counts (context, not flood
+  evidence) even when a model's honest, evidence-free "no flood risk"
+  response was otherwise correct — found via golden-set regression
+  (`test_multiple_villages`). Split into `_key_figures()` (unchanged,
+  full set, prompt display only) and a new, narrower
+  `_flood_severity_figures()` (forecast/GIS/weather/shelter-capacity
+  only, excludes village population) used solely for validation
+  enforcement.
+
+#### Verified
+
+- Full test suite: 256 passed, 1 skipped.
+- Full golden set (16 real-API scenarios, including 1 new specificity
+  golden test): 16/16 passing.
+- Live multi-turn manual verification: retry-with-feedback mechanism
+  observed recovering from a real grounding failure in production without
+  crashing or exhausting the retry budget; evidence-reuse and no-crash
+  guarantees held across multiple real follow-up questions.
+
+### Notes
+
+- **Known limitation, deferred:** GIS evidence collection (real OSM/
+  WorldPop parsing over the full Pakistan dataset) measured at 30s–4+
+  minutes per fresh-evidence turn in live testing. No loading-state UX
+  exists yet to communicate this to a user. Confirmed as a hard
+  requirement for Sprint 14, not optional polish — real measured
+  latencies now available to inform that design.
+- No changes to `evidence_reference_index.py`, `models.py`, or graph
+  routing/aggregation logic.
+- No dashboard, chat UI, or deployment work — out of scope for this
+  session.
+- All fixes verified via both automated tests and live, real-API manual
+  testing — not test-suite-only verification.
+- Ready for Sprint 14 – Streamlit Dashboard.
+
+---
+
+## [1.3.0] - 2026-07-28
+
+---
+
+## Sprint 13 – Multi-Turn Conversation & Follow-Up Questions (2026-07-28)
+
+### Sprint 13.1 — Conversation State Model
+
+#### Added
+
+- Added `backend/app/conversation/` package with immutable, strict Pydantic contracts: `ConversationTurn` (request context, active evidence bundle, resulting decision, timestamp) and `ConversationSession` (ordered turn history, keyed by UUID).
+- Added `ConversationSessionStore`, an async-safe in-memory session store guarded by `asyncio.Lock`, with no persistence layer (explicit v1.0 scope decision).
+
+---
+
+### Sprint 13.2 — Deterministic Evidence-Reuse Policy
+
+#### Added
+
+- Added `requires_new_evidence()`, a pure function determining whether a follow-up requires fresh graph execution based solely on whether coordinates, village, district, or province changed from the immediately preceding turn — no NLP/intent classification.
+- Added focused unit tests covering first-turn, identical-context, changed-location, and partial/unspecified-context scenarios.
+
+---
+
+### Sprint 13.3 — Conversation-Aware Prompting
+
+#### Added
+
+- Extended `PromptBuilder.build()` with an optional, backward-compatible `history` parameter (default empty), rendering prior turns' request text and recommendation summaries only — never prior evidence — preserving Sprint 11's grounding guarantees unchanged when history is empty.
+- Added an explicit system-prompt instruction: conversation history is continuity context only; all grounding and citation rules apply exclusively to the current evidence bundle.
+
+---
+
+### Sprint 13.4 — Conversation Orchestration
+
+#### Added
+
+- Added `ConversationOrchestrator`, coordinating session lookup, evidence-reuse decisions, graph execution, and decision-agent invocation without owning graph or prompt logic itself.
+
+#### Fixed
+
+- Eliminated a redundant duplicate LLM call on fresh-evidence turns: the graph's own `RecommendationNode`-produced `Decision` is now retained directly on `GraphState` (new `decision: Decision | None` field, mirroring the existing `forecast_result`/`forecast` canonical-plus-projection pattern) and reused by the orchestrator, instead of invoking the decision agent a second time.
+- Corrected a dependency-direction violation introduced mid-sprint: `backend/app/decision/` briefly imported `backend/app/conversation/` directly, inverting this project's established Clean Architecture layering. Replaced with a narrow structural `ConversationTurnLike` protocol in `decision/protocols.py`; `decision/` no longer imports from `conversation/` anywhere.
+- Added explicit, non-silent handling for graph fallback without a canonical decision: `ConversationOrchestrator` raises `DecisionGenerationError` rather than fabricating or retrying, with a dedicated regression test proving the graph runs exactly once and the decision agent is never separately invoked in this case.
+
+---
+
+### Sprint 13.5 — Multi-Turn Verification
+
+#### Added
+
+- Added 6 scripted multi-turn test scenarios: 3 orchestration-level tests using injected spies (call-count and evidence-identity verification), and 3 real, non-mocked golden-set tests (`backend/tests/golden/test_conversation_golden_set.py`, gated behind `RUN_GOLDEN_SET=1`) exercising the real OpenAI provider and real graph runtime against deterministic tool boundaries.
+
+#### Verified
+
+- Same-context follow-ups reuse evidence with zero additional tool invocations across all 7 evidence tools; changed-context follow-ups correctly trigger exactly one fresh round of all 7 tool invocations.
+- Real grounded decisions across 3 consecutive real follow-ups, each independently citation-validated against its active evidence bundle.
+- No cross-turn evidence leakage: a real second-turn decision for a different village contains no reference to the first turn's village-specific evidence.
+- Real prompt history threading verified via `wraps=`-spied `PromptBuilder.build()`: third-turn history contains exactly the first two turns' summaries, in order.
+- Full test suite (247 tests) passes with zero regressions.
+
+### Notes
+
+- No changes to `decision/parser.py`, `evidence_reference_index.py`, or `decision/models.py`.
+- No Urdu/multilingual work — English-only, per project plan.
+- No persistent/database-backed session storage — in-memory only, explicit v1.0 scope.
+- No Streamlit/chat UI — deferred to Sprint 14.
+- Sprint 13 completed.
+
+---
+
 ## [1.2.0] - 2026-07-28
 
 ---

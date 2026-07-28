@@ -23,6 +23,7 @@ from backend.app.decision.exceptions import (
 from backend.app.decision.models import Decision
 from backend.app.decision.parser import DecisionParser
 from backend.app.decision.prompt_builder import PromptBuilder
+from backend.app.decision.protocols import ConversationTurnLike
 from backend.app.decision.resilience import (
     DecisionCircuitBreaker,
     DecisionExecutionMetadata,
@@ -130,9 +131,13 @@ class OpenAIDecisionProvider:
         evidence: EvidenceBundle,
         *,
         execution_context: ExecutionContext | None = None,
+        history: Sequence[ConversationTurnLike] = (),
     ) -> Decision:
         """Generate and parse one schema-constrained decision from evidence only."""
-        system_prompt, user_prompt = self._prompt_builder.build(evidence)
+        system_prompt, user_prompt = self._prompt_builder.build(
+            evidence,
+            history=history,
+        )
         context = execution_context or ExecutionContext.uncorrelated()
         timer = OperationTimer.start()
         log_event(
@@ -159,15 +164,19 @@ class OpenAIDecisionProvider:
 
         attempts = 0
         timeout_occurred = False
+        correction_messages: tuple[dict[str, str], ...] = ()
         while True:
             attempts += 1
             try:
                 response = await asyncio.wait_for(
-                    self._create_completion(system_prompt, user_prompt),
+                    self._create_completion(
+                        system_prompt, user_prompt, correction_messages
+                    ),
                     timeout=self._runtime_config.timeout_seconds,
                 )
                 parser_timer = OperationTimer.start()
-                decision = self._parser.parse(_completion_content(response), evidence)
+                response_content = _completion_content(response)
+                decision = self._parser.parse(response_content, evidence)
                 log_event(
                     _LOGGER,
                     logging.INFO,
@@ -185,6 +194,17 @@ class OpenAIDecisionProvider:
                 failure.__cause__ = error
             except DecisionGroundingError as error:
                 failure = error
+                if error.invalid_references:
+                    correction_messages = (
+                        *correction_messages,
+                        {"role": "assistant", "content": response_content},
+                        {
+                            "role": "user",
+                            "content": _grounding_correction_message(
+                                error.invalid_references
+                            ),
+                        },
+                    )
             except (DecisionParsingError, LLMOutputValidationError) as failure:
                 self._log_failure(
                     timer,
@@ -252,14 +272,18 @@ class OpenAIDecisionProvider:
             await self._sleep(self._retry_delay(attempts))
 
     async def _create_completion(
-        self, system_prompt: str, user_prompt: str
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        correction_messages: Sequence[dict[str, str]] = (),
     ) -> _CompletionProtocol:
-        """Create one provider completion with an unchanged request contract."""
+        """Create one provider completion, optionally continuing a grounding-correction turn."""
         return await self._client.chat.completions.create(
             model=self._model,
             messages=(
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
+                *correction_messages,
             ),
             temperature=0.0,
             response_format={
@@ -378,6 +402,18 @@ def _is_transient(error: DecisionGenerationError) -> bool:
             DecisionRateLimitedError,
             DecisionGroundingError,
         ),
+    )
+
+
+def _grounding_correction_message(invalid_references: tuple[str, ...]) -> str:
+    """Name the exact invalid citations so the model corrects only those."""
+    return (
+        "Your previous JSON response used these citation strings, which are NOT "
+        f"present in 'Allowed citation values': {list(invalid_references)}. Return "
+        "a corrected JSON decision that replaces ONLY these invalid citations with "
+        "exact matches from 'Allowed citation values', keeping every other "
+        "citation, reason, and piece of reasoning unchanged. Return the complete "
+        "corrected JSON object, matching the original schema."
     )
 
 

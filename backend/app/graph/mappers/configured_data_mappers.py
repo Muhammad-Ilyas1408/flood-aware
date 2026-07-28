@@ -41,10 +41,12 @@ class DatasetEvidenceMapper:
     @staticmethod
     def to_graph(result: DatasetCatalogDTO) -> DatasetEvidence:
         """Return catalog names and explicit source provenance without analysis."""
-        citation = f"{result.document_name}:p{result.page_number}"
-        if result.section is not None:
-            citation = f"{citation}:{result.section}"
+        summaries = (result.villages, result.shelters)
         return DatasetEvidence(
             datasets=(result.villages.metadata.name, result.shelters.metadata.name),
-            provenance=(citation,),
+            provenance=tuple(
+                f"{summary.metadata.name}:v{summary.metadata.version} "
+                f"(source: {summary.metadata.source})"
+                for summary in summaries
+            ),
         )

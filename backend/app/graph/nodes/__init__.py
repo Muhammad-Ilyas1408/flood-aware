@@ -1,4 +1,4 @@
-"""Empty node skeletons for the LangGraph foundation."""
+"""Production LangGraph evidence and recommendation node implementations."""
 
 from backend.app.graph.nodes.evidence_nodes import (
     DatasetCatalogNode,

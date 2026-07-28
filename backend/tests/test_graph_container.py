@@ -13,7 +13,10 @@ from backend.app.decision.models import (
     RiskAssessment,
     RiskLevel,
 )
+from backend.app.data.models import DatasetMetadata, DatasetStatistics
 from backend.app.dtos.datasets import (
+    DatasetCatalogDTO,
+    DatasetSummaryDTO,
     ShelterDTO,
     ShelterListDTO,
     VillageDTO,
@@ -81,12 +84,29 @@ def test_container_wires_production_boundaries_into_the_graph() -> None:
     dataset_catalog_tool.execute.return_value = ToolResult(
         tool_name="DatasetCatalogTool",
         summary="Dataset catalog retrieved.",
-        data=SimpleNamespace(
-            villages=SimpleNamespace(metadata=SimpleNamespace(name="villages")),
-            shelters=SimpleNamespace(metadata=SimpleNamespace(name="shelters")),
-            document_name="Dataset Catalog",
-            page_number=3,
-            section="Sources",
+        data=DatasetCatalogDTO(
+            villages=DatasetSummaryDTO(
+                metadata=DatasetMetadata(
+                    name="villages",
+                    description="Graph test village records.",
+                    version="1.0.0",
+                    source="graph-test-villages.csv",
+                    created_at=datetime(2026, 7, 26, tzinfo=UTC),
+                    updated_at=datetime(2026, 7, 26, tzinfo=UTC),
+                ),
+                statistics=DatasetStatistics(record_count=1),
+            ),
+            shelters=DatasetSummaryDTO(
+                metadata=DatasetMetadata(
+                    name="shelters",
+                    description="Graph test shelter records.",
+                    version="1.0.0",
+                    source="graph-test-shelters.csv",
+                    created_at=datetime(2026, 7, 26, tzinfo=UTC),
+                    updated_at=datetime(2026, 7, 26, tzinfo=UTC),
+                ),
+                statistics=DatasetStatistics(record_count=1),
+            ),
         ),
     )
     knowledge_tool = Mock()

@@ -1,6 +1,7 @@
 """Strict parsing and grounding validation of structured LLM decision output."""
 
 import json
+import re
 
 from pydantic import ValidationError
 
@@ -8,10 +9,14 @@ from backend.app.decision.evidence_reference_index import EvidenceReferenceIndex
 from backend.app.decision.exceptions import (
     DecisionGroundingError,
     DecisionParsingError,
+    DecisionSpecificityError,
     LLMOutputValidationError,
 )
 from backend.app.decision.models import Decision
+from backend.app.decision.prompt_builder import _flood_severity_figures
 from backend.app.graph.state import EvidenceBundle
+
+_QUANTITATIVE_FIGURE_PATTERN = re.compile(r"\d{2,}")
 
 
 class DecisionParser:
@@ -45,6 +50,7 @@ class DecisionParser:
             ) from error
 
         self._validate_grounding(decision, evidence)
+        self._validate_specificity(decision, evidence)
         return decision
 
     def _validate_grounding(
@@ -63,10 +69,32 @@ class DecisionParser:
         unknown = cited - allowed
         if unknown:
             raise DecisionGroundingError(
-                f"Decision cites evidence not present in the bundle: {sorted(unknown)}"
+                f"Decision cites evidence not present in the bundle: {sorted(unknown)}",
+                invalid_references=tuple(sorted(unknown)),
             )
 
         if allowed and not cited:
             raise DecisionGroundingError(
                 "Decision provides no citations despite available evidence."
+            )
+
+    def _validate_specificity(
+        self, decision: Decision, evidence: EvidenceBundle
+    ) -> None:
+        """Reject decisions that ignore available quantitative evidence."""
+        figures = _flood_severity_figures(evidence)
+        if not figures:
+            return
+
+        text = " ".join(
+            (
+                decision.risk_assessment.rationale,
+                decision.recommendation.summary,
+                *(reason.statement for reason in decision.reasons),
+            )
+        )
+        if not _QUANTITATIVE_FIGURE_PATTERN.search(text):
+            raise DecisionSpecificityError(
+                "Decision ignores available quantitative evidence: "
+                f"{sorted(figures)}"
             )

@@ -99,6 +99,28 @@ class GovernmentKnowledgeEngineTests(unittest.TestCase):
         self.assertEqual(chunks[0].metadata.heading, "1. FLOOD RISK")
         self.assertEqual(chunks[0].metadata.document_name, "Swat Risk Map.pdf")
 
+    def test_semantic_chunker_rejects_numeric_table_rows_as_headings(self) -> None:
+        """Tabular values must not overwrite the current section provenance."""
+        chunker = SemanticChunker()
+
+        self.assertFalse(chunker._is_heading("450.00 Lai Nullah"))
+        self.assertFalse(
+            chunker._is_heading("450.00 Lai Nullah\n6,125.00\n8,698.00")
+        )
+
+    def test_semantic_chunker_retains_valid_numbered_and_uppercase_headings(self) -> None:
+        """Section markers and existing uppercase headings remain recognized."""
+        chunker = SemanticChunker()
+
+        for heading in (
+            "1. Introduction",
+            "3.2 Evacuation Procedures",
+            "12) Overview",
+            "FLOOD RISK",
+        ):
+            with self.subTest(heading=heading):
+                self.assertTrue(chunker._is_heading(heading))
+
     def test_context_deduplicates_and_retains_citations(self) -> None:
         chunk = _chunk("one")
         context = ContextBuilder().build((chunk, chunk))

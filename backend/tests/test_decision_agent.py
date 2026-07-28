@@ -1,18 +1,21 @@
 """Behavioral tests for the evidence-only structured decision agent."""
 
 import asyncio
+from datetime import UTC, datetime
 import json
 from types import SimpleNamespace
 
 import pytest
 from pydantic import ValidationError
 
+from backend.app.conversation.models import ConversationTurn
 from backend.app.decision.exceptions import (
     DecisionCircuitOpenError,
     DecisionGenerationError,
     DecisionParsingError,
     DecisionProviderTimeoutError,
     DecisionRateLimitedError,
+    DecisionSpecificityError,
     LLMOutputValidationError,
 )
 from backend.app.decision.models import (
@@ -43,6 +46,7 @@ from backend.app.graph.state import (
     EvidenceProvenance,
     GISEvidence,
     KnowledgeEvidence,
+    VillageEvidence,
 )
 from backend.tests.graph_test_support import state_factory
 
@@ -173,6 +177,105 @@ def test_parser_rejects_malformed_or_invalid_decisions(
         DecisionParser().parse(response, parser_evidence)
 
 
+def test_parser_raises_specificity_error_when_no_digits_are_used() -> None:
+    """A Decision that ignores available quantitative figures must be rejected."""
+    evidence = EvidenceBundle(
+        gis=GISEvidence(flood_zone="high_risk", population_exposed=18000),
+        provenance=(
+            EvidenceProvenance(evidence_type="gis", tool_name="gis_domain_service"),
+        ),
+    )
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.HIGH, rationale="There is a high risk of flooding."
+        ),
+        recommendation=Recommendation(
+            summary="Prioritize alerting vulnerable populations.",
+            citations=("gis",),
+        ),
+        reasons=(
+            DecisionReason(
+                statement="GIS exposure is elevated.", evidence_references=("gis",)
+            ),
+        ),
+        confidence=DecisionConfidence.HIGH,
+    )
+
+    with pytest.raises(DecisionSpecificityError):
+        DecisionParser().parse(decision.model_dump_json(), evidence)
+
+
+def test_parser_accepts_decision_that_cites_a_quantitative_figure() -> None:
+    """A Decision incorporating a real evidence number must pass validation."""
+    evidence = EvidenceBundle(
+        gis=GISEvidence(flood_zone="high_risk", population_exposed=18000),
+        provenance=(
+            EvidenceProvenance(evidence_type="gis", tool_name="gis_domain_service"),
+        ),
+    )
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.HIGH,
+            rationale="Approximately 18000 people are exposed in the flood zone.",
+        ),
+        recommendation=Recommendation(
+            summary="Prioritize alerting vulnerable populations.",
+            citations=("gis",),
+        ),
+        reasons=(
+            DecisionReason(
+                statement="GIS exposure is elevated.", evidence_references=("gis",)
+            ),
+        ),
+        confidence=DecisionConfidence.HIGH,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed == decision
+
+
+def test_parser_skips_specificity_check_without_quantitative_evidence(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """A knowledge-only bundle with no numeric evidence needs no digits."""
+    parsed = DecisionParser().parse(_decision().model_dump_json(), parser_evidence)
+
+    assert parsed == _decision()
+
+
+def test_parser_skips_specificity_check_for_village_population_only_evidence() -> None:
+    """Village population alone is context, not flood-severity evidence to cite."""
+    evidence = EvidenceBundle(
+        villages=(VillageEvidence(village_name="Kalam", population=12000),),
+        provenance=(
+            EvidenceProvenance(evidence_type="village", tool_name="village_tool"),
+        ),
+    )
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.NORMAL,
+            rationale="No evidence of flooding was found for this area.",
+        ),
+        recommendation=Recommendation(
+            summary="No action needed at this time.",
+            citations=("Kalam",),
+        ),
+        reasons=(
+            DecisionReason(
+                statement="Village population data was reviewed; no flood "
+                "indicators are present.",
+                evidence_references=("Kalam",),
+            ),
+        ),
+        confidence=DecisionConfidence.HIGH,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed == decision
+
+
 def test_prompt_builder_is_deterministic_and_contains_only_bundle_and_schema() -> None:
     """Prompt construction should be repeatable with no provider interaction."""
     evidence = state_factory().create().evidence_bundle
@@ -185,6 +288,51 @@ def test_prompt_builder_is_deterministic_and_contains_only_bundle_and_schema() -
     assert "EvidenceBundle" in first[1]
     assert builder.PROMPT_VERSION == "v1.0.0"
     assert builder.SYSTEM_PROMPT_VERSION == "v1.0.0"
+
+
+def test_prompt_builder_warns_against_citing_figure_labels() -> None:
+    """The prompt must explicitly forbid citing 'Key quantitative figures' labels."""
+    evidence = EvidenceBundle(
+        gis=GISEvidence(flood_zone="high_risk", population_exposed=18000),
+        villages=(VillageEvidence(village_name="Kabal", population=5000),),
+        provenance=(
+            EvidenceProvenance(evidence_type="gis", tool_name="gis_domain_service"),
+        ),
+    )
+    builder = PromptBuilder()
+
+    system_prompt, _ = builder.build(evidence)
+
+    assert "NOT valid citations" in system_prompt
+
+
+def test_openai_provider_forwards_prior_turns_to_prompt_builder(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """Provider continuity context must contain prior summaries, not prior evidence."""
+    completions = _Completions(_decision().model_dump_json())
+    provider = OpenAIDecisionProvider(
+        client=_Client(completions),
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+    )
+    history = (
+        ConversationTurn(
+            request_text="Flood outlook for Mingora?",
+            village_name="Mingora",
+            evidence_bundle=parser_evidence,
+            decision=_decision(),
+            created_at=datetime(2026, 7, 28, tzinfo=UTC),
+        ),
+    )
+
+    asyncio.run(provider.decide(parser_evidence, history=history))
+
+    user_prompt = completions.requests[0]["messages"][1]["content"]
+    assert "Conversation history:" in user_prompt
+    assert "Flood outlook for Mingora?" in user_prompt
+    assert "Prepare local response." in user_prompt
 
 
 def test_openai_agent_name_remains_a_compatible_provider_alias() -> None:
@@ -340,6 +488,94 @@ def test_provider_translates_timeout_and_recommendation_node_falls_back() -> Non
     assert updated.recommendation.confidence == 0
 
 
+def test_provider_retries_grounding_failure_with_correction_context_then_succeeds(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """A grounding failure should retry with targeted correction, not an identical prompt."""
+    invalid_decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.HIGH, rationale="High discharge."
+        ),
+        recommendation=Recommendation(
+            summary="Prepare local response.",
+            citations=("shelter:Relief Camp Jail Road Mingora",),
+        ),
+        confidence=DecisionConfidence.HIGH,
+    )
+    responses = iter(
+        (invalid_decision.model_dump_json(), _decision().model_dump_json())
+    )
+    requests: list[dict[str, object]] = []
+
+    async def create(**kwargs: object) -> object:
+        requests.append(kwargs)
+        return SimpleNamespace(
+            choices=(
+                SimpleNamespace(message=SimpleNamespace(content=next(responses))),
+            ),
+            usage=SimpleNamespace(total_tokens=42),
+        )
+
+    client = _Client(_Completions(None))
+    client.chat.completions.create = create
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=DecisionRuntimeConfig(retry_count=1, jitter_seconds=0),
+        sleep=lambda _: asyncio.sleep(0),
+    )
+
+    assert asyncio.run(provider.decide(parser_evidence)) == _decision()
+    assert len(requests) == 2
+
+    first_messages = requests[0]["messages"]
+    second_messages = requests[1]["messages"]
+    assert len(first_messages) == 2
+    assert len(second_messages) == 4
+    assert second_messages[2] == {
+        "role": "assistant",
+        "content": invalid_decision.model_dump_json(),
+    }
+    assert second_messages[3]["role"] == "user"
+    assert "shelter:Relief Camp Jail Road Mingora" in second_messages[3]["content"]
+
+
+def test_provider_retries_non_grounding_failure_with_unchanged_messages(
+    parser_evidence: EvidenceBundle,
+) -> None:
+    """Non-grounding failures must retry with the original prompt, unchanged."""
+    completions = _Completions(_decision().model_dump_json())
+    successful_create = completions.create
+    calls = 0
+    requests: list[dict[str, object]] = []
+
+    async def create(**kwargs: object) -> object:
+        nonlocal calls
+        calls += 1
+        requests.append(kwargs)
+        if calls == 1:
+            raise _RateLimitedProviderError()
+        return await successful_create(**kwargs)
+
+    client = _Client(completions)
+    client.chat.completions.create = create
+    provider = OpenAIDecisionProvider(
+        client=client,
+        prompt_builder=PromptBuilder(),
+        parser=DecisionParser(),
+        model="gpt-4.1-mini",
+        runtime_config=DecisionRuntimeConfig(retry_count=1, jitter_seconds=0),
+        sleep=lambda _: asyncio.sleep(0),
+    )
+
+    assert asyncio.run(provider.decide(parser_evidence)) == _decision()
+    assert calls == 2
+    assert requests[0]["messages"] == requests[1]["messages"]
+    assert len(requests[1]["messages"]) == 2
+
+
 def test_provider_opens_circuit_after_retry_exhaustion_and_recovers(
     parser_evidence: EvidenceBundle,
 ) -> None:
@@ -405,6 +641,7 @@ def test_recommendation_node_consumes_only_bundle_and_updates_owned_section() ->
     assert agent.execution_context.execution_id == state.runtime.execution_id
     assert updated is not state
     assert updated.weather is state.weather
+    assert updated.decision is agent.decision
     assert updated.recommendation.recommendation == "Prepare local response."
     assert updated.recommendation.recommended_actions == ("Notify response teams.",)
     assert updated.recommendation.missing_evidence == ("shelter occupancy",)
@@ -418,9 +655,10 @@ def test_recommendation_node_maps_decision_error_to_fallback() -> None:
             del evidence, execution_context
             raise DecisionRateLimitedError("Decision provider rate limit exceeded.")
 
-    state = state_factory().create()
+    state = state_factory().create().model_copy(update={"decision": _decision()})
     updated = asyncio.run(RecommendationNode(_FailingDecisionAgent()).execute(state))
 
+    assert updated.decision is None
     assert updated.recommendation == DecisionFallbackMapper.unavailable()
 
 
@@ -440,6 +678,7 @@ def test_evidence_bundle_to_agent_to_recommendation_evidence_flow(
 
     updated = asyncio.run(RecommendationNode(agent).execute(state))
 
+    assert updated.decision is not None
     assert updated.recommendation.risk_level == "high"
     assert updated.recommendation.recommendation == "Prepare local response."
     assert updated.recommendation.citations == ("NDMA Plan:p4",)

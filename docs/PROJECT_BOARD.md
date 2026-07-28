@@ -1118,4 +1118,139 @@ Deliverables:
 
 ---
 
-Ready for Sprint 13 – Multi-Turn Conversation & Follow-Up Questions
+## Sprint 13 – Multi-Turn Conversation & Follow-Up Questions
+
+Status: Completed
+Completed: 2026-07-28
+
+---
+
+### Sprint 13.1 – Conversation State Model
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] ConversationTurn / ConversationSession immutable models
+- [x] Async-safe in-memory ConversationSessionStore
+
+---
+
+### Sprint 13.2 – Deterministic Evidence-Reuse Policy
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] requires_new_evidence() pure function
+- [x] Unit tests: first turn, identical context, changed location, partial context
+
+---
+
+### Sprint 13.3 – Conversation-Aware Prompting
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] Backward-compatible `history` parameter on PromptBuilder.build()
+- [x] History-scoped grounding instruction (no prior-evidence citation)
+
+---
+
+### Sprint 13.4 – Conversation Orchestration
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] ConversationOrchestrator
+- [x] Fixed: redundant duplicate LLM call on fresh-evidence turns
+- [x] Fixed: decision/ → conversation/ dependency-direction violation (ConversationTurnLike protocol)
+- [x] Explicit DecisionGenerationError on graph fallback without canonical decision
+
+---
+
+### Sprint 13.5 – Multi-Turn Verification
+
+Status: Completed
+Completed: 2026-07-28
+
+Deliverables:
+
+- [x] 3 orchestration-level spy-based multi-turn tests
+- [x] 3 real golden-set multi-turn tests (RUN_GOLDEN_SET=1)
+- [x] Verified: evidence reuse, evidence refresh, no cross-turn leakage, real grounding, history ordering
+- [x] Full suite (247 tests) passing
+
+---
+
+## Hotfix – Live Verification & Reasoning-Quality Hardening
+
+Status: Completed
+Completed: 2026-07-29
+
+---
+
+### Hotfix 1 – Dataset Catalog Provenance Crash
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+
+- [x] Fixed DatasetEvidenceMapper AttributeError (PDF-provenance vs. dataset-provenance mismatch)
+- [x] Real DatasetMetadata-based citation format
+- [x] Verified live in manual_chat.py
+
+---
+
+### Hotfix 2 – RAG Citation Corruption
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+
+- [x] Fixed SemanticChunker._is_heading() numeric-table misclassification
+- [x] Chroma government-knowledge index rebuilt (4 docs, 1,384 chunks)
+- [x] Verified clean citations live
+
+---
+
+### Hotfix 3 – Developer Tooling & Observability
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+
+- [x] scripts/manual_chat.py (real end-to-end interactive verification tool)
+- [x] ExtraFieldsFormatter for structured log visibility
+- [x] Fixed conversation/__init__.py export gap
+
+---
+
+### Feature – Reasoning Specificity
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+
+- [x] _key_figures() prompt surfacing + SPECIFICITY instruction with contrast example
+- [x] DecisionSpecificityError + parser enforcement
+- [x] Fixed: citation/figure-label collision
+- [x] Retry-with-feedback resilience mechanism (generalizes beyond single hallucination patterns)
+- [x] Fixed: over-broad enforcement (village population false-positive)
+- [x] Full suite: 256 passed, 1 skipped
+- [x] Full golden set: 16/16 passing
+- [x] Live multi-turn manual verification, including real retry-recovery observed in production
+
+---
+
+Ready for Sprint 14 – Streamlit Dashboard

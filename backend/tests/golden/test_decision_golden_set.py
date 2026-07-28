@@ -1,6 +1,7 @@
 """Golden-set evaluation of real LLM decisions. Costs real API calls."""
 
 import os
+import re
 
 import pytest
 
@@ -90,6 +91,17 @@ class TestGoldenSet:
             action.priority == Priority.CRITICAL
             for action in decision.recommendation.actions
         )
+
+    async def test_extreme_exposure_reasoning_cites_concrete_figures(self, provider):
+        decision = await provider.decide(f.scenario_extreme_exposure())
+        text = " ".join(
+            (
+                decision.risk_assessment.rationale,
+                decision.recommendation.summary,
+                *(reason.statement for reason in decision.reasons),
+            )
+        )
+        assert re.search(r"\d{2,}", text)
 
     async def test_weather_only(self, provider):
         decision = await provider.decide(f.scenario_weather_only())

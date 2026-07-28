@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from backend.app.decision.models import Decision
 from backend.app.forecast.models import ForecastResult
 
 
@@ -282,6 +283,7 @@ class GraphState(_FrozenModel):
     datasets: DatasetEvidence = Field(default_factory=DatasetEvidence)
     knowledge: KnowledgeEvidence = Field(default_factory=KnowledgeEvidence)
     evidence_bundle: EvidenceBundle = Field(default_factory=EvidenceBundle)
+    decision: Decision | None = None
     recommendation: RecommendationEvidence = Field(
         default_factory=RecommendationEvidence
     )

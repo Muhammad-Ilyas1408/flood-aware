@@ -327,7 +327,12 @@ class RecommendationNode:
                 node="recommendation",
                 duration_ms=mapper_timer.elapsed_ms(),
             )
-            return state.model_copy(update={"recommendation": fallback})
+            return state.model_copy(
+                update={
+                    "decision": None,
+                    "recommendation": fallback,
+                }
+            )
         mapper_timer = OperationTimer.start()
         recommendation = DecisionRecommendationMapper.to_graph(decision)
         log_event(
@@ -339,4 +344,9 @@ class RecommendationNode:
             duration_ms=mapper_timer.elapsed_ms(),
             risk_level=recommendation.risk_level,
         )
-        return state.model_copy(update={"recommendation": recommendation})
+        return state.model_copy(
+            update={
+                "decision": decision,
+                "recommendation": recommendation,
+            }
+        )

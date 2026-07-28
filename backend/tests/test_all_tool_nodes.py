@@ -11,7 +11,10 @@ from backend.app.ai.dataset_catalog_tool import DatasetCatalogTool
 from backend.app.ai.models import ToolResult
 from backend.app.ai.shelter_tool import ShelterTool
 from backend.app.ai.village_tool import VillageTool
+from backend.app.data.models import DatasetMetadata, DatasetStatistics
 from backend.app.dtos.datasets import (
+    DatasetCatalogDTO,
+    DatasetSummaryDTO,
     ShelterDTO,
     ShelterListDTO,
     VillageDTO,
@@ -161,12 +164,30 @@ def test_shelter_node_maps_tool_result_without_ranking() -> None:
 
 def test_dataset_node_maps_catalog_provenance() -> None:
     """Dataset orchestration should retain configured names and provenance only."""
-    catalog = SimpleNamespace(
-        villages=SimpleNamespace(metadata=SimpleNamespace(name="villages")),
-        shelters=SimpleNamespace(metadata=SimpleNamespace(name="shelters")),
-        document_name="Dataset Catalog",
-        page_number=3,
-        section="Sources",
+    timestamp = datetime(2026, 7, 26, tzinfo=UTC)
+    catalog = DatasetCatalogDTO(
+        villages=DatasetSummaryDTO(
+            metadata=DatasetMetadata(
+                name="Villages",
+                description="Flood-Aware village records.",
+                version="1.0.0",
+                source="Flood-Aware villages.csv",
+                created_at=timestamp,
+                updated_at=timestamp,
+            ),
+            statistics=DatasetStatistics(record_count=150),
+        ),
+        shelters=DatasetSummaryDTO(
+            metadata=DatasetMetadata(
+                name="Shelters",
+                description="Flood-Aware shelter records.",
+                version="1.0.0",
+                source="Flood-Aware shelters.csv",
+                created_at=timestamp,
+                updated_at=timestamp,
+            ),
+            statistics=DatasetStatistics(record_count=51),
+        ),
     )
     dataset_tool = Mock(spec=DatasetCatalogTool)
     dataset_tool.execute.return_value = ToolResult(
@@ -185,8 +206,11 @@ def test_dataset_node_maps_catalog_provenance() -> None:
 
     dataset_tool.execute.assert_called_once()
     evidence_mapper.assert_called_once_with(catalog)
-    assert updated.datasets.datasets == ("villages", "shelters")
-    assert updated.datasets.provenance == ("Dataset Catalog:p3:Sources",)
+    assert updated.datasets.datasets == ("Villages", "Shelters")
+    assert updated.datasets.provenance == (
+        "Villages:v1.0.0 (source: Flood-Aware villages.csv)",
+        "Shelters:v1.0.0 (source: Flood-Aware shelters.csv)",
+    )
     assert updated.knowledge is state.knowledge
 
 

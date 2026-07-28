@@ -71,6 +71,23 @@ class SemanticChunker:
 
     @staticmethod
     def _is_heading(text: str) -> bool:
-        return len(text) <= 160 and (
-            text.isupper() or bool(re.match(r"^\d+(?:\.\d+)*[.)]?\s+", text))
+        if len(text) > 160:
+            return False
+        if text.isupper():
+            return True
+
+        match = re.match(r"^(\d+(?:\.\d+)*[.)]?)\s+", text)
+        if match is None:
+            return False
+
+        section_parts = match.group(1).rstrip(".)").split(".")
+        numeric_tokens = set(re.findall(r"\b\d[\d,]*(?:\.\d+)?\b", text))
+        return (
+            len(numeric_tokens) == 1
+            and len(section_parts[0]) <= 2
+            and all(
+                len(part) == 1 or not part.startswith("0")
+                for part in section_parts[1:]
+            )
+            and bool(re.search(r"[A-Za-z]", text[match.end() :]))
         )

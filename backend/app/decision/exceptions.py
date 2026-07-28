@@ -69,3 +69,14 @@ class DecisionUnknownProviderError(DecisionProviderError):
 
 class DecisionGroundingError(DecisionGenerationError, LLMOutputValidationError):
     """Raised when a decision's citations are not grounded in its evidence."""
+
+    def __init__(
+        self, message: str, *, invalid_references: tuple[str, ...] = ()
+    ) -> None:
+        """Retain the exact invalid citation strings alongside the error message."""
+        super().__init__(message)
+        self.invalid_references = invalid_references
+
+
+class DecisionSpecificityError(DecisionGroundingError):
+    """Raised when a Decision ignores available quantitative evidence."""
