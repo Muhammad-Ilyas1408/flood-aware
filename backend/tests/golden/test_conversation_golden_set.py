@@ -12,7 +12,7 @@ from backend.app.conversation.orchestrator import ConversationOrchestrator
 from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.decision.dependencies import build_openai_decision_provider
 from backend.app.decision.evidence_reference_index import EvidenceReferenceIndex
-from backend.app.decision.models import Decision
+from backend.app.decision.models import ActionRecommendation, Decision
 from backend.app.decision.prompt_builder import PromptBuilder
 from backend.app.data.models import DatasetMetadata, DatasetStatistics
 from backend.app.dtos.datasets import (
@@ -53,6 +53,31 @@ def _assert_grounded(decision: Decision, evidence: EvidenceBundle) -> None:
     """Assert the parser-approved decision contains current-bundle citations."""
     assert decision.recommendation.citations
     assert _all_references(decision).issubset(EvidenceReferenceIndex.build(evidence))
+
+
+def _shelter_related_references(evidence: EvidenceBundle) -> set[str]:
+    """Return every allowed reference that identifies shelter evidence.
+
+    Matches by what evidence a reference identifies, not by free-text
+    keywords in an action description — a genuinely shelter-focused action
+    naming a specific real shelter need not contain the literal word
+    "shelter".
+    """
+    allowed = EvidenceReferenceIndex.build(evidence)
+    return {
+        ref
+        for ref in allowed
+        if "shelter" in ref.lower()
+        or ref in evidence.shelters.shelters
+        or ref == evidence.shelters.nearest_shelter
+    }
+
+
+def _is_shelter_grounded(
+    action: ActionRecommendation, shelter_related: set[str]
+) -> bool:
+    """Return whether one action cites at least one shelter-related reference."""
+    return bool(set(action.evidence_references) & shelter_related)
 
 
 def _build_orchestrator(provider):
@@ -259,6 +284,36 @@ class TestConversationGoldenSet:
             + tuple(action.action for action in second.recommendation.actions)
         ).lower()
         assert any(keyword in content for keyword in ("shelter", "relief", "evacuat"))
+
+    async def test_follow_up_narrows_focus_to_shelters_not_general_overview(
+        self, provider
+    ):
+        orchestrator, session_store, tools = _build_orchestrator(provider)
+        session_id, _ = await orchestrator.handle_turn(
+            None,
+            _request("What is the flood situation in Mingora?", "Mingora"),
+        )
+        _, second = await orchestrator.handle_turn(
+            session_id,
+            _request("What about shelters?", "Mingora"),
+        )
+
+        session = await session_store.get_session(session_id)
+        assert session is not None
+        _assert_grounded(second, session.turns[-1].evidence_bundle)
+        assert second.recommendation.actions, (
+            "Turn 2 must recommend at least one action to be shelter-focused."
+        )
+        shelter_related = _shelter_related_references(session.turns[-1].evidence_bundle)
+        assert any(
+            _is_shelter_grounded(action, shelter_related)
+            for action in second.recommendation.actions
+        ), "Turn 2 must include at least one action grounded in shelter evidence."
+        assert _is_shelter_grounded(second.recommendation.actions[0], shelter_related), (
+            "Turn 2's first (highest-priority) action must be shelter-grounded, "
+            "proving shelters lead the response rather than appear as an "
+            "afterthought."
+        )
 
     async def test_village_change_refreshes_evidence_without_cross_turn_leakage(
         self, provider

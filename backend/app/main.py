@@ -14,11 +14,19 @@ from backend.app.config.datasets import (
     DatasetCatalogConfig,
     create_production_dataset_catalog_config,
 )
+from backend.app.config.graph_dependencies import (
+    close_graph_dependencies,
+    configure_graph_dependencies,
+)
 from backend.app.config.logging import configure_logging
 from backend.app.config.settings import Settings, get_settings
+from backend.app.conversation import ConversationOrchestrator
+from backend.app.conversation.exceptions import ConversationSessionNotFoundError
 from backend.app.core.application_exceptions import ApplicationError
 from backend.app.core.exceptions import (
     handle_application_exception,
+    handle_conversation_session_not_found_error,
+    handle_decision_generation_error,
     handle_http_exception,
     handle_request_validation_error,
     handle_unexpected_exception,
@@ -26,6 +34,7 @@ from backend.app.core.exceptions import (
 )
 from backend.app.core.logger import get_logger
 from backend.app.core.validation_exceptions import ValidationException
+from backend.app.decision.exceptions import DecisionGenerationError
 from backend.app.middleware.request_logging import log_request
 
 logger = get_logger(__name__)
@@ -50,9 +59,15 @@ async def lifespan(application: FastAPI) -> AsyncIterator[None]:
             application,
             create_production_dataset_catalog_config(),
         )
+    if not isinstance(
+        getattr(application.state, "conversation_orchestrator", None),
+        ConversationOrchestrator,
+    ):
+        configure_graph_dependencies(application)
     try:
         yield
     finally:
+        close_graph_dependencies(application)
         logger.info("Shutting down %s.", settings.application_name)
 
 
@@ -90,6 +105,12 @@ def create_application(
     )
     application.add_exception_handler(ValidationException, handle_validation_exception)
     application.add_exception_handler(ApplicationError, handle_application_exception)
+    application.add_exception_handler(
+        DecisionGenerationError, handle_decision_generation_error
+    )
+    application.add_exception_handler(
+        ConversationSessionNotFoundError, handle_conversation_session_not_found_error
+    )
     application.add_exception_handler(Exception, handle_unexpected_exception)
     application.middleware("http")(log_request)
     return application

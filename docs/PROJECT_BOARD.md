@@ -199,6 +199,11 @@ Deliverables:
 
 ---
 
+## Sprint 5 - Services
+
+Status: Completed
+Completed: 2026-07-22
+
 ### Sprint 5.1 – Service Contracts
 
 Status: Completed
@@ -291,7 +296,7 @@ Deliverables:
 
 ---
 
-### Sprint 6.1.1 – Clean Architecture Refinement
+#### Sprint 6.1.1 – Clean Architecture Refinement
 
 Status: Completed
 Completed: 2026-07-22
@@ -311,7 +316,7 @@ Deliverables:
 
 ---
 
-### Sprint 6.1.6 – Application Composition Root
+#### Sprint 6.1.6 – Application Composition Root
 
 Status: Completed
 
@@ -559,7 +564,7 @@ Deliverables:
 
 ---
 
-### Sprint 9.1.5 – Runtime Composition
+#### Sprint 9.1.5 – Runtime Composition
 
 Status: Completed
 Completed: 2026-07-24
@@ -576,18 +581,16 @@ Deliverables:
 
 ---
 
-# Sprint 9.2 – Runtime Tool Integration
+### Sprint 9.2 – Runtime Tool Integration
 
 Status: Completed
-
 Completed: 2026-07-24
 
 ---
 
-## Sprint 9.2.0 – Production Dataset Projection
+#### Sprint 9.2.0 – Production Dataset Projection
 
 Status: Completed
-
 Completed: 2026-07-24
 
 Deliverables:
@@ -602,10 +605,9 @@ Deliverables:
 
 ---
 
-## Sprint 9.2.1 – Runtime Integration Validation
+#### Sprint 9.2.1 – Runtime Integration Validation
 
 Status: Completed
-
 Completed: 2026-07-24
 
 Deliverables:
@@ -622,18 +624,16 @@ Deliverables:
 
 ---
 
-## Sprint 9.3 – Government Knowledge Engine (RAG Tool)
+### Sprint 9.3 – Government Knowledge Engine (RAG Tool)
 
 Status: Completed
-
 Completed: 2026-07-24
 
 ---
 
-### Sprint 9.3.0 – Government Knowledge Base
+#### Sprint 9.3.0 – Government Knowledge Base
 
 Status: Completed
-
 Completed: 2026-07-24
 
 Deliverables:
@@ -653,10 +653,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.3.1 – Government Knowledge Evaluation
+#### Sprint 9.3.1 – Government Knowledge Evaluation
 
 Status: Completed
-
 Completed: 2026-07-24
 
 Deliverables:
@@ -674,10 +673,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.3.2 – Benchmark Synchronization
+#### Sprint 9.3.2 – Benchmark Synchronization
 
 Status: Completed
-
 Completed: 2026-07-24
 
 Deliverables:
@@ -690,7 +688,7 @@ Deliverables:
 
 ---
 
-## Sprint 9.4 – Weather Tool
+### Sprint 9.4 – Weather Tool
 
 Status: Completed
 Completed: 2026-07-24
@@ -708,18 +706,16 @@ Completed
 
 ---
 
-## Sprint 9.5 – GloFAS Forecast Tool
+### Sprint 9.5 – GloFAS Forecast Tool
 
 Status: Completed
-
 Completed: 2026-07-25
 
 ---
 
-### Sprint 9.5.0 – Forecast Tool Foundation
+#### Sprint 9.5.0 – Forecast Tool Foundation
 
 Status: Completed
-
 Completed: 2026-07-25
 
 Deliverables:
@@ -736,10 +732,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.5.1 – Forecast Ingestion
+#### Sprint 9.5.1 – Forecast Ingestion
 
 Status: Completed
-
 Completed: 2026-07-25
 
 Deliverables:
@@ -753,10 +748,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.5.2 – Forecast Processing
+#### Sprint 9.5.2 – Forecast Processing
 
 Status: Completed
-
 Completed: 2026-07-25
 
 Deliverables:
@@ -772,7 +766,7 @@ Deliverables:
 
 ---
 
-### Sprint 9.5.3 – Forecast Architecture Refinement
+#### Sprint 9.5.3 – Forecast Architecture Refinement
 
 Status: Completed
 
@@ -789,18 +783,16 @@ Deliverables:
 
 ---
 
-## Sprint 9.6 – GIS Flood Analysis Tool
+### Sprint 9.6 – GIS Flood Analysis Tool
 
 Status: Completed
-
 Completed: 2026-07-26
 
 ---
 
-### Sprint 9.6.0 – GIS Foundation
+#### Sprint 9.6.0 – GIS Foundation
 
 Status: Completed
-
 Completed: 2026-07-26
 
 Deliverables:
@@ -814,10 +806,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.6.1 – Terrain & Flood Processing
+#### Sprint 9.6.1 – Terrain & Flood Processing
 
 Status: Completed
-
 Completed: 2026-07-26
 
 Deliverables:
@@ -831,10 +822,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.6.2 – Population & Infrastructure Processing
+#### Sprint 9.6.2 – Population & Infrastructure Processing
 
 Status: Completed
-
 Completed: 2026-07-26
 
 Deliverables:
@@ -847,10 +837,9 @@ Deliverables:
 
 ---
 
-### Sprint 9.6.3 – AI Spatial Evidence
+#### Sprint 9.6.3 – AI Spatial Evidence
 
 Status: Completed
-
 Completed: 2026-07-26
 
 Deliverables:
@@ -863,17 +852,17 @@ Deliverables:
 
 ---
 
-# Sprint 10 – LangGraph Decision Agent
+## Sprint 10 – LangGraph Decision Agent
 
 Status: Completed
-
 Completed: 2026-07-27
 
 ---
 
-## Sprint 10.1 – Graph Definition
+### Sprint 10.1 – Graph Definition
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -885,9 +874,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.2 – Evidence Infrastructure
+### Sprint 10.2 – Evidence Infrastructure
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -901,9 +891,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.2.4 – Architecture Cleanup
+#### Sprint 10.2.4 – Architecture Cleanup
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -914,9 +905,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.3 – Conditional Routing
+### Sprint 10.3 – Conditional Routing
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -926,9 +918,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.4 – Evidence Aggregation
+### Sprint 10.4 – Evidence Aggregation
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -940,9 +933,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.5 – LLM Decision Agent
+### Sprint 10.5 – LLM Decision Agent
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -955,9 +949,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.5.1 – Architecture Refinement
+#### Sprint 10.5.1 – Architecture Refinement
 
 Status: Completed
+Completed: 2026-07-27
 
 Deliverables:
 
@@ -968,9 +963,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.6 – Failure Recovery
+#### Sprint 10.6 – Failure Recovery
 
 Status: Completed
+Completed: 2026-07-28
 
 Deliverables:
 
@@ -983,9 +979,10 @@ Deliverables:
 
 ---
 
-## Sprint 10.7 – Observability & Production Hardening
+### Sprint 10.7 – Observability & Production Hardening
 
 Status: Completed
+Completed: 2026-07-28
 
 Deliverables:
 
@@ -1254,3 +1251,48 @@ Deliverables:
 ---
 
 Ready for Sprint 14 – Streamlit Dashboard
+
+## Sprint 14.1 – Production Composition Root & Conversation API
+
+Status: Completed
+Completed: 2026-07-29
+
+---
+
+### Sprint 14.1.1 – Production Graph Composition Root
+
+Status: Completed
+Deliverables:
+- [x] Singleton composition root (configure_graph_dependencies)
+- [x] Request-scoped orchestrator dependency provider
+- [x] Fail-fast startup validation
+- [x] GIS loader reuse verified (no per-request re-parsing)
+
+---
+
+### Sprint 14.1.2 – POST /conversation Endpoint
+
+Status: Completed
+Deliverables:
+- [x] ConversationRequest/ConversationResponse schemas (minimal response surface)
+- [x] POST /conversation endpoint
+- [x] Fixed: strict-mode session_id defect (blocked every real client)
+- [x] Fixed: DecisionGenerationError → 503
+- [x] Fixed: unknown session → 404 (ConversationSessionNotFoundError)
+- [x] Full suite: 260 passed, 1 skipped
+- [x] Live end-to-end verification via real running server
+
+---
+
+### Sprint 14.1.3 – Multi-Turn Reasoning Focus
+
+Status: Completed
+Deliverables:
+- [x] FOCUS prompt instruction with real weak/strong example
+- [x] Golden-set follow-up-focus test (stable 3x + full suite)
+- [x] Measurement-methodology correction documented (ratio → structural check)
+
+---
+
+Real Weather/Forecast integration: scoped, deferred, not yet started.
+Ready for Sprint 14.2 - Weather/Forecast wiring.

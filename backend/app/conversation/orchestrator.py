@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from backend.app.conversation.evidence_reuse import requires_new_evidence
+from backend.app.conversation.exceptions import ConversationSessionNotFoundError
 from backend.app.conversation.models import ConversationTurn
 from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.decision.exceptions import DecisionGenerationError
@@ -55,7 +56,7 @@ class ConversationOrchestrator:
         resolved_session_id = session_id or await self._session_store.create_session()
         session = await self._session_store.get_session(resolved_session_id)
         if session is None:
-            raise ValueError(
+            raise ConversationSessionNotFoundError(
                 f"Conversation session {resolved_session_id} does not exist."
             )
 

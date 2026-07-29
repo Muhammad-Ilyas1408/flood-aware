@@ -8,6 +8,70 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.4.0] - 2026-07-29
+
+---
+
+## Sprint 14.1 – Production Composition Root & Conversation API (2026-07-29)
+
+### Sprint 14.1.1 — Production Graph Composition Root
+
+#### Added
+
+- Added `backend/app/config/graph_dependencies.py`: `configure_graph_dependencies()`, constructing the full real tool stack (village/shelter/dataset services and tools, GIS river/OSM/WorldPop loaders + `GISDomainService`, government knowledge tool, real `build_openai_decision_provider()`) exactly once at FastAPI application startup, mirroring `scripts/manual_chat.py`'s composition but as a true singleton stored on `application.state` rather than rebuilt per invocation.
+- Added `get_conversation_orchestrator(request)`, a request-scoped dependency provider matching the existing `get_village_service(request)` pattern.
+- Added `close_graph_dependencies()`, releasing vector store/river/WorldPop loader resources at application shutdown.
+- Wired both into `main.py`'s existing lifespan sequence, idempotently guarded.
+- Weather and Forecast use the same deterministic static stand-ins as `manual_chat.py` (explicit, deliberate v1.0 scope decision — real API/GloFAS integration deferred as separate follow-up work).
+
+#### Verified
+
+- GIS river-network loading confirmed already internally cached (`RiverNetworkLoader`); `OSMLoader` has no internal cache but is now constructed once at startup regardless, eliminating per-request re-parsing structurally via the composition root rather than requiring a second caching layer.
+- Fails fast with a clear `ApplicationConfigurationError` if required GIS data files or `OPENAI_API_KEY` are missing at startup, rather than accepting traffic and failing on first request.
+
+---
+
+### Sprint 14.1.2 — POST /conversation Endpoint
+
+#### Added
+
+- Added `backend/app/schemas/conversation.py`: `ConversationRequest`/`ConversationResponse`, exposing only client-appropriate fields (risk level, confidence, summary, actions, citations, missing_evidence) — internal fields (full evidence bundle, reasons, conversation history) explicitly excluded from the response surface, verified by dedicated test assertions.
+- Added `backend/app/api/conversation.py`: `POST /conversation`, registered in the existing router aggregation, following the established villages/shelters router conventions exactly.
+- Added `backend/tests/test_conversation_api.py`: integration tests using `app.dependency_overrides`, no real OpenAI/GIS calls.
+
+#### Fixed
+
+- **Request-schema strict-mode defect:** `ConversationRequest` originally inherited `strict=True`, which rejects `session_id: UUID` unless the caller supplies an already-constructed Python `UUID` object — impossible for any real JSON client, since JSON has no native UUID type. This made the documented "supply a session_id to continue a conversation" contract unsatisfiable for every real caller. Removed `strict=True` from the inbound request schema (response schemas remain strict, since they are always constructed internally from typed domain objects, never parsed from external input). Audited all other request fields; confirmed none share this defect.
+- **Unhandled `DecisionGenerationError` mapped to 503:** added `handle_decision_generation_error`, returning a clean, generic "temporarily unavailable" message with safe server-side logging (exception type only, never message/internals), registered ahead of the catch-all handler.
+- **Unhandled unknown-session `ValueError` mapped to 404:** added `backend/app/conversation/exceptions.py` (`ConversationError`/`ConversationSessionNotFoundError`, following the existing `decision/exceptions.py` domain-hierarchy convention) and `handle_conversation_session_not_found_error`, returning a safe "session not found, start a new conversation" message. Test explicitly asserts neither the raw session UUID nor the exception class name appear in the response body.
+
+#### Verified
+
+- Full test suite: 260 passed, 1 skipped.
+- Live end-to-end verification against a real running server (`uvicorn`): real multi-turn conversation via `POST /conversation` with real GIS/village/shelter/knowledge tools and real OpenAI reasoning; observed the Sprint 13 retry-with-feedback mechanism recover live from a real grounding correction; confirmed evidence reuse (no GIS re-parse) on same-context follow-up; confirmed real 404 for an unknown session ID and real 503-shaped handling wired correctly.
+
+---
+
+### Sprint 14.1.3 — Multi-Turn Reasoning Focus
+
+#### Added
+
+- Added a FOCUS instruction to `PromptBuilder._SYSTEM_INSTRUCTIONS`' conversation-history paragraph, with a weak/strong contrast example built from real captured production output: follow-up questions must primarily address what the current request specifically asks, using prior turns for continuity only rather than re-deriving a general overview each turn.
+- Added `test_follow_up_narrows_focus_to_shelters_not_general_overview` (`backend/tests/golden/test_conversation_golden_set.py`), a real multi-turn golden-set scenario proving the fix against the live API.
+
+#### Notes — measurement methodology finding
+
+- Initial test design measured focus via a shelter-action ratio threshold; this proved unreliable not because the prompt fix was ineffective, but because the underlying metric (a ratio over typically 2–3 discrete actions) cannot support a stable threshold comparison — real API variance moved the ratio between 0.33/0.5/0.67 across identical repeated calls, with no threshold value avoiding false failures. Replaced with a coarser, structural pass/fail check instead: at least one action must be shelter-grounded, and the first (highest-priority) action specifically must be shelter-grounded — proving shelters lead the response rather than measuring an inherently noisy proportion. Verified stable across 3 consecutive real-API runs plus the full 17-test golden set.
+
+### Notes
+
+- No changes to `decision/parser.py`, `evidence_reference_index.py`, or `models.py`.
+- Real Weather (OpenWeatherMap) and real Forecast (GloFAS) integration explicitly deferred — static stand-ins remain in production composition root pending scoped follow-up work.
+- No Streamlit/dashboard UI in this session — Sprint 14.2 remains next.
+- Sprint 14.1 completed.
+
+---
+
 ## [1.3.1] - 2026-07-29
 
 ---

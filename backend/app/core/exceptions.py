@@ -8,9 +8,11 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
+from backend.app.conversation.exceptions import ConversationSessionNotFoundError
 from backend.app.core.application_exceptions import ApplicationError
 from backend.app.core.logger import get_logger
 from backend.app.core.validation_exceptions import ValidationException
+from backend.app.decision.exceptions import DecisionGenerationError
 from backend.app.schemas.errors import ErrorResponse, ValidationIssue
 
 logger = get_logger(__name__)
@@ -128,6 +130,44 @@ async def handle_application_exception(
         request,
         status.HTTP_500_INTERNAL_SERVER_ERROR,
         "An unexpected server error occurred.",
+    )
+
+
+async def handle_decision_generation_error(
+    request: Request,
+    exception: DecisionGenerationError,
+) -> JSONResponse:
+    """Return a safe standardized response for decision-generation failures."""
+
+    logger.error(
+        "Decision generation exception: method=%s path=%s exception_type=%s",
+        request.method,
+        request.url.path,
+        type(exception).__name__,
+    )
+    return _error_response(
+        request,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+        "The recommendation service is temporarily unavailable. Please try again.",
+    )
+
+
+async def handle_conversation_session_not_found_error(
+    request: Request,
+    exception: ConversationSessionNotFoundError,
+) -> JSONResponse:
+    """Return a safe standardized response for an unknown conversation session."""
+
+    logger.error(
+        "Conversation session not found: method=%s path=%s exception_type=%s",
+        request.method,
+        request.url.path,
+        type(exception).__name__,
+    )
+    return _error_response(
+        request,
+        status.HTTP_404_NOT_FOUND,
+        "The requested conversation session was not found. Start a new conversation.",
     )
 
 
