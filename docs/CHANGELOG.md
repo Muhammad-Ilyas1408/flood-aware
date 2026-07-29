@@ -67,8 +67,41 @@ All notable changes to this project will be documented in this file.
 
 - No changes to `decision/parser.py`, `evidence_reference_index.py`, or `models.py`.
 - Real Weather (OpenWeatherMap) and real Forecast (GloFAS) integration explicitly deferred — static stand-ins remain in production composition root pending scoped follow-up work.
-- No Streamlit/dashboard UI in this session — Sprint 14.2 remains next.
-- Sprint 14.1 completed.
+
+---
+
+## Sprint 14.1.4 – Real Weather & Forecast Integration (2026-07-29)
+
+### Added
+
+- Wired real `WeatherTool` (OpenWeatherMap, synchronous per-request) into the production composition root, replacing `_StaticWeatherTool`. Fails fast at startup via `ApplicationConfigurationError` if `OPENWEATHER_API_KEY` is missing.
+- Wired real `GloFASForecastTool` into the production composition root, replacing `_StaticForecastProvider`. Reads only the newest already-ingested local snapshot from `data/glofas/`; deliberately never triggers live GloFAS/CDS ingestion from the request path (confirmed via investigation: the underlying `cdsapi` client has an unbounded blocking poll loop unsuitable for a synchronous request handler). Ingestion remains an explicitly separate, independently-run process (`scripts/ingest_glofas_snapshot.py`).
+- Added snapshot staleness detection: `ForecastEvidence` gained `snapshot_age_hours`/`snapshot_stale` fields, computed in `ForecastNode` from the snapshot file's modification time against a configurable threshold (`GLOFAS_MAX_SNAPSHOT_AGE_HOURS`, default 48h — one full tolerated missed/delayed GloFAS daily publication cycle).
+- Staleness is surfaced **both internally and to the end user**, via the existing `missing_evidence` mechanism rather than a new field: a stale forecast produces a human-readable notice (e.g. "forecast (data is approximately 4 days old)") that reaches `Recommendation.missing_evidence` and the real API response, and separately causes the model's confidence reasoning to treat a stale forecast as non-authoritative (extending the existing SINGLE-SOURCE CONFIDENCE instruction).
+- Removed both static stand-in classes (`_StaticWeatherTool`, `_StaticForecastProvider`) entirely — no dead code left behind.
+
+### Fixed
+
+- **`ForecastNode` never populated `evidence.forecast`:** discovered during investigation — the node only ever wrote to `state.forecast_result` (the raw domain object), leaving `state.forecast` (the `ForecastEvidence` the prompt actually reads) permanently at its empty default. This meant every prior conversation session reported "forecast" as entirely absent in `missing_evidence`, even when real discharge data existed in `forecast_result`. Fixed as part of this work (required for staleness to be representable at all); existing test assertion in `test_forecast_node.py` updated to reflect the corrected, intentional behavior.
+
+### Verified
+
+- Full test suite: 267 passed, 1 skipped.
+- Full golden set (17 real-API scenarios): 17/17 passing.
+- Live end-to-end verification against a real running server across two real villages (Mingora — major severity, triggers full tool suite; Barikot — normal severity, minimal tool suite):
+  - Real weather/forecast values genuinely differ per location and differ from the old fixed stand-in values.
+  - Staleness notice correctly and consistently surfaced across multiple real turns.
+  - System correctly and honestly declined to fabricate shelter guidance when real shelter evidence was genuinely absent (Barikot, normal severity — GIS/Village/Shelter never triggered by existing severity-based routing).
+  - System correctly produced a shelter-led, FOCUS-compliant follow-up response when real shelter evidence was genuinely present (Mingora, moderate/major severity).
+
+### Notes — real finding, deferred as future work
+
+- Live testing surfaced a legitimate design gap, not a bug: because tool routing is purely severity-based (Sprint 12), a user's explicit question (e.g. "what about shelters?") cannot itself trigger GIS/Village/Shelter evidence collection if computed severity alone wouldn't have triggered it. This is the same query-intent-based-routing gap Sprint 12 already identified and explicitly deferred — now with a concrete real-world example. Recommended as a scoped future enhancement (e.g. "intent-aware supplementary tool invocation"), not undertaken in this session.
+- Live-observed inconsistency, not yet root-caused: one real response (Barikot follow-up) included `"shelters"` in `missing_evidence` as a bare word, differing in form from the forecast staleness notice's descriptive phrasing — worth a closer look in a future session, low priority given it doesn't affect grounding correctness.
+- No changes to `decision/parser.py`, `evidence_reference_index.py`, or `models.py`'s core `Decision` contracts.
+- GloFAS ingestion scheduling (periodic automated refresh) remains a separate, explicitly deferred follow-up task.
+- Sprint 14.1 (composition root, conversation API, real Weather/Forecast wiring) is now fully complete.
+- Ready for Sprint 14.2 – Streamlit Dashboard.
 
 ---
 

@@ -41,7 +41,11 @@ def state_factory() -> GraphStateFactory:
     )
 
 
-def forecast_result(*, discharge_m3_per_second: float = 100.0) -> ForecastResult:
+def forecast_result(
+    *,
+    discharge_m3_per_second: float = 100.0,
+    retrieved_at: datetime | None = None,
+) -> ForecastResult:
     """Create complete canonical forecast data without external I/O."""
     timestamp = datetime(2026, 7, 26, tzinfo=UTC)
     requested_point = Point(latitude=34.0151, longitude=71.5249)
@@ -58,7 +62,7 @@ def forecast_result(*, discharge_m3_per_second: float = 100.0) -> ForecastResult
             hydrological_model="lisflood",
             system_version="operational",
             forecast_reference_time=timestamp,
-            retrieved_at=timestamp,
+            retrieved_at=retrieved_at or timestamp,
         ),
         series=ForecastSeries(
             points=(

@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from backend.app.ai.dataset_catalog_tool import DatasetCatalogTool
 from backend.app.ai.shelter_tool import ShelterTool
@@ -9,6 +11,7 @@ from backend.app.ai.village_tool import VillageTool
 from backend.app.decision.protocols import DecisionAgentProtocol
 from backend.app.decision.exceptions import DecisionError
 from backend.app.core.logger import get_logger
+from backend.app.forecast.constants import DEFAULT_MAX_SNAPSHOT_AGE_HOURS
 from backend.app.forecast.models import ForecastResult
 from backend.app.flood.classification.service import FloodClassificationService
 from backend.app.gis.domain.gis_request_factory import GISRequestFactory
@@ -68,13 +71,21 @@ class WeatherNode:
 class ForecastNode:
     """Retain the canonical forecast result produced by an injected provider."""
 
-    def __init__(self, forecast_provider: ForecastProvider) -> None:
+    def __init__(
+        self,
+        forecast_provider: ForecastProvider,
+        *,
+        max_snapshot_age_hours: int = DEFAULT_MAX_SNAPSHOT_AGE_HOURS,
+        clock: Callable[[], datetime] | None = None,
+    ) -> None:
         """Initialize the node with the injected production forecast boundary."""
 
         self._forecast_provider = forecast_provider
+        self._max_snapshot_age_hours = max_snapshot_age_hours
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     async def execute(self, state: GraphState) -> GraphState:
-        """Store the provider's canonical result without deriving new facts."""
+        """Store the provider's canonical result and its derived snapshot-age evidence."""
         coordinates = state.user_request.coordinates
         if coordinates is None:
             _log_precondition_skip(state, "forecast", "request coordinates are absent")
@@ -88,7 +99,24 @@ class ForecastNode:
             )
             if not isinstance(forecast_result, ForecastResult):
                 raise TypeError("Forecast provider must return a ForecastResult.")
-            return state.model_copy(update={"forecast_result": forecast_result})
+            age_hours = max(
+                0.0,
+                (
+                    self._clock() - forecast_result.metadata.retrieved_at
+                ).total_seconds()
+                / 3600,
+            )
+            return state.model_copy(
+                update={
+                    "forecast_result": forecast_result,
+                    "forecast": state.forecast.model_copy(
+                        update={
+                            "snapshot_age_hours": age_hours,
+                            "snapshot_stale": age_hours > self._max_snapshot_age_hours,
+                        }
+                    ),
+                }
+            )
         except Exception as error:
             return _record_tool_failure(state, "forecast", error)
 

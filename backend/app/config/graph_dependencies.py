@@ -5,14 +5,14 @@ This module constructs the full LangGraph decision pipeline exactly as
 startup instead of once per script run, so expensive GIS resources (river
 network and OSM PBF parsing) are read once and reused across every request.
 
-Weather and forecast evidence intentionally use the same deterministic
-stand-ins as ``manual_chat.py`` rather than live provider integrations;
-wiring the real ``WeatherTool``/GloFAS forecast provider into this graph is
-explicitly out of scope for this composition root.
+Weather and forecast now use their real production boundaries. Weather calls
+OpenWeatherMap synchronously per request. Forecast reads the newest already-
+ingested local GloFAS snapshot from ``data/glofas/`` only; it never triggers
+live GloFAS/CDS ingestion, which remains a separate, independently-run
+process (``scripts/ingest_glofas_snapshot.py``) explicitly out of scope here.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -28,20 +28,18 @@ from backend.app.decision.dependencies import build_openai_decision_provider
 from backend.app.decision.prompt_builder import PromptBuilder as DecisionPromptBuilder
 from backend.app.flood.classification.policy import FloodClassificationPolicy
 from backend.app.flood.classification.service import FloodClassificationService
-from backend.app.forecast.models import (
-    ForecastLocation,
-    ForecastMetadata,
-    ForecastPoint,
-    ForecastResult,
-    ForecastSeries,
-)
+from backend.app.forecast.constants import DEFAULT_SNAPSHOT_DIRECTORY
+from backend.app.forecast.forecast_tool import GloFASForecastTool
+from backend.app.forecast.mapper import ForecastMapper
+from backend.app.forecast.parser import NetCDFForecastParser
+from backend.app.forecast.settings import ForecastSettings
+from backend.app.forecast.snapshot_locator import SnapshotLocator
 from backend.app.gis.analysis_tool import GISAnalysisTool
 from backend.app.gis.domain.gis_request_factory import GISRequestFactory
 from backend.app.gis.domain.models import SpatialPolicy
 from backend.app.gis.domain.service import GISDomainService
 from backend.app.gis.domain.spatial_policy_service import SpatialPolicyService
 from backend.app.gis.evidence import FloodEvidenceBuilder
-from backend.app.gis.geometry import DistanceResult, Point
 from backend.app.gis.processing.flood_zone import FloodZoneGenerator
 from backend.app.gis.processing.infrastructure_impact import InfrastructureImpactCalculator
 from backend.app.gis.processing.osm import OSMLoader
@@ -66,83 +64,29 @@ from backend.app.services.dependencies import (
 from backend.app.use_cases.dataset_catalog import ViewDatasetCatalogUseCase
 from backend.app.use_cases.shelters import ViewSheltersUseCase
 from backend.app.use_cases.villages import ViewVillagesUseCase
-from backend.app.weather.models import WeatherRequest, WeatherResult
+from backend.app.weather.client import OpenWeatherClient
+from backend.app.weather.settings import WeatherSettings
+from backend.app.weather.weather_tool import WeatherTool
 
-_FIXTURE_TIMESTAMP = datetime(2026, 7, 26, tzinfo=UTC)
 _OSM_PBF_PATH = PROJECT_ROOT / "data/gis/osm/raw/pakistan-latest.osm.pbf"
 _WORLDPOP_RASTER_PATH = PROJECT_ROOT / "data/gis/worldpop/raw/pak_ppp_2025.tif"
 
 
-class _StaticWeatherTool:
-    """Provide deterministic weather evidence pending live weather integration."""
-
-    def get_current_weather(self, request: WeatherRequest) -> WeatherResult:
-        """Return deterministic, realistic weather for the requested coordinates."""
-        return WeatherResult(
-            location="Mingora",
-            country="PK",
-            latitude=request.latitude,
-            longitude=request.longitude,
-            temperature=22.5,
-            feels_like=22.5,
-            humidity=80,
-            pressure=1012,
-            wind_speed=3.0,
-            weather_condition="Rain",
-            weather_description="light rain",
-            rainfall=1.2,
-            timestamp=_FIXTURE_TIMESTAMP,
-            source="graph_dependencies_static_weather",
-        )
-
-
-class _StaticForecastProvider:
-    """Provide deterministic forecast evidence pending live GloFAS integration."""
-
-    def get_forecast(self, latitude: float, longitude: float) -> ForecastResult:
-        """Return a deterministic major-discharge forecast at the requested point."""
-        point = Point(latitude=latitude, longitude=longitude)
-        return ForecastResult(
-            location=ForecastLocation(
-                requested_point=point,
-                grid_point=point,
-                grid_distance=DistanceResult(meters=0.0, kilometers=0.0),
-            ),
-            metadata=ForecastMetadata(
-                snapshot_path=PROJECT_ROOT
-                / "data/glofas/glofas_control_20260726T000000Z.nc",
-                dataset_name="cems-glofas-forecast",
-                product_type="control_forecast",
-                hydrological_model="lisflood",
-                system_version="operational",
-                forecast_reference_time=_FIXTURE_TIMESTAMP,
-                retrieved_at=_FIXTURE_TIMESTAMP,
-            ),
-            series=ForecastSeries(
-                points=(
-                    ForecastPoint(
-                        valid_time=_FIXTURE_TIMESTAMP,
-                        lead_time_hours=0,
-                        discharge_m3_per_second=600.0,
-                    ),
-                )
-            ),
-        )
-
-
 @dataclass(frozen=True, slots=True)
 class _GraphRuntimeResources:
-    """Own closable GIS/RAG resources constructed once for the app's lifetime."""
+    """Own closable GIS/RAG/weather resources constructed once for the app's lifetime."""
 
     vector_store: ChromaVectorStore
     river_loader: RiverNetworkLoader
     worldpop_loader: WorldPopLoader
+    weather_client: OpenWeatherClient
 
     def close(self) -> None:
         """Release every owned resource at application shutdown."""
         self.vector_store.close()
         self.river_loader.close()
         self.worldpop_loader.close()
+        self.weather_client.close()
 
 
 def _build_knowledge_tool() -> tuple[KnowledgeTool, ChromaVectorStore]:
@@ -178,6 +122,38 @@ def _build_knowledge_tool() -> tuple[KnowledgeTool, ChromaVectorStore]:
     )
 
 
+def _build_weather_tool(
+    settings: WeatherSettings,
+) -> tuple[WeatherTool, OpenWeatherClient]:
+    """Compose the production OpenWeatherMap-backed Weather Tool.
+
+    The owned HTTP client is returned alongside the tool so its lifetime can
+    be closed explicitly at application shutdown.
+
+    Raises:
+        ApplicationConfigurationError: If ``OPENWEATHER_API_KEY`` is unavailable.
+    """
+    if not settings.openweather_api_key:
+        raise ApplicationConfigurationError(
+            "OPENWEATHER_API_KEY is required to build the production weather tool."
+        )
+    client = OpenWeatherClient(settings)
+    return WeatherTool(client), client
+
+
+def _build_forecast_provider(settings: ForecastSettings) -> GloFASForecastTool:
+    """Compose the production forecast tool reading the local snapshot directory only.
+
+    This never triggers live GloFAS/CDS ingestion: it only parses whatever
+    snapshot ``scripts/ingest_glofas_snapshot.py`` has already saved locally.
+    """
+    return GloFASForecastTool(
+        parser=NetCDFForecastParser(),
+        mapper=ForecastMapper(),
+        snapshot_locator=SnapshotLocator(DEFAULT_SNAPSHOT_DIRECTORY),
+    )
+
+
 def _require_existing_file(path: Path, description: str) -> None:
     """Fail fast when a required production data file is missing."""
     if not path.is_file():
@@ -189,22 +165,28 @@ def _require_existing_file(path: Path, description: str) -> None:
 def configure_graph_dependencies(application: FastAPI) -> None:
     """Construct the production graph and conversation stack once at startup.
 
-    Builds every real collaborator the graph needs (village/shelter/dataset
-    services and tools, GIS river/OSM/worldpop loaders and domain service,
-    the government-knowledge tool, and the real OpenAI decision provider),
-    then wires one ``GraphContainer`` and one ``ConversationOrchestrator``
-    and attaches them to ``application.state`` so they persist for the
-    application's lifetime and are reused across every request.
+    Builds every real collaborator the graph needs (the OpenWeatherMap-backed
+    weather tool, the local-snapshot GloFAS forecast tool, village/shelter/
+    dataset services and tools, GIS river/OSM/worldpop loaders and domain
+    service, the government-knowledge tool, and the real OpenAI decision
+    provider), then wires one ``GraphContainer`` and one
+    ``ConversationOrchestrator`` and attaches them to ``application.state``
+    so they persist for the application's lifetime and are reused across
+    every request.
 
     Args:
         application: The FastAPI application that owns the runtime state.
 
     Raises:
         ApplicationConfigurationError: If required data files or the OpenAI
-            API key are missing.
+            or OpenWeatherMap API keys are missing.
     """
     _require_existing_file(_OSM_PBF_PATH, "OSM PBF dataset")
     _require_existing_file(_WORLDPOP_RASTER_PATH, "WorldPop raster dataset")
+
+    weather_tool, weather_client = _build_weather_tool(WeatherSettings())
+    forecast_settings = ForecastSettings()
+    forecast_provider = _build_forecast_provider(forecast_settings)
 
     dataset_config = create_production_dataset_catalog_config()
     village_service = create_village_service(
@@ -236,8 +218,8 @@ def configure_graph_dependencies(application: FastAPI) -> None:
     )
     decision_agent = build_openai_decision_provider()
     dependencies = GraphDependencies(
-        weather_tool=_StaticWeatherTool(),
-        forecast_provider=_StaticForecastProvider(),
+        weather_tool=weather_tool,
+        forecast_provider=forecast_provider,
         flood_classification_service=classification_service,
         spatial_policy_service=SpatialPolicyService(SpatialPolicy()),
         gis_request_factory=GISRequestFactory(),
@@ -249,6 +231,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
         ),
         knowledge_tool=knowledge_tool,
         decision_agent=decision_agent,
+        forecast_max_snapshot_age_hours=forecast_settings.glofas_max_snapshot_age_hours,
     )
     container = GraphContainer(dependencies)
     orchestrator = ConversationOrchestrator(
@@ -265,6 +248,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
         vector_store=vector_store,
         river_loader=river_loader,
         worldpop_loader=worldpop_loader,
+        weather_client=weather_client,
     )
 
 

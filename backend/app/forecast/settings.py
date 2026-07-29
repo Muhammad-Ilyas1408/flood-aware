@@ -5,7 +5,10 @@ from urllib.parse import urlparse
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from backend.app.forecast.constants import DEFAULT_DATASET_NAME
+from backend.app.forecast.constants import (
+    DEFAULT_DATASET_NAME,
+    DEFAULT_MAX_SNAPSHOT_AGE_HOURS,
+)
 
 
 class ForecastSettings(BaseSettings):
@@ -42,6 +45,11 @@ class ForecastSettings(BaseSettings):
         validation_alias="GLOFAS_DEFAULT_FORECAST_DAYS",
         ge=1,
         le=30,
+    )
+    glofas_max_snapshot_age_hours: int = Field(
+        default=DEFAULT_MAX_SNAPSHOT_AGE_HOURS,
+        validation_alias="GLOFAS_MAX_SNAPSHOT_AGE_HOURS",
+        ge=1,
     )
 
     @field_validator("glofas_base_url")

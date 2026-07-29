@@ -1294,5 +1294,25 @@ Deliverables:
 
 ---
 
-Real Weather/Forecast integration: scoped, deferred, not yet started.
-Ready for Sprint 14.2 - Weather/Forecast wiring.
+## Sprint 14.1.4 – Real Weather & Forecast Integration
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+
+- [x] Real WeatherTool wired (OpenWeatherMap)
+- [x] Real GloFASForecastTool wired (local snapshot read only, no live ingestion)
+- [x] Snapshot staleness detection (internal + user-facing via missing_evidence)
+- [x] Fixed: ForecastNode never populated evidence.forecast (pre-existing gap)
+- [x] Static stand-ins fully removed
+- [x] Full suite: 267 passed, 1 skipped
+- [x] Full golden set: 17/17 passing
+- [x] Live multi-village, multi-turn verification (Mingora + Barikot)
+- [x] Documented finding: intent-aware routing gap (deferred, links to Sprint 12)
+- [x] Documented finding: minor missing_evidence phrasing inconsistency (low priority, deferred)
+
+---
+
+Sprint 14.1 fully complete (composition root + conversation API + real Weather/Forecast).
+Ready for Sprint 14.2 – Streamlit Dashboard.

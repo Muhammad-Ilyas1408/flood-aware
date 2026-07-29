@@ -44,6 +44,7 @@ from backend.app.graph.mappers import DecisionFallbackMapper
 from backend.app.graph.state import (
     EvidenceBundle,
     EvidenceProvenance,
+    ForecastEvidence,
     GISEvidence,
     KnowledgeEvidence,
     VillageEvidence,
@@ -304,6 +305,39 @@ def test_prompt_builder_warns_against_citing_figure_labels() -> None:
     system_prompt, _ = builder.build(evidence)
 
     assert "NOT valid citations" in system_prompt
+
+
+def test_prompt_builder_surfaces_stale_forecast_notice_for_missing_evidence() -> None:
+    """A stale forecast must produce a missing_evidence-bound notice the user sees."""
+    evidence = EvidenceBundle(
+        forecast=ForecastEvidence(
+            discharge=650.0,
+            snapshot_stale=True,
+            snapshot_age_hours=96.0,
+        ),
+    )
+    builder = PromptBuilder()
+
+    system_prompt, user_prompt = builder.build(evidence)
+
+    assert "forecast (data is approximately 4 days old)" in user_prompt
+    assert "Stale evidence notices" in system_prompt
+
+
+def test_prompt_builder_omits_stale_notice_for_a_fresh_forecast() -> None:
+    """A fresh forecast must not be reported as a stale evidence notice."""
+    evidence = EvidenceBundle(
+        forecast=ForecastEvidence(
+            discharge=650.0,
+            snapshot_stale=False,
+            snapshot_age_hours=2.0,
+        ),
+    )
+    builder = PromptBuilder()
+
+    _, user_prompt = builder.build(evidence)
+
+    assert "Stale evidence notices:\n[]" in user_prompt
 
 
 def test_openai_provider_forwards_prior_turns_to_prompt_builder(

@@ -48,17 +48,21 @@ class PromptBuilder:
         "silently picking one value.\n\n"
         "COMPLETENESS: Every category listed in 'Entirely absent evidence "
         "categories' must be explicitly named in `recommendation.missing_evidence`, "
-        "regardless of whether other evidence seems sufficient to act on. Category "
-        "names listed under 'Entirely absent evidence categories' must never appear "
-        "in `citations`, `supporting_evidence`, or `evidence_references`; they are "
+        "regardless of whether other evidence seems sufficient to act on. Every "
+        "note listed in 'Stale evidence notices' must also appear verbatim in "
+        "`recommendation.missing_evidence`: that evidence category is present but "
+        "outdated, which is a safety-relevant caveat the requester must still see, "
+        "even though the data may still be cited elsewhere. Category names listed "
+        "under 'Entirely absent evidence categories' must never appear in "
+        "`citations`, `supporting_evidence`, or `evidence_references`; they are "
         "missing, not citable. Only strings from 'Allowed citation values' may be "
         "used there.\n\n"
         "SINGLE-SOURCE CONFIDENCE: Do not assign confidence 'high' when your "
         "assessment rests on only one evidence category, especially when the "
-        "forecast category (the authoritative hydrological source) is absent. "
-        "Reserve 'high' confidence for cases corroborated by at least two "
-        "independent evidence categories, or by forecast data alone when it is "
-        "present and unambiguous.\n\n"
+        "forecast category (the authoritative hydrological source) is absent or "
+        "flagged in 'Stale evidence notices'. Reserve 'high' confidence for cases "
+        "corroborated by at least two independent evidence categories, or by "
+        "forecast data alone when it is present, unambiguous, and not stale.\n\n"
         "SPECIFICITY: When 'Key quantitative figures' is non-empty, "
         "`risk_assessment.rationale` and at least one entry in `reasons` must "
         "incorporate at least one concrete figure from that list — not just "
@@ -122,6 +126,7 @@ class PromptBuilder:
         absent_categories_json = json.dumps(
             sorted(_entirely_absent_evidence_categories(evidence))
         )
+        stale_notices_json = json.dumps(sorted(_stale_evidence_notices(evidence)))
         conflicts_json = json.dumps(
             [c.model_dump(mode="json") for c in evidence.conflicts],
             sort_keys=True,
@@ -139,7 +144,8 @@ class PromptBuilder:
             f"Allowed citation values (use these exact strings only):\n"
             f"{allowed_refs_json}\n\n"
             f"Unresolved evidence conflicts:\n{conflicts_json}\n\n"
-            f"Entirely absent evidence categories:\n{absent_categories_json}"
+            f"Entirely absent evidence categories:\n{absent_categories_json}\n\n"
+            f"Stale evidence notices:\n{stale_notices_json}"
         )
         return system_prompt, user_prompt
 
@@ -210,6 +216,24 @@ def _conversation_history_section(history: Sequence[ConversationTurnLike]) -> st
     return "Conversation history:\n" + json.dumps(
         turns, sort_keys=True, separators=(",", ":")
     ) + "\n\n"
+
+
+def _stale_evidence_notices(evidence: EvidenceBundle) -> tuple[str, ...]:
+    """Return human-readable notices for evidence flagged stale by its owning node.
+
+    A stale category is present, not absent, so it is deliberately kept out
+    of ``_entirely_absent_evidence_categories``. It still must reach
+    ``recommendation.missing_evidence`` as its own distinct notice, per the
+    COMPLETENESS instruction, so the requester sees the age caveat.
+    """
+    notices: list[str] = []
+    if (
+        evidence.forecast.snapshot_stale
+        and evidence.forecast.snapshot_age_hours is not None
+    ):
+        age_days = evidence.forecast.snapshot_age_hours / 24
+        notices.append(f"forecast (data is approximately {age_days:.0f} days old)")
+    return tuple(notices)
 
 
 def _entirely_absent_evidence_categories(evidence: EvidenceBundle) -> set[str]:

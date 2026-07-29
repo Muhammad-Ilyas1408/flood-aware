@@ -115,6 +115,8 @@ class ForecastEvidence(_Evidence):
     severity: str | None = None
     lead_time: int | None = Field(default=None, ge=0)
     source: str | None = None
+    snapshot_age_hours: float | None = Field(default=None, ge=0)
+    snapshot_stale: bool | None = None
 
 
 class GISEvidence(_Evidence):

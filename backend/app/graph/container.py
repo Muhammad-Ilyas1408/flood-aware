@@ -7,6 +7,7 @@ from backend.app.ai.shelter_tool import ShelterTool
 from backend.app.ai.village_tool import VillageTool
 from backend.app.decision.protocols import DecisionAgentProtocol
 from backend.app.flood.classification.service import FloodClassificationService
+from backend.app.forecast.constants import DEFAULT_MAX_SNAPSHOT_AGE_HOURS
 from backend.app.gis.domain.gis_request_factory import GISRequestFactory
 from backend.app.gis.domain.protocols import ForecastProvider
 from backend.app.gis.domain.service import GISDomainService
@@ -57,6 +58,7 @@ class GraphDependencies:
     dataset_catalog_tool: DatasetCatalogTool
     knowledge_tool: KnowledgeTool
     decision_agent: DecisionAgentProtocol
+    forecast_max_snapshot_age_hours: int = DEFAULT_MAX_SNAPSHOT_AGE_HOURS
     decision_metrics: DecisionMetricsCollector | None = None
 
 
@@ -75,7 +77,10 @@ class GraphContainer:
         )
         self._graph_builder = GraphBuilder(
             weather_node=WeatherNode(dependencies.weather_tool),
-            forecast_node=ForecastNode(dependencies.forecast_provider),
+            forecast_node=ForecastNode(
+                dependencies.forecast_provider,
+                max_snapshot_age_hours=dependencies.forecast_max_snapshot_age_hours,
+            ),
             gis_node=GISAnalysisNode(
                 dependencies.flood_classification_service,
                 dependencies.spatial_policy_service,
