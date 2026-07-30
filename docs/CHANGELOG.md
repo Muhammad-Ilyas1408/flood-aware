@@ -8,6 +8,36 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.6.1] - 2026-07-30
+
+---
+
+## Sprint 14.2.4 – Shelter-Action Grounding Refinement (2026-07-30)
+
+### Fixed
+
+- **Entirely-absent evidence categories could still generate specific, actionable-sounding recommendations.** Confirmed via live testing: a response could honestly state "no shelter data available" in `missing_evidence` while simultaneously recommending a specific action ("assess and prepare existing shelters, ensuring they are stocked") — not a hallucinated citation, but an inconsistent, over-specific claim about a category with zero real evidence behind it.
+- Added `DecisionActionGroundingError` (a `DecisionGroundingError` subclass) and `DecisionParser._validate_no_actions_on_absent_categories()`, enforced at the parser level, not prompt-wording alone — consistent with this project's established pattern (prompt instruction + parser-level enforcement) for high-stakes grounding rules.
+- **Refined through three rounds of empirical verification, each correcting a real gap found by the previous round's own test:**
+  1. Initial check (reference-subset only) correctly caught the real live-observed bug, but the retry-correction message carried no structured feedback, so the model couldn't reliably self-correct within the retry budget — fixed by adding `rejected_action`/`absent_category` fields (mirroring `DecisionGroundingError.invalid_references`) and a dedicated correction-message builder, with careful attention to Python's multiple-inheritance `except` clause ordering (`DecisionActionGroundingError` is transitively an `LLMOutputValidationError` too).
+  2. Reference-subset alone proved too strict: it rejected the prompt's own "strong" example behavior — a legitimate general action ("obtain shelter data before finalizing evacuation planning") that happened to cite only shelter-related dataset provenance. Citation shape cannot distinguish *acquiring* missing information from making a *specific claim* about an absent resource.
+  3. Final fix: the check now requires **both** reference-subset-of-absent-category **and** action text matching a specific-claim pattern (stock/prepare/assess/activate/ready/capacity) before rejecting — general data-gathering language is always allowed regardless of its citations. Verified empirically against all four relevant real examples (prompt's strong/weak examples, the real live-observed bug, and legitimate "gathering" phrasing) before considering the fix complete.
+
+### Verified
+
+- Full suite: 275 passed, 2 skipped.
+- Full golden set: 19/19 passing, including 3 consecutive stable runs of the new/refined shelter-action test before the final full-suite confirmation.
+- One unrelated golden test (`test_shelter_recommendation`, Sprint 11's single-turn golden set, untouched by this session's changes) failed once on exact citation-string phrasing, then passed twice on immediate re-run — logged as observed, non-reproducing variance, not investigated further.
+
+### Notes
+
+- This fix is a strong example of iterative refinement done correctly: each of the three rounds was driven by a real test failure exposing a genuine design gap, not speculative tuning — the same discipline applied to every fix this session.
+- No changes to `route_after_gis`/graph routing (confirmed correct and untouched throughout this investigation).
+- Sprint 14.2 (dashboard + all real-traffic production hardening) is now fully complete, with all previously-open items resolved.
+- Ready for Sprint 14.3 – Visual polish pass.
+
+---
+
 ## [1.5.0] - 2026-07-30
 
 ---

@@ -13,6 +13,7 @@ from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.decision.dependencies import build_openai_decision_provider
 from backend.app.decision.evidence_reference_index import EvidenceReferenceIndex
 from backend.app.decision.models import ActionRecommendation, Decision
+from backend.app.decision.parser import _SPECIFIC_ACTION_CLAIM_PATTERN
 from backend.app.decision.prompt_builder import PromptBuilder
 from backend.app.data.models import DatasetMetadata, DatasetStatistics
 from backend.app.dtos.datasets import (
@@ -80,7 +81,7 @@ def _is_shelter_grounded(
     return bool(set(action.evidence_references) & shelter_related)
 
 
-def _build_orchestrator(provider):
+def _build_orchestrator(provider, severity: FloodSeverity = FloodSeverity.MAJOR):
     """Compose a real graph runtime with deterministic non-LLM tool boundaries."""
     weather_tool = Mock()
     weather_tool.get_current_weather.return_value = SimpleNamespace(
@@ -97,7 +98,7 @@ def _build_orchestrator(provider):
         discharge_m3_per_second=2400.0
     )
     classification_service = Mock()
-    classification_service.classify.return_value = FloodSeverity.MAJOR
+    classification_service.classify.return_value = severity
     spatial_policy_service = Mock()
     spatial_policy_service.analysis_bounds.return_value = BoundingBox(
         min_latitude=33.9,
@@ -109,7 +110,7 @@ def _build_orchestrator(provider):
     gis_request_factory.build.return_value = Mock()
     gis_domain_service = AsyncMock()
     gis_domain_service.execute.return_value = SimpleNamespace(
-        flood_zone=SimpleNamespace(severity=FloodSeverity.MAJOR),
+        flood_zone=SimpleNamespace(severity=severity),
         population_exposure=SimpleNamespace(exposed_population=1800.0),
         infrastructure_impact=SimpleNamespace(critical_assets_affected=4),
         flood_area_square_meters=3200.0,
@@ -360,6 +361,48 @@ class TestConversationGoldenSet:
             "flood-status recap instead of substantively discussing the "
             "retrieved government policy guidance."
         )
+
+    async def test_moderate_severity_omits_shelter_actions_when_shelters_absent(
+        self, provider
+    ):
+        orchestrator, session_store, tools = _build_orchestrator(
+            provider, severity=FloodSeverity.MODERATE
+        )
+        session_id, _ = await orchestrator.handle_turn(
+            None,
+            _request("What is the flood situation in Mingora?", "Mingora"),
+        )
+        _, second = await orchestrator.handle_turn(
+            session_id,
+            _request("What about shelters?", "Mingora"),
+        )
+
+        assert tools["shelter"].execute.call_count == 0, (
+            "MODERATE severity must skip shelter collection per route_after_gis; "
+            "this test is only meaningful if shelter evidence is genuinely absent."
+        )
+        session = await session_store.get_session(session_id)
+        assert session is not None
+        _assert_grounded(second, session.turns[-1].evidence_bundle)
+        missing_text = " ".join(second.recommendation.missing_evidence).lower()
+        assert "shelter" in missing_text, (
+            "Absent shelter evidence must be named in missing_evidence."
+        )
+        shelter_related = _shelter_related_references(session.turns[-1].evidence_bundle)
+        for action in second.recommendation.actions:
+            references = set(action.evidence_references)
+            if not references or not (references <= shelter_related):
+                continue
+            # An action grounded ENTIRELY in shelter-related evidence is only a
+            # problem if it makes a specific-sounding claim about the resource
+            # itself (stock/prepare/assess/etc.) rather than general
+            # data-gathering language (obtain/gather/...), which is always
+            # acceptable and should never have been rejected by the parser.
+            assert not _SPECIFIC_ACTION_CLAIM_PATTERN.search(action.action), (
+                "An action grounded only in shelter-related evidence must not "
+                "make a specific claim about the resource itself — the parser "
+                f"should already reject this: {action.action!r}"
+            )
 
     async def test_village_change_refreshes_evidence_without_cross_turn_leakage(
         self, provider

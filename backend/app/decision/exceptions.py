@@ -80,3 +80,19 @@ class DecisionGroundingError(DecisionGenerationError, LLMOutputValidationError):
 
 class DecisionSpecificityError(DecisionGroundingError):
     """Raised when a Decision ignores available quantitative evidence."""
+
+
+class DecisionActionGroundingError(DecisionGroundingError):
+    """Raised when a recommended action is grounded only in an absent category."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        rejected_action: str = "",
+        absent_category: str = "",
+    ) -> None:
+        """Retain the rejected action text and absent category for correction."""
+        super().__init__(message)
+        self.rejected_action = rejected_action
+        self.absent_category = absent_category

@@ -309,6 +309,21 @@ def test_prompt_builder_warns_against_citing_figure_labels() -> None:
     assert "NOT valid citations" in system_prompt
 
 
+def test_prompt_builder_forbids_actions_built_on_absent_evidence_categories() -> None:
+    """The prompt must forbid a specific action centered on an absent category."""
+    evidence = EvidenceBundle()
+    builder = PromptBuilder()
+
+    system_prompt, _ = builder.build(evidence)
+
+    assert (
+        "must never be built around an entirely-absent evidence category"
+        in system_prompt
+    )
+    assert "Weak action" in system_prompt
+    assert "Strong action" in system_prompt
+
+
 def test_prompt_builder_surfaces_stale_forecast_notice_for_missing_evidence() -> None:
     """A stale forecast must produce a missing_evidence-bound notice the user sees."""
     evidence = EvidenceBundle(

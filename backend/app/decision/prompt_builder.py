@@ -12,6 +12,7 @@ from backend.app.graph.state import (
     ForecastEvidence,
     GISEvidence,
     KnowledgeEvidence,
+    ShelterEvidence,
     WeatherEvidence,
 )
 from backend.app.observability.version import PROMPT_VERSION, SYSTEM_VERSION
@@ -56,7 +57,20 @@ class PromptBuilder:
         "under 'Entirely absent evidence categories' must never appear in "
         "`citations`, `supporting_evidence`, or `evidence_references`; they are "
         "missing, not citable. Only strings from 'Allowed citation values' may be "
-        "used there.\n\n"
+        "used there. Recommended actions must never be built around an "
+        "entirely-absent evidence category: if a category is absent, note it in "
+        "`recommendation.missing_evidence` only — do not recommend a specific "
+        "action whose main subject is that absent category. A general action not "
+        "centered on the absent category (e.g. continuing to monitor and gather "
+        "missing evidence) is acceptable; a category-specific action is not, "
+        "since there is nothing concrete in the evidence to act on.\n\n"
+        "Weak action (do not write like this, when shelter evidence is entirely "
+        "absent): \"Assess and prepare existing shelters, ensuring they are "
+        "stocked and ready for evacuation.\"\n\n"
+        "Strong action (write like this): note 'shelter data unavailable' in "
+        "missing_evidence only; if an action is still warranted, keep it "
+        "general: \"Obtain shelter data before finalizing evacuation "
+        "planning.\"\n\n"
         "SINGLE-SOURCE CONFIDENCE: Do not assign confidence 'high' when your "
         "assessment rests on only one evidence category, especially when the "
         "forecast category (the authoritative hydrological source) is absent or "
@@ -277,4 +291,8 @@ def _entirely_absent_evidence_categories(evidence: EvidenceBundle) -> set[str]:
         absent.add("weather")
     if evidence.knowledge == KnowledgeEvidence():
         absent.add("knowledge")
+    if evidence.shelters == ShelterEvidence():
+        absent.add("shelter")
+    if not evidence.villages:
+        absent.add("village")
     return absent

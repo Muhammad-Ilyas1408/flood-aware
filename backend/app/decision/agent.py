@@ -9,6 +9,7 @@ from typing import Callable, Protocol
 
 from backend.app.core.logger import get_logger
 from backend.app.decision.exceptions import (
+    DecisionActionGroundingError,
     DecisionCircuitOpenError,
     DecisionError,
     DecisionGenerationError,
@@ -194,6 +195,18 @@ class OpenAIDecisionProvider:
                     "Decision provider request timed out."
                 )
                 failure.__cause__ = error
+            except DecisionActionGroundingError as error:
+                failure = error
+                correction_messages = (
+                    *correction_messages,
+                    {"role": "assistant", "content": response_content},
+                    {
+                        "role": "user",
+                        "content": _action_grounding_correction_message(
+                            error.rejected_action, error.absent_category
+                        ),
+                    },
+                )
             except DecisionGroundingError as error:
                 failure = error
                 if error.invalid_references:
@@ -416,6 +429,22 @@ def _grounding_correction_message(invalid_references: tuple[str, ...]) -> str:
         "exact matches from 'Allowed citation values', keeping every other "
         "citation, reason, and piece of reasoning unchanged. Return the complete "
         "corrected JSON object, matching the original schema."
+    )
+
+
+def _action_grounding_correction_message(
+    rejected_action: str, absent_category: str
+) -> str:
+    """Name the exact rejected action and absent category for a targeted fix."""
+    return (
+        "Your previous JSON response recommended this action, which is grounded "
+        f"only in the entirely-absent '{absent_category}' evidence category: "
+        f"{rejected_action!r}. Return a corrected JSON decision that either "
+        "removes this action entirely, or rewrites it to be general and not "
+        f"centered on '{absent_category}' (e.g. continuing to monitor and "
+        "gather missing evidence), keeping every other action, reason, and "
+        "citation unchanged. Return the complete corrected JSON object, "
+        "matching the original schema."
     )
 
 

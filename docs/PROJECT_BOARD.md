@@ -1362,4 +1362,23 @@ Status: Completed
 (claims "no data available" while citing real evidence). Diagnostic
 queued as next session's first task.
 
-Ready for Sprint 14.2.4 (fix carried-forward issue) → Sprint 14.3 (visual polish).
+---
+
+## Sprint 14.2.4 – Shelter-Action Grounding Refinement
+
+Status: Completed
+Completed: 2026-07-30
+
+Deliverables:
+- [x] DecisionActionGroundingError + parser-level enforcement
+- [x] Structured retry-feedback (rejected_action/absent_category)
+- [x] Content-aware classification (fixes over-rejection of legitimate general actions)
+- [x] Verified empirically against all 4 real reference examples
+- [x] Full suite: 275 passed, 2 skipped
+- [x] Full golden set: 19/19 passing (3x stability-confirmed on the refined test)
+- [x] Unrelated single-run golden flake logged, confirmed non-reproducing
+
+---
+
+Sprint 14.2 fully complete — no open items remaining.
+Ready for Sprint 14.3 – Visual polish pass.
