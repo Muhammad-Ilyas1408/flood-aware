@@ -134,6 +134,16 @@ def _village_schema() -> DatasetSchema:
                 data_type=DatasetColumnType.INTEGER,
                 nullable=False,
             ),
+            DatasetColumn(
+                name="latitude",
+                data_type=DatasetColumnType.FLOAT,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="longitude",
+                data_type=DatasetColumnType.FLOAT,
+                nullable=False,
+            ),
         )
     )
 
@@ -156,6 +166,16 @@ def _shelter_schema() -> DatasetSchema:
             DatasetColumn(
                 name="capacity",
                 data_type=DatasetColumnType.INTEGER,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="latitude",
+                data_type=DatasetColumnType.FLOAT,
+                nullable=False,
+            ),
+            DatasetColumn(
+                name="longitude",
+                data_type=DatasetColumnType.FLOAT,
                 nullable=False,
             ),
         )
@@ -615,7 +635,8 @@ class NegativeRepositoryTests(unittest.TestCase):
         with TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "malformed.csv"
             path.write_text(
-                'name,district,population\n"unterminated,Swat,1000\n',
+                "name,district,population,latitude,longitude\n"
+                '"unterminated,Swat,1000,34.0,72.0\n',
                 encoding="utf-8",
             )
             repository = CSVRepository(

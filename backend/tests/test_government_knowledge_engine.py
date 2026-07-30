@@ -46,8 +46,13 @@ class FakeEmbeddings(EmbeddingService):
 
 
 class FakeStore(VectorStore):
-    def __init__(self, chunks: tuple[KnowledgeChunk, ...]) -> None:
+    def __init__(
+        self,
+        chunks: tuple[KnowledgeChunk, ...],
+        distances: tuple[float, ...] | None = None,
+    ) -> None:
         self.chunks = chunks
+        self.distances = distances if distances is not None else (0.0,) * len(chunks)
         self.calls: list[tuple[tuple[float, ...], int, object]] = []
 
     def index(
@@ -63,7 +68,12 @@ class FakeStore(VectorStore):
         score_threshold: float | None = None,
     ) -> tuple[KnowledgeChunk, ...]:
         self.calls.append((vector, top_k, filters))
-        return self.chunks[:top_k]
+        nearest = sorted(zip(self.chunks, self.distances), key=lambda pair: pair[1])
+        return tuple(
+            chunk
+            for chunk, distance in nearest[:top_k]
+            if score_threshold is None or distance <= score_threshold
+        )
 
 
 class FakeGenerator(ResponseGenerator):
@@ -128,6 +138,15 @@ class GovernmentKnowledgeEngineTests(unittest.TestCase):
         self.assertEqual(context.citations[0].document_name, "NDMA Plan")
         self.assertIn("p. 4", context.text)
 
+    def test_context_deduplicates_near_identical_text_across_chunk_ids(self) -> None:
+        """Boilerplate text repeated under a different chunk_id is still collapsed."""
+        first = _chunk("page-3", "  MESSAGE FROM SECRETARY   RELIEF REHABILITATION.\n\n")
+        duplicate = _chunk("page-9", "message from secretary relief rehabilitation.")
+
+        context = ContextBuilder().build((first, duplicate))
+
+        self.assertEqual(context.chunks, (first,))
+
     def test_knowledge_tool_runs_grounded_pipeline_with_citations(self) -> None:
         store = FakeStore((_chunk("one"),))
         generator = FakeGenerator()
@@ -142,6 +161,70 @@ class GovernmentKnowledgeEngineTests(unittest.TestCase):
         self.assertEqual(answer.citations[0].page_number, 4)
         self.assertEqual(store.calls[0][1], 5)
         self.assertIn("Government evidence", generator.calls[0][1])
+
+    def test_knowledge_tool_threads_score_threshold_to_retrieval(self) -> None:
+        """A configured score_threshold filters weak matches before generation."""
+        strong = _chunk("strong", "Detailed flood embankment maintenance policy.")
+        weak = _chunk(
+            "weak", "MESSAGE FROM SECRETARY RELIEF REHABILITATION SETTLEMENT."
+        )
+        store = FakeStore((strong, weak), distances=(0.4, 1.9))
+        generator = FakeGenerator()
+        tool = KnowledgeTool(
+            GovernmentRetriever(FakeEmbeddings(), store),
+            ContextBuilder(),
+            PromptBuilder(),
+            generator,
+            score_threshold=1.3,
+        )
+
+        answer = tool.answer("What is the government policy about flood?")
+
+        self.assertEqual(len(answer.citations), 1)
+        self.assertEqual(answer.citations[0].document_name, "NDMA Plan")
+        self.assertIn("Detailed flood embankment", generator.calls[0][1])
+
+    def test_knowledge_tool_reports_honest_absence_above_threshold(self) -> None:
+        """No chunk clears the threshold: an honest no-guidance answer, no generation."""
+        weak = _chunk(
+            "weak", "MESSAGE FROM SECRETARY RELIEF REHABILITATION SETTLEMENT."
+        )
+        store = FakeStore((weak,), distances=(1.9,))
+        generator = FakeGenerator()
+        tool = KnowledgeTool(
+            GovernmentRetriever(FakeEmbeddings(), store),
+            ContextBuilder(),
+            PromptBuilder(),
+            generator,
+            score_threshold=1.3,
+        )
+
+        answer = tool.answer("What is the government policy about flood?")
+
+        self.assertEqual(answer.citations, ())
+        self.assertEqual(generator.calls, [])
+        self.assertIn("No sufficiently relevant", answer.text)
+
+    @unittest.skipUnless(
+        importlib.util.find_spec("chromadb"), "ChromaDB is not installed."
+    )
+    @unittest.skipIf(
+        os.name == "nt", "ChromaDB retains HNSW files on Windows until process exit."
+    )
+    def test_vector_store_score_threshold_filters_weak_matches(self) -> None:
+        """A real Chroma collection filters chunks beyond the configured distance."""
+        near = _chunk("near")
+        far = _chunk("far")
+        with tempfile.TemporaryDirectory() as directory:
+            store = ChromaVectorStore(directory, "threshold-test")
+            store.index((near, far), ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0)))
+
+            unfiltered = store.search((1.0, 0.0, 0.0), 2)
+            filtered = store.search((1.0, 0.0, 0.0), 2, score_threshold=1.0)
+            store.close()
+
+        self.assertEqual(set(unfiltered), {near, far})
+        self.assertEqual(filtered, (near,))
 
     @unittest.skipUnless(importlib.util.find_spec("fitz"), "PyMuPDF is not installed.")
     def test_loader_builds_real_authoritative_corpus(self) -> None:

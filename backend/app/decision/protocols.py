@@ -35,5 +35,6 @@ class DecisionAgentProtocol(Protocol):
         *,
         execution_context: ExecutionContext | None = None,
         history: Sequence[ConversationTurnLike] = (),
+        current_request_text: str = "",
     ) -> Decision:
         """Return a validated decision with optional correlated prior turns."""

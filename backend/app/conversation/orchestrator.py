@@ -76,6 +76,7 @@ class ConversationOrchestrator:
                 evidence,
                 execution_context=ExecutionContext.from_graph_state(state),
                 history=session.turns,
+                current_request_text=request.request_text,
             )
         await self._session_store.append_turn(
             resolved_session_id,

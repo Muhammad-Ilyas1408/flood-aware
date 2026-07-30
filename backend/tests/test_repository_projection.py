@@ -49,7 +49,7 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
     """Verify real production rows are projected before frozen DTO construction."""
 
     def test_village_production_rows_project_to_application_columns(self) -> None:
-        """Village production rows expose only name, district, and population."""
+        """Village production rows expose name, district, population, and coordinates."""
         repository = CSVRepository(
             FileRepositoryConfig(
                 dataset_path=str(DATASETS_DIRECTORY / "villages.csv"),
@@ -58,6 +58,8 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
                     ("name", DatasetColumnType.STRING),
                     ("district", DatasetColumnType.STRING),
                     ("population", DatasetColumnType.INTEGER),
+                    ("latitude", DatasetColumnType.FLOAT),
+                    ("longitude", DatasetColumnType.FLOAT),
                 ),
                 file_format=DatasetFileFormat.CSV,
             )
@@ -68,13 +70,13 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
 
         self.assertEqual(
             tuple(column.name for column in table.dataset_schema.columns),
-            ("name", "district", "population"),
+            ("name", "district", "population", "latitude", "longitude"),
         )
         self.assertEqual(len(table.rows), len(villages.villages))
         self.assertTrue(villages.villages[0].name)
 
     def test_shelter_production_rows_project_to_application_columns(self) -> None:
-        """Shelter production rows expose only name, district, and capacity."""
+        """Shelter production rows expose name, district, capacity, and coordinates."""
         repository = CSVRepository(
             FileRepositoryConfig(
                 dataset_path=str(DATASETS_DIRECTORY / "shelters.csv"),
@@ -83,6 +85,8 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
                     ("name", DatasetColumnType.STRING),
                     ("district", DatasetColumnType.STRING),
                     ("capacity", DatasetColumnType.INTEGER),
+                    ("latitude", DatasetColumnType.FLOAT),
+                    ("longitude", DatasetColumnType.FLOAT),
                 ),
                 file_format=DatasetFileFormat.CSV,
             )
@@ -93,7 +97,7 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
 
         self.assertEqual(
             tuple(column.name for column in table.dataset_schema.columns),
-            ("name", "district", "capacity"),
+            ("name", "district", "capacity", "latitude", "longitude"),
         )
         self.assertEqual(len(table.rows), len(shelters.shelters))
         self.assertTrue(shelters.shelters[0].name)

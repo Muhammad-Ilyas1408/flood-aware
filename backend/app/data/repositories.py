@@ -171,7 +171,8 @@ def _project_production_rows(
                 destination: source_row[source]
                 for destination, source in zip(expected_headers, projection, strict=True)
             }
-            if expected_headers == ("name", "district", "population"):
+            village_headers = ("name", "district", "population", "latitude", "longitude")
+            if expected_headers == village_headers:
                 projected_row["population"] = _normalize_nullable_value(
                     projected_row["population"]
                 )
@@ -187,12 +188,12 @@ def _production_projection(
 ) -> tuple[str, ...] | None:
     """Return one supported explicit production projection, if applicable."""
 
-    village_headers = ("name", "district", "population")
-    shelter_headers = ("name", "district", "capacity")
+    village_headers = ("name", "district", "population", "latitude", "longitude")
+    shelter_headers = ("name", "district", "capacity", "latitude", "longitude")
     if expected_headers == village_headers and "village_name" in source_headers:
-        return ("village_name", "district", "population")
+        return ("village_name", "district", "population", "latitude", "longitude")
     if expected_headers == shelter_headers and "shelter_name" in source_headers:
-        return ("shelter_name", "district", "capacity")
+        return ("shelter_name", "district", "capacity", "latitude", "longitude")
     return None
 
 

@@ -199,6 +199,8 @@ def _village_result(context) -> ToolResult:
                     name=village_name,
                     district="Swat",
                     population=18000,
+                    latitude=34.7700,
+                    longitude=72.3600,
                 ),
             )
         ),
@@ -217,6 +219,8 @@ def _shelter_result(context) -> ToolResult:
                     name=f"{village_name} Community Shelter",
                     district="Swat",
                     capacity=500,
+                    latitude=34.7700,
+                    longitude=72.3600,
                 ),
             )
         ),
@@ -313,6 +317,48 @@ class TestConversationGoldenSet:
             "Turn 2's first (highest-priority) action must be shelter-grounded, "
             "proving shelters lead the response rather than appear as an "
             "afterthought."
+        )
+
+    async def test_follow_up_narrows_focus_to_policy_not_general_overview(
+        self, provider
+    ):
+        orchestrator, session_store, tools = _build_orchestrator(provider)
+        session_id, first = await orchestrator.handle_turn(
+            None,
+            _request("What is the flood situation in Mingora?", "Mingora"),
+        )
+        _, second = await orchestrator.handle_turn(
+            session_id,
+            _request("What about the government policy?", "Mingora"),
+        )
+
+        session = await session_store.get_session(session_id)
+        assert session is not None
+        _assert_grounded(second, session.turns[-1].evidence_bundle)
+        assert second.recommendation.actions, (
+            "Turn 2 must recommend at least one action to be policy-focused."
+        )
+        knowledge_reference = "PDMA Flood Preparedness Plan:p3:Shelters"
+        assert knowledge_reference in _all_references(second), (
+            "Turn 2 must cite the retrieved government-knowledge evidence."
+        )
+        assert (
+            knowledge_reference in second.recommendation.actions[0].evidence_references
+        ), (
+            "Turn 2's first (highest-priority) action must be grounded in the "
+            "retrieved government-policy evidence, proving policy content leads "
+            "rather than appearing as an afterthought."
+        )
+        assert second.recommendation.summary != first.recommendation.summary, (
+            "Turn 2 must not repeat turn 1's summary verbatim."
+        )
+        first_words = set(first.recommendation.summary.lower().split())
+        second_words = set(second.recommendation.summary.lower().split())
+        overlap = len(first_words & second_words) / max(len(second_words), 1)
+        assert overlap < 0.6, (
+            "Turn 2's summary overlaps too heavily with turn 1's general "
+            "flood-status recap instead of substantively discussing the "
+            "retrieved government policy guidance."
         )
 
     async def test_village_change_refreshes_evidence_without_cross_turn_leakage(

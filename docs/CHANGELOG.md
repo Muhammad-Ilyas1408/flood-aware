@@ -8,6 +8,108 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.5.0] - 2026-07-30
+
+---
+
+## Sprint 14.2 – Streamlit Dashboard & Production Hardening (2026-07-30)
+
+### Sprint 14.2.1 — Situation Analysis Page
+
+#### Added
+
+- Added `dashboard/` Streamlit application (`app.py`, `config.py`, `api_client.py`), a thin client calling only existing, tested FastAPI endpoints — no business logic duplicated in the frontend.
+- Added `dashboard/pages/situation_analysis.py`: dataset catalog summary, filterable village/shelter tables, and a dataset-level bounding-box map with an explicit, honest notice when per-record coordinates are unavailable rather than fabricating positions.
+- Added `streamlit`, `streamlit-folium`, `folium` as real dependencies (versions confirmed against PyPI, not assumed).
+
+### Sprint 14.2.2 — AI Assistant Chat Page
+
+#### Added
+
+- Added `dashboard/pages/ai_assistant_chat.py`: real multi-turn chat UI wired to `POST /conversation`, using `st.chat_message`/`st.chat_input`, session-state-persisted conversation history, colored risk/confidence badges, prioritized action lists, and a collapsible citations panel.
+- Added rotating, honestly-worded progress messages during the real multi-second/minute wait (a background thread performs the blocking API call; only the main thread touches Streamlit UI elements, per Streamlit's threading constraints) — a deliberate choice over fabricating fake granular progress, since true per-node streaming isn't available from the backend.
+- Added distinct, user-facing handling for all three real failure modes: session-not-found (404, auto-starts a new conversation), recommendation-service-unavailable (503, no silent auto-retry), and generic connection failure — each with its own honest message, verified live against real triggered failures.
+
+#### Fixed
+
+- **Manual coordinate entry removed entirely.** `GET /villages`/`GET /shelters` previously discarded real latitude/longitude columns that already existed in the source CSVs, at a hardcoded 3-column projection layer (`config/datasets.py`, `data/repositories.py`) — this silently forced every chat request through either a village with no real location data (causing GIS/Forecast to be honestly but confusingly skipped for every village) or manual lat/lon entry no real user should need. Extended the schema/DTO/API chain (`DatasetColumnType`, `VillageDTO`/`ShelterDTO`, `VillageResponse`/`ShelterResponse`) to surface real coordinates end-to-end; the chat page now auto-derives coordinates from the selected village with zero manual entry required.
+
+---
+
+### Sprint 14.2.3 — Real-Traffic Production Fixes
+
+Found and fixed via live dashboard testing — not surfaced by any automated test suite, since the mocked fixtures used throughout the day's automated tests didn't reproduce these specific real-data conditions.
+
+#### Fixed
+
+- **GIS re-parsing on every fresh-evidence request.** GDAL's OSM vector driver has no persistent spatial index for `.osm.pbf` files — a `bbox=` filter narrows results, not scan cost, which is dominated by total file size. Added `warm_up()` to `RiverNetworkLoader`/`OSMLoader`, eagerly parsing the full Pakistan-wide dataset once at application startup and serving all subsequent requests from the in-memory result via spatial clipping. Real measured fresh-evidence request time reduced from 2–4 minutes to ~30 seconds after the one-time startup cost.
+- **Real Weather (OpenWeatherMap) and Forecast (GloFAS) wired into production**, replacing the deterministic stand-ins used since Sprint 14.1. Forecast reads only the newest already-ingested local snapshot; live GloFAS/CDS ingestion is confirmed unsuitable for a synchronous request path (the `cdsapi` client has an unbounded blocking poll loop) and remains a deliberately separate, independently-run process. Added snapshot staleness detection (`ForecastEvidence.snapshot_age_hours`/`snapshot_stale`, configurable threshold, default 48h), surfaced both internally (confidence reasoning) and to the end user via the existing `missing_evidence` mechanism — a deliberate design choice, since hiding data-freshness caveats from users is the wrong default for a disaster-response tool.
+- **RAG retrieval had no relevance floor.** `ChromaVectorStore.search()`'s existing `score_threshold` parameter was never actually passed by either of its two callers, so retrieval always returned Chroma's raw top-5 nearest neighbors unconditionally — including weak/boilerplate matches (a repeated PDF title/preamble page was cited as "government policy" guidance in live testing). Wired a real, empirically-derived threshold (confirmed Chroma's squared-L2 distance metric and OpenAI embedding normalization before deriving the number, rather than guessing) through `KnowledgeTool`/`GovernmentRetriever`/`ChromaVectorStore`; zero-results-above-threshold now returns an honest "no sufficiently relevant guidance found" result without calling the LLM. Extended `ContextBuilder` deduplication to catch near-duplicate boilerplate text across different chunk IDs, not just exact chunk-ID matches.
+- **Root-caused today's FOCUS instability.** `ConversationOrchestrator`/`RecommendationNode` never passed the current turn's raw request text into `decide()` — only the evidence bundle and prior-turn history. The FOCUS prompt instruction (added earlier this session) was asking the model to "address what the CURRENT request specifically asks about" while the current request's text was never actually present anywhere in the prompt. This was a structural data-flow gap, not a prompt-wording problem, and explains the instability across multiple same-day wording attempts. Added a `current_request_text` parameter (backward-compatible) threaded through `decide()`/`PromptBuilder.build()`/both real call sites; live re-verification confirmed a real "what about shelters" follow-up now correctly leads with named, specific shelter details instead of a generic recap.
+
+### Verified
+
+- Full suite: 274 passed, 2 skipped.
+- Full golden set: 18/18 passing (including new multi-turn shelter-focus and policy-focus scenarios).
+- Extensive live, real-API, real-UI verification across multiple villages and multi-turn conversations, including a real observed 503 (recommendation service temporarily unavailable) with correct user-facing handling and successful recovery on resend.
+
+### Notes — known issue, actively investigating
+
+- Live testing surfaced one further real inconsistency, found in this session's final verification pass: a real "what about shelters?" follow-up produced a response summary stating "no specific shelter data is available" while simultaneously showing real citations and giving specific shelter-preparedness actions in the same response. Not yet root-caused — diagnostic investigation (raw `Decision` object plus the turn's stored `EvidenceBundle.shelters` field, via the real `ConversationOrchestrator` rather than a lower-level probe) is queued as the first task of the next session, to determine whether this is a text-generation inconsistency or a genuine evidence gap specific to certain requests.
+- Real Weather/Forecast integration deliberately excludes automated ingestion scheduling; refreshing the local GloFAS snapshot before a demo remains a manual/scheduled step, explicitly deferred as future work.
+- Policy/knowledge-focused chat page (skipping location selection for pure policy questions) identified as a good, small future UX improvement — not undertaken this session.
+- Sprint 14.2.3 completed; one open issue carried forward.
+- Ready for Sprint 14.2.4 (shelter-inconsistency fix) → Sprint 14.3 (visual polish pass).
+
+---
+
+### Notes — known issue, actively investigating (revised)
+
+- Live dashboard testing surfaced an apparent inconsistency (a response
+  claiming "no shelter data available" while showing real citations and
+  specific shelter advice). A same-day diagnostic using the real
+  ConversationOrchestrator (not a lower-level probe) did NOT reproduce
+  that specific inconsistency — instead it surfaced a more fundamental,
+  separate finding: real shelter evidence collection (`EvidenceBundle.
+  shelters`) returned genuinely empty for Mingora in that diagnostic run,
+  despite Mingora having confirmed real shelter records in `shelters.csv`
+  and returning real shelter data reliably in numerous earlier tests this
+  same session. When evidence is genuinely empty, the model's response
+  was actually internally consistent (correctly citing only dataset-level
+  provenance, correctly flagging the gap in `missing_evidence`) — so this
+  is likely evidence of intermittent shelter-collection failure, not a
+  reasoning/grounding bug. The original live dashboard symptom and this
+  new empty-evidence finding may be two faces of the same underlying
+  flakiness. Root-causing why shelter collection intermittently returns
+  empty for a village with confirmed real data — including checking
+  whether Sprint 12's `_record_tool_failure` degradation path logged a
+  real exception during collection, which would distinguish a silently
+  swallowed error from a genuine empty-but-successful lookup — is queued
+  as the first task of the next session.
+
+---
+
+### Notes — investigation closed
+
+- The apparent "shelter data inconsistency" observed in live dashboard
+  testing was fully investigated and root-caused: village and shelter
+  evidence collection are correctly, symmetrically gated by
+  route_after_gis (Sprint 12) to only run at MAJOR/EXTREME severity —
+  confirmed via direct reproduction that both fields come back equally
+  empty at MODERATE severity, with no silent failure, matching-logic
+  asymmetry, or caching issue involved. This is working as designed, not
+  a bug.
+- One legitimate, undecided product question remains: at severities below
+  MAJOR/EXTREME, the model currently still generates a generic
+  shelter-preparedness action even when it explicitly states shelter data
+  is unavailable — non-hallucinated but arguably over-specific for
+  entirely-absent evidence. Queued as a scoped decision for the Sprint
+  14.3 polish pass: either accept generic-but-honest action wording as-is,
+  or tighten the prompt so entirely-absent categories are only mentioned
+  in missing_evidence, never turned into a specific action.
+
+---
+
 ## [1.4.0] - 2026-07-29
 
 ---

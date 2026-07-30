@@ -23,11 +23,19 @@ class VillageResponse(BaseModel):
     name: str = Field(min_length=1)
     district: str = Field(min_length=1)
     population: int | None = Field(default=None, ge=0)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
     @classmethod
     def from_dto(cls, dto: VillageDTO) -> "VillageResponse":
         """Translate an application village DTO into an API response model."""
-        return cls(name=dto.name, district=dto.district, population=dto.population)
+        return cls(
+            name=dto.name,
+            district=dto.district,
+            population=dto.population,
+            latitude=dto.latitude,
+            longitude=dto.longitude,
+        )
 
 
 class VillageListResponse(SuccessResponse[tuple[VillageResponse, ...]]):
@@ -51,11 +59,19 @@ class ShelterResponse(BaseModel):
     name: str = Field(min_length=1)
     district: str = Field(min_length=1)
     capacity: int = Field(ge=0)
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
 
     @classmethod
     def from_dto(cls, dto: ShelterDTO) -> "ShelterResponse":
         """Translate an application shelter DTO into an API response model."""
-        return cls(name=dto.name, district=dto.district, capacity=dto.capacity)
+        return cls(
+            name=dto.name,
+            district=dto.district,
+            capacity=dto.capacity,
+            latitude=dto.latitude,
+            longitude=dto.longitude,
+        )
 
 
 class ShelterListResponse(SuccessResponse[tuple[ShelterResponse, ...]]):

@@ -122,6 +122,7 @@ def _build_knowledge_tool() -> tuple[KnowledgeTool, ChromaVectorStore]:
                 api_key=settings.openai_api_key,
                 model=settings.response_model,
             ),
+            score_threshold=settings.retrieval_score_threshold,
         ),
         store,
     )

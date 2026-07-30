@@ -132,11 +132,13 @@ class OpenAIDecisionProvider:
         *,
         execution_context: ExecutionContext | None = None,
         history: Sequence[ConversationTurnLike] = (),
+        current_request_text: str = "",
     ) -> Decision:
         """Generate and parse one schema-constrained decision from evidence only."""
         system_prompt, user_prompt = self._prompt_builder.build(
             evidence,
             history=history,
+            current_request_text=current_request_text,
         )
         context = execution_context or ExecutionContext.uncorrelated()
         timer = OperationTimer.start()

@@ -1330,5 +1330,36 @@ Deliverables:
 
 ---
 
-Sprint 14.1 fully complete.
-Ready for Sprint 14.2 – Streamlit Dashboard.
+## Sprint 14.2 – Streamlit Dashboard & Production Hardening
+
+Status: Completed (one open issue carried forward)
+Completed: 2026-07-30
+
+---
+
+### Sprint 14.2.1 – Situation Analysis Page
+Status: Completed
+- [x] Thin-client dashboard scaffold, real API-backed catalog/tables/map
+
+### Sprint 14.2.2 – AI Assistant Chat Page
+Status: Completed
+- [x] Real multi-turn chat UI, session-state history, badges, citations
+- [x] Rotating honest progress messaging
+- [x] Distinct 404/503/connection-failure handling
+- [x] Fixed: manual coordinate entry removed (real village coordinates surfaced end-to-end)
+
+### Sprint 14.2.3 – Real-Traffic Production Fixes
+Status: Completed
+- [x] Fixed: GIS eager-parse caching (2-4min → ~30s per request)
+- [x] Real Weather + Forecast wired, with snapshot staleness detection (internal + user-facing)
+- [x] Fixed: RAG retrieval relevance floor (score_threshold wired up) + dedup improvement
+- [x] Fixed: root cause of FOCUS instability (current_request_text never reached decide())
+- [x] Full suite (274 passed, 2 skipped) + full golden set (18/18) + extensive live verification
+
+---
+
+⚠️ Known issue, carried forward: shelter-data response inconsistency
+(claims "no data available" while citing real evidence). Diagnostic
+queued as next session's first task.
+
+Ready for Sprint 14.2.4 (fix carried-forward issue) → Sprint 14.3 (visual polish).

@@ -4,52 +4,52 @@
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.1264, 33.8231]},
-      "properties": {"name": "Akora Khattak", "district": "Nowshera", "population": 6250}
+      "properties": {"name": "Akora Khattak", "district": "Nowshera", "population": 6250, "latitude": 33.8231, "longitude": 72.1264}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.3547, 34.7501]},
-      "properties": {"name": "Barikot", "district": "Swat", "population": 4180}
+      "properties": {"name": "Barikot", "district": "Swat", "population": 4180, "latitude": 34.7501, "longitude": 72.3547}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7356, 34.1465]},
-      "properties": {"name": "Charsadda Khas", "district": "Charsadda", "population": 7350}
+      "properties": {"name": "Charsadda Khas", "district": "Charsadda", "population": 7350, "latitude": 34.1465, "longitude": 71.7356}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.0178, 34.2431]},
-      "properties": {"name": "Gari Kapoora", "district": "Mardan", "population": 2890}
+      "properties": {"name": "Gari Kapoora", "district": "Mardan", "population": 2890, "latitude": 34.2431, "longitude": 72.0178}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.4221, 34.1735]},
-      "properties": {"name": "Hund", "district": "Swabi", "population": 1640}
+      "properties": {"name": "Hund", "district": "Swabi", "population": 1640, "latitude": 34.1735, "longitude": 72.4221}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.8709, 34.3136]},
-      "properties": {"name": "Jalala", "district": "Mardan", "population": 5320}
+      "properties": {"name": "Jalala", "district": "Mardan", "population": 5320, "latitude": 34.3136, "longitude": 71.8709}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.4980, 35.4909]},
-      "properties": {"name": "Kalam", "district": "Swat", "population": 3140}
+      "properties": {"name": "Kalam", "district": "Swat", "population": 3140, "latitude": 35.4909, "longitude": 72.4980}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.6174, 33.9169]},
-      "properties": {"name": "Mattani", "district": "Peshawar", "population": 6840}
+      "properties": {"name": "Mattani", "district": "Peshawar", "population": 6840, "latitude": 33.9169, "longitude": 71.6174}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7952, 34.0083]},
-      "properties": {"name": "Pabbi", "district": "Nowshera", "population": 7620}
+      "properties": {"name": "Pabbi", "district": "Nowshera", "population": 7620, "latitude": 34.0083, "longitude": 71.7952}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7818, 34.1577]},
-      "properties": {"name": "Utmanzai", "district": "Charsadda", "population": 4910}
+      "properties": {"name": "Utmanzai", "district": "Charsadda", "population": 4910, "latitude": 34.1577, "longitude": 71.7818}
     }
   ]
 }

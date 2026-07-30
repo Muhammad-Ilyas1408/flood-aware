@@ -69,7 +69,7 @@ class _DecisionAgentSpy:
     """Return deterministic decisions while retaining active evidence and history."""
 
     def __init__(self) -> None:
-        self.calls: list[tuple[EvidenceBundle, tuple[ConversationTurn, ...]]] = []
+        self.calls: list[tuple[EvidenceBundle, tuple[ConversationTurn, ...], str]] = []
 
     async def decide(
         self,
@@ -77,10 +77,11 @@ class _DecisionAgentSpy:
         *,
         execution_context: ExecutionContext | None = None,
         history: Sequence[ConversationTurn] = (),
+        current_request_text: str = "",
     ) -> Decision:
         """Capture one agent call without invoking a provider."""
         del execution_context
-        self.calls.append((evidence, tuple(history)))
+        self.calls.append((evidence, tuple(history), current_request_text))
         return _decision(f"decision-{len(self.calls)}")
 
 
@@ -135,15 +136,22 @@ def test_prompt_history_contains_only_prior_request_and_summary() -> None:
         created_at=datetime(2026, 7, 28, tzinfo=UTC),
     )
 
-    _, user_prompt = PromptBuilder().build(bundle, history=(turn,))
+    _, user_prompt = PromptBuilder().build(
+        bundle, history=(turn,), current_request_text="What about shelters?"
+    )
 
     assert "Conversation history:" in user_prompt
     assert "Flood outlook for Mingora?" in user_prompt
     assert "Prepare local response." in user_prompt
-    assert user_prompt.index("Conversation history:") < user_prompt.index(
-        "EvidenceBundle:"
+    assert "Current request:" in user_prompt
+    assert "What about shelters?" in user_prompt
+    assert (
+        user_prompt.index("Conversation history:")
+        < user_prompt.index("Current request:")
+        < user_prompt.index("EvidenceBundle:")
     )
     assert "Conversation history:" not in PromptBuilder().build(bundle)[1]
+    assert "Current request:" not in PromptBuilder().build(bundle)[1]
 
 
 def test_same_village_follow_up_reuses_evidence_without_graph_execution() -> None:
@@ -163,6 +171,11 @@ def test_same_village_follow_up_reuses_evidence_without_graph_execution() -> Non
     assert len(runtime.inputs) == 1
     assert [call[0] for call in agent.calls] == [first_bundle]
     assert second.recommendation.summary == "decision-1"
+    assert agent.calls[0][2] == "What about shelters?", (
+        "The reuse-path decide() call must receive the CURRENT turn's own "
+        "request text, not the prior turn's, so the model can actually see "
+        "what this turn specifically asks about."
+    )
 
 
 def test_changed_village_runs_graph_again() -> None:
@@ -208,7 +221,7 @@ def test_consecutive_same_context_follow_ups_grow_history_without_refetching() -
     )
 
     assert len(runtime.inputs) == 1
-    assert [len(history) for _, history in agent.calls] == [1, 2]
+    assert [len(history) for _, history, _ in agent.calls] == [1, 2]
 
 
 def test_reuse_tracks_the_most_recent_changed_context() -> None:
@@ -261,7 +274,7 @@ def test_agent_receives_active_evidence_and_ordered_prior_summaries() -> None:
         )
     )
 
-    third_evidence, third_history = agent.calls[0]
+    third_evidence, third_history, _ = agent.calls[0]
     assert third_evidence is second_bundle
     assert [turn.recommendation_summary for turn in third_history] == [
         "graph-decision-1",

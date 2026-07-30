@@ -4,52 +4,52 @@
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.1282, 33.8245]},
-      "properties": {"name": "Government High School Akora", "district": "Nowshera", "capacity": 850}
+      "properties": {"name": "Government High School Akora", "district": "Nowshera", "capacity": 850, "latitude": 33.8245, "longitude": 72.1282}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7314, 34.1482]},
-      "properties": {"name": "Charsadda Community Hall", "district": "Charsadda", "capacity": 420}
+      "properties": {"name": "Charsadda Community Hall", "district": "Charsadda", "capacity": 420, "latitude": 34.1482, "longitude": 71.7314}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.0216, 34.2524]},
-      "properties": {"name": "Government High School Takht Bhai", "district": "Mardan", "capacity": 680}
+      "properties": {"name": "Government High School Takht Bhai", "district": "Mardan", "capacity": 680, "latitude": 34.2524, "longitude": 72.0216}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.4257, 34.1716]},
-      "properties": {"name": "Hund Sports Complex", "district": "Swabi", "capacity": 550}
+      "properties": {"name": "Hund Sports Complex", "district": "Swabi", "capacity": 550, "latitude": 34.1716, "longitude": 72.4257}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.4985, 35.4881]},
-      "properties": {"name": "Kalam Community Hall", "district": "Swat", "capacity": 260}
+      "properties": {"name": "Kalam Community Hall", "district": "Swat", "capacity": 260, "latitude": 35.4881, "longitude": 72.4985}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.6201, 33.9153]},
-      "properties": {"name": "Mattani Relief Camp", "district": "Peshawar", "capacity": 1200}
+      "properties": {"name": "Mattani Relief Camp", "district": "Peshawar", "capacity": 1200, "latitude": 33.9153, "longitude": 71.6201}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.0556, 34.0108]},
-      "properties": {"name": "Nowshera District Sports Complex", "district": "Nowshera", "capacity": 1450}
+      "properties": {"name": "Nowshera District Sports Complex", "district": "Nowshera", "capacity": 1450, "latitude": 34.0108, "longitude": 72.0556}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7931, 34.0065]},
-      "properties": {"name": "Pabbi Government High School", "district": "Nowshera", "capacity": 740}
+      "properties": {"name": "Pabbi Government High School", "district": "Nowshera", "capacity": 740, "latitude": 34.0065, "longitude": 71.7931}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [72.4658, 34.1207]},
-      "properties": {"name": "Swabi Community Centre", "district": "Swabi", "capacity": 390}
+      "properties": {"name": "Swabi Community Centre", "district": "Swabi", "capacity": 390, "latitude": 34.1207, "longitude": 72.4658}
     },
     {
       "type": "Feature",
       "geometry": {"type": "Point", "coordinates": [71.7803, 34.1591]},
-      "properties": {"name": "Utmanzai Relief Camp", "district": "Charsadda", "capacity": 980}
+      "properties": {"name": "Utmanzai Relief Camp", "district": "Charsadda", "capacity": 980, "latitude": 34.1591, "longitude": 71.7803}
     }
   ]
 }

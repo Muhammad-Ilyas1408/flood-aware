@@ -110,7 +110,15 @@ def test_village_node_maps_tool_result_and_preserves_unowned_state() -> None:
         tool_name="VillageTool",
         summary="Village dataset retrieved.",
         data=VillageListDTO(
-            villages=(VillageDTO(name="Mingora", district="Swat", population=1000),)
+            villages=(
+                VillageDTO(
+                    name="Mingora",
+                    district="Swat",
+                    population=1000,
+                    latitude=34.7700,
+                    longitude=72.3600,
+                ),
+            )
         ),
     )
     state = _state()
@@ -144,7 +152,15 @@ def test_shelter_node_maps_tool_result_without_ranking() -> None:
         tool_name="ShelterTool",
         summary="Shelter dataset retrieved.",
         data=ShelterListDTO(
-            shelters=(ShelterDTO(name="School Hall", district="Swat", capacity=200),)
+            shelters=(
+                ShelterDTO(
+                    name="School Hall",
+                    district="Swat",
+                    capacity=200,
+                    latitude=34.7800,
+                    longitude=72.3700,
+                ),
+            )
         ),
     )
     state = _state()

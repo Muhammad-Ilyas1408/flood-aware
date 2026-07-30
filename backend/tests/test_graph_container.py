@@ -69,7 +69,15 @@ def test_container_wires_production_boundaries_into_the_graph() -> None:
         tool_name="VillageTool",
         summary="Village dataset retrieved.",
         data=VillageListDTO(
-            villages=(VillageDTO(name="Mingora", district="Swat", population=1000),)
+            villages=(
+                VillageDTO(
+                    name="Mingora",
+                    district="Swat",
+                    population=1000,
+                    latitude=34.7700,
+                    longitude=72.3600,
+                ),
+            )
         ),
     )
     shelter_tool = Mock()
@@ -77,7 +85,15 @@ def test_container_wires_production_boundaries_into_the_graph() -> None:
         tool_name="ShelterTool",
         summary="Shelter dataset retrieved.",
         data=ShelterListDTO(
-            shelters=(ShelterDTO(name="School Hall", district="Swat", capacity=200),)
+            shelters=(
+                ShelterDTO(
+                    name="School Hall",
+                    district="Swat",
+                    capacity=200,
+                    latitude=34.7800,
+                    longitude=72.3700,
+                ),
+            )
         ),
     )
     dataset_catalog_tool = Mock()

@@ -66,7 +66,15 @@ def test_view_villages_use_case_returns_service_dto() -> None:
     """Village use case returns the exact DTO produced by its service."""
 
     expected_dto = VillageListDTO(
-        villages=(VillageDTO(name="Kalam", district="Swat", population=5000),)
+        villages=(
+            VillageDTO(
+                name="Kalam",
+                district="Swat",
+                population=5000,
+                latitude=35.5000,
+                longitude=72.6000,
+            ),
+        )
     )
     service = create_autospec(VillageServiceProtocol, instance=True, spec_set=True)
     service.load_villages.return_value = expected_dto
@@ -97,6 +105,8 @@ def test_view_shelters_use_case_returns_service_dto() -> None:
                 name="Government High School Akora",
                 district="Nowshera",
                 capacity=500,
+                latitude=33.8245,
+                longitude=72.1282,
             ),
         )
     )

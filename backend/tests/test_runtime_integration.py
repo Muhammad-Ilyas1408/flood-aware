@@ -1,7 +1,5 @@
 """Runtime registration and execution tests for canonical AI tools."""
 
-from datetime import datetime, timezone
-from pathlib import Path
 from unittest.mock import create_autospec, patch
 
 from fastapi import Request
@@ -15,15 +13,7 @@ from backend.app.ai.tools.executor import ToolExecutor
 from backend.app.ai.tools.metadata import ToolMetadata
 from backend.app.ai.tools.registry import ExecutableToolProtocol, ToolRegistry
 from backend.app.ai.village_tool import VillageTool
-from backend.app.config.datasets import DatasetCatalogConfig
-from backend.app.data.file_support import DatasetFileFormat
-from backend.app.data.models import (
-    DatasetColumn,
-    DatasetColumnType,
-    DatasetMetadata,
-    DatasetSchema,
-)
-from backend.app.data.repository_config import FileRepositoryConfig
+from backend.app.config.datasets import create_production_dataset_catalog_config
 from backend.app.dtos.datasets import DatasetCatalogDTO, ShelterListDTO, VillageListDTO
 from backend.app.main import create_application
 from backend.app.use_cases.protocols import (
@@ -32,65 +22,11 @@ from backend.app.use_cases.protocols import (
     ViewVillagesUseCaseProtocol,
 )
 
-DATASETS_DIRECTORY = Path(__file__).parents[2] / "data" / "datasets"
-
-
-def _production_metadata(name: str) -> DatasetMetadata:
-    """Provide explicit test-only metadata for one real production dataset."""
-
-    timestamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
-    return DatasetMetadata(
-        name=name,
-        description="Production dataset runtime integration test.",
-        version="1.0.0",
-        source="production dataset",
-        created_at=timestamp,
-        updated_at=timestamp,
-    )
-
-
-def _application_schema(
-    *columns: tuple[str, DatasetColumnType],
-) -> DatasetSchema:
-    """Build the frozen application-facing schema required by each service."""
-
-    return DatasetSchema(
-        columns=tuple(
-            DatasetColumn(
-                name=name,
-                data_type=data_type,
-                nullable=name in {"population", "capacity"},
-            )
-            for name, data_type in columns
-        )
-    )
-
 
 def _production_runtime():
     """Compose the real runtime against the checked-in production CSV datasets."""
 
-    configuration = DatasetCatalogConfig(
-        villages=FileRepositoryConfig(
-            dataset_path=str(DATASETS_DIRECTORY / "villages.csv"),
-            dataset_metadata=_production_metadata("Production villages"),
-            dataset_schema=_application_schema(
-                ("name", DatasetColumnType.STRING),
-                ("district", DatasetColumnType.STRING),
-                ("population", DatasetColumnType.INTEGER),
-            ),
-            file_format=DatasetFileFormat.CSV,
-        ),
-        shelters=FileRepositoryConfig(
-            dataset_path=str(DATASETS_DIRECTORY / "shelters.csv"),
-            dataset_metadata=_production_metadata("Production shelters"),
-            dataset_schema=_application_schema(
-                ("name", DatasetColumnType.STRING),
-                ("district", DatasetColumnType.STRING),
-                ("capacity", DatasetColumnType.INTEGER),
-            ),
-            file_format=DatasetFileFormat.CSV,
-        ),
-    )
+    configuration = create_production_dataset_catalog_config()
     application = create_application(configuration)
     request = Request(
         {

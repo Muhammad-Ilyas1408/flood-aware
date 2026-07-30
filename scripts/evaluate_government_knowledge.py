@@ -41,6 +41,7 @@ def build_runner(settings: GovernmentKnowledgeSettings) -> tuple[EvaluationRunne
             api_key=settings.openai_api_key,
             model=settings.response_model,
         ),
+        score_threshold=settings.retrieval_score_threshold,
     )
     return EvaluationRunner(tool, retriever.retrieve, top_k=settings.maximum_retrieved_chunks), store
 

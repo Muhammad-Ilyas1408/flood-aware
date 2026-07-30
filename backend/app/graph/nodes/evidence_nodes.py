@@ -329,6 +329,7 @@ class RecommendationNode:
             decision = await self._decision_agent.decide(
                 state.evidence_bundle,
                 execution_context=context,
+                current_request_text=state.user_request.request_text,
             )
         except DecisionError as error:
             if self._metrics is not None:

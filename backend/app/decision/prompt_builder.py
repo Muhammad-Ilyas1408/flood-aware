@@ -88,12 +88,13 @@ class PromptBuilder:
         "grounding and citation rules exclusively to the current EvidenceBundle; "
         "never cite prior-turn evidence as current evidence.\n\n"
         "FOCUS: When conversation history exists, your response must primarily "
-        "address what the CURRENT request specifically asks about, using history "
-        "only for continuity (e.g. referring back to 'the area' or 'that "
-        "shelter' without re-explaining it). Do not restate the full general "
-        "situation overview from a prior turn if the current question narrows "
-        "focus to one aspect (e.g. shelters, evacuation routes, a specific "
-        "village) — lead with and prioritize that specific aspect instead.\n\n"
+        "address what the 'Current request' section above specifically asks "
+        "about, using history only for continuity (e.g. referring back to "
+        "'the area' or 'that shelter' without re-explaining it). Do not "
+        "restate the full general situation overview from a prior turn if "
+        "the current question narrows focus to one aspect (e.g. shelters, "
+        "evacuation routes, a specific village) — lead with and prioritize "
+        "that specific aspect instead.\n\n"
         "Weak follow-up (do not write like this, when asked \"What about "
         "shelters?\" right after a general flood-outlook turn): \"Mingora is "
         "in a major flood zone with a high population exposure of "
@@ -105,6 +106,19 @@ class PromptBuilder:
         "flood risk. For shelters specifically: the nearest shelter has a "
         "capacity of 500 and should be stocked and opened now, with "
         "residents directed there ahead of any evacuation order.\"\n\n"
+        "Weak follow-up (do not write like this, when asked \"What about "
+        "the government policy?\" right after a general flood-outlook "
+        "turn): \"Mingora is in a major flood zone with a high population "
+        "exposure of approximately 695,584 people and 4 critical "
+        "infrastructure assets at risk. Immediate preparedness actions "
+        "including evacuation planning, public awareness campaigns, and "
+        "shelter readiness are recommended.\"\n\n"
+        "Strong follow-up (write like this): \"As noted, Mingora is at "
+        "high flood risk. On government policy specifically: the "
+        "retrieved disaster-management plan requires district authorities "
+        "to pre-position relief stock and conduct evacuation drills ahead "
+        "of the monsoon season, rather than treating flood response as an "
+        "ad hoc effort.\"\n\n"
         "Return only JSON that validates against the supplied schema."
     )
 
@@ -113,6 +127,7 @@ class PromptBuilder:
         evidence: EvidenceBundle,
         *,
         history: Sequence[ConversationTurnLike] = (),
+        current_request_text: str = "",
     ) -> tuple[str, str]:
         """Return deterministic system and user prompts for one evidence bundle."""
         schema = json.dumps(
@@ -135,9 +150,11 @@ class PromptBuilder:
 
         system_prompt = f"{self._SYSTEM_INSTRUCTIONS}\nDecision schema:\n{schema}"
         history_section = _conversation_history_section(history)
+        current_request_section = _current_request_section(current_request_text)
         key_figures_json = json.dumps(_key_figures(evidence), sort_keys=True)
         user_prompt = (
             f"{history_section}"
+            f"{current_request_section}"
             f"EvidenceBundle:\n{evidence_json}\n\n"
             f"Key quantitative figures (use these in your reasoning):\n"
             f"{key_figures_json}\n\n"
@@ -216,6 +233,19 @@ def _conversation_history_section(history: Sequence[ConversationTurnLike]) -> st
     return "Conversation history:\n" + json.dumps(
         turns, sort_keys=True, separators=(",", ":")
     ) + "\n\n"
+
+
+def _current_request_section(current_request_text: str) -> str:
+    """Render the current turn's raw request text as its own labeled section.
+
+    The FOCUS instruction depends on this section existing: without it, the
+    model has no way to know what the current turn specifically asks about,
+    since neither the EvidenceBundle nor conversation history (prior turns
+    only) ever contains it.
+    """
+    if not current_request_text:
+        return ""
+    return f"Current request:\n{current_request_text}\n\n"
 
 
 def _stale_evidence_notices(evidence: EvidenceBundle) -> tuple[str, ...]:

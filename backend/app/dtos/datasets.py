@@ -12,6 +12,8 @@ class VillageDTO:
     name: str
     district: str
     population: int | None
+    latitude: float
+    longitude: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +30,8 @@ class ShelterDTO:
     name: str
     district: str
     capacity: int
+    latitude: float
+    longitude: float
 
 
 @dataclass(frozen=True, slots=True)

@@ -118,11 +118,13 @@ class _DecisionAgent:
         self.decision = decision
         self.evidence = None
         self.execution_context = None
+        self.current_request_text = None
 
-    async def decide(self, evidence, *, execution_context=None):
+    async def decide(self, evidence, *, execution_context=None, current_request_text=""):
         """Capture the canonical bundle and return the configured decision."""
         self.evidence = evidence
         self.execution_context = execution_context
+        self.current_request_text = current_request_text
         return self.decision
 
 
@@ -343,7 +345,7 @@ def test_prompt_builder_omits_stale_notice_for_a_fresh_forecast() -> None:
 def test_openai_provider_forwards_prior_turns_to_prompt_builder(
     parser_evidence: EvidenceBundle,
 ) -> None:
-    """Provider continuity context must contain prior summaries, not prior evidence."""
+    """Provider must forward prior summaries and the current turn's own request text."""
     completions = _Completions(_decision().model_dump_json())
     provider = OpenAIDecisionProvider(
         client=_Client(completions),
@@ -361,12 +363,23 @@ def test_openai_provider_forwards_prior_turns_to_prompt_builder(
         ),
     )
 
-    asyncio.run(provider.decide(parser_evidence, history=history))
+    asyncio.run(
+        provider.decide(
+            parser_evidence,
+            history=history,
+            current_request_text="What about shelters?",
+        )
+    )
 
     user_prompt = completions.requests[0]["messages"][1]["content"]
     assert "Conversation history:" in user_prompt
     assert "Flood outlook for Mingora?" in user_prompt
     assert "Prepare local response." in user_prompt
+    assert "Current request:" in user_prompt
+    assert "What about shelters?" in user_prompt
+    assert user_prompt.index("Conversation history:") < user_prompt.index(
+        "Current request:"
+    ) < user_prompt.index("EvidenceBundle:")
 
 
 def test_openai_agent_name_remains_a_compatible_provider_alias() -> None:
@@ -685,8 +698,10 @@ def test_recommendation_node_maps_decision_error_to_fallback() -> None:
     """A decision-agent failure should return the deterministic fallback evidence."""
 
     class _FailingDecisionAgent:
-        async def decide(self, evidence, *, execution_context=None):
-            del evidence, execution_context
+        async def decide(
+            self, evidence, *, execution_context=None, current_request_text=""
+        ):
+            del evidence, execution_context, current_request_text
             raise DecisionRateLimitedError("Decision provider rate limit exceeded.")
 
     state = state_factory().create().model_copy(update={"decision": _decision()})

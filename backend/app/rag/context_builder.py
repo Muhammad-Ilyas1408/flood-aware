@@ -1,6 +1,16 @@
 """Evidence context assembly with provenance and deterministic deduplication."""
 
+import re
+
 from backend.app.rag.models import Citation, EvidenceContext, KnowledgeChunk
+
+_WHITESPACE_PATTERN = re.compile(r"\s+")
+
+
+def _normalize_text(text: str) -> str:
+    """Fold whitespace and case so near-identical passages compare equal."""
+
+    return _WHITESPACE_PATTERN.sub(" ", text).strip().lower()
 
 
 class ContextBuilder:
@@ -10,15 +20,27 @@ class ContextBuilder:
         self._max_characters = max_characters
 
     def build(self, chunks: tuple[KnowledgeChunk, ...]) -> EvidenceContext:
-        """Deduplicate by chunk identity while preserving retrieval order."""
+        """Deduplicate by chunk identity and normalized text, preserving order.
+
+        Repeated boilerplate (e.g. a preamble page re-chunked under a different
+        chunk_id) can otherwise survive chunk_id-only deduplication as if it
+        were independent evidence.
+        """
 
         selected: list[KnowledgeChunk] = []
-        seen: set[str] = set()
+        seen_ids: set[str] = set()
+        seen_text: set[str] = set()
         total = 0
         for chunk in chunks:
-            if chunk.chunk_id in seen or total + len(chunk.text) > self._max_characters:
+            normalized = _normalize_text(chunk.text)
+            if (
+                chunk.chunk_id in seen_ids
+                or normalized in seen_text
+                or total + len(chunk.text) > self._max_characters
+            ):
                 continue
-            seen.add(chunk.chunk_id)
+            seen_ids.add(chunk.chunk_id)
+            seen_text.add(normalized)
             selected.append(chunk)
             total += len(chunk.text)
         citations = tuple(

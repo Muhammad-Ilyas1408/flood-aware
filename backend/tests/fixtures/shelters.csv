@@ -1,11 +1,11 @@
-name,district,capacity
-Government High School Akora,Nowshera,850
-Charsadda Community Hall,Charsadda,420
-Government High School Takht Bhai,Mardan,680
-Hund Sports Complex,Swabi,550
-Kalam Community Hall,Swat,260
-Mattani Relief Camp,Peshawar,1200
-Nowshera District Sports Complex,Nowshera,1450
-Pabbi Government High School,Nowshera,740
-Swabi Community Centre,Swabi,390
-Utmanzai Relief Camp,Charsadda,980
+name,district,capacity,latitude,longitude
+Government High School Akora,Nowshera,850,33.8245,72.1282
+Charsadda Community Hall,Charsadda,420,34.1482,71.7314
+Government High School Takht Bhai,Mardan,680,34.2524,72.0216
+Hund Sports Complex,Swabi,550,34.1716,72.4257
+Kalam Community Hall,Swat,260,35.4881,72.4985
+Mattani Relief Camp,Peshawar,1200,33.9153,71.6201
+Nowshera District Sports Complex,Nowshera,1450,34.0108,72.0556
+Pabbi Government High School,Nowshera,740,34.0065,71.7931
+Swabi Community Centre,Swabi,390,34.1207,72.4658
+Utmanzai Relief Camp,Charsadda,980,34.1591,71.7803
