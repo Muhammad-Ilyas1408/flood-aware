@@ -5,6 +5,7 @@ from time import perf_counter
 
 import geopandas as gpd
 from pyproj import CRS
+from shapely.geometry import box
 from shapely.ops import unary_union
 
 from backend.app.core.logger import get_logger
@@ -20,9 +21,11 @@ _WATERWAY_COLUMN = "waterway"
 class RiverNetworkLoader:
     """Provide bounded, deterministic river geometry from an OSM PBF dataset.
 
-    GeoPandas closes the underlying file after each read. This loader therefore
-    owns and caches immutable query results rather than retaining file handles.
-    Call ``close`` to release those in-memory results at its composition boundary.
+    The full-extent dataset is parsed from disk exactly once (either eagerly
+    via ``warm_up`` or lazily on first use) and retained in memory; every
+    requested extent is served by spatially filtering that already-parsed
+    layer rather than re-reading the PBF source. Call ``close`` to release
+    those in-memory results at its composition boundary.
     """
 
     def __init__(self, dataset_path: Path) -> None:
@@ -31,6 +34,19 @@ class RiverNetworkLoader:
         self._geometry_cache: dict[
             tuple[float, float, float, float] | None, RiverGeometry
         ] = {}
+        self._full_extent_layer: gpd.GeoDataFrame | None = None
+
+    def warm_up(self) -> None:
+        """Eagerly parse the full dataset once, ahead of any request.
+
+        Intended to be called once at application startup so the expensive
+        PBF parse is paid a single time rather than on every request.
+
+        Raises:
+            RiverNetworkError: If the dataset is missing or cannot be read.
+        """
+        self._validate_dataset()
+        self._load_full_extent_layer()
 
     def get_geometry(self, bounds: BoundingBox | None = None) -> RiverGeometry:
         """Return cached or newly loaded waterway geometry for an optional extent.
@@ -51,13 +67,8 @@ class RiverNetworkLoader:
             return cached
         self._validate_dataset()
         started_at = perf_counter()
-        _LOGGER.info("River network loading started: dataset=%s", self._dataset_path)
         try:
-            layer = gpd.read_file(
-                self._dataset_path,
-                layer="lines",
-                bbox=cache_key,
-            )
+            layer = self._clipped_layer(cache_key)
             river_geometry = self._to_river_geometry(layer)
         except RiverNetworkError:
             raise
@@ -67,8 +78,9 @@ class RiverNetworkLoader:
             ) from error
         self._geometry_cache[cache_key] = river_geometry
         _LOGGER.info(
-            "River network loaded: dataset=%s crs=%s duration_ms=%.2f",
+            "River network geometry resolved: dataset=%s bounds=%s crs=%s duration_ms=%.2f",
             self._dataset_path,
+            cache_key,
             river_geometry.crs,
             (perf_counter() - started_at) * 1000,
         )
@@ -77,6 +89,39 @@ class RiverNetworkLoader:
     def close(self) -> None:
         """Release cached in-memory query results owned by this loader."""
         self._geometry_cache.clear()
+        self._full_extent_layer = None
+
+    def _load_full_extent_layer(self) -> gpd.GeoDataFrame:
+        """Parse the full dataset from disk exactly once and retain it in memory."""
+        if self._full_extent_layer is None:
+            started_at = perf_counter()
+            _LOGGER.info(
+                "River network full-extent parse started: dataset=%s",
+                self._dataset_path,
+            )
+            try:
+                self._full_extent_layer = gpd.read_file(
+                    self._dataset_path, layer="lines"
+                )
+            except Exception as error:
+                raise RiverNetworkError(
+                    "River network dataset could not be loaded."
+                ) from error
+            _LOGGER.info(
+                "River network full-extent parse finished: dataset=%s duration_ms=%.2f",
+                self._dataset_path,
+                (perf_counter() - started_at) * 1000,
+            )
+        return self._full_extent_layer
+
+    def _clipped_layer(
+        self, cache_key: tuple[float, float, float, float] | None
+    ) -> gpd.GeoDataFrame:
+        """Return the in-memory full-extent layer filtered to one requested bbox."""
+        layer = self._load_full_extent_layer()
+        if cache_key is None:
+            return layer
+        return layer.loc[layer.geometry.intersects(box(*cache_key))]
 
     def _validate_dataset(self) -> None:
         """Validate the configured production OSM PBF source before reading it."""

@@ -1314,5 +1314,21 @@ Deliverables:
 
 ---
 
-Sprint 14.1 fully complete (composition root + conversation API + real Weather/Forecast).
+## Sprint 14.1.5 – GIS Loader Eager-Parse Caching
+
+Status: Completed
+Completed: 2026-07-29
+
+Deliverables:
+- [x] warm_up() eager-parse on RiverNetworkLoader and OSMLoader
+- [x] In-memory clip-per-request instead of re-read-per-request
+- [x] Wired into configure_graph_dependencies startup
+- [x] Root cause documented (no persistent PBF spatial index)
+- [x] Self-enforcing tests (StopIteration on unintended re-parse)
+- [x] Live verified: 30s vs. 2-4min per fresh-evidence request
+- [x] Regional PBF extraction identified, deferred as future data-prep task
+
+---
+
+Sprint 14.1 fully complete.
 Ready for Sprint 14.2 – Streamlit Dashboard.

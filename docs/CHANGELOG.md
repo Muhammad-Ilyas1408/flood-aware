@@ -101,6 +101,32 @@ All notable changes to this project will be documented in this file.
 - No changes to `decision/parser.py`, `evidence_reference_index.py`, or `models.py`'s core `Decision` contracts.
 - GloFAS ingestion scheduling (periodic automated refresh) remains a separate, explicitly deferred follow-up task.
 - Sprint 14.1 (composition root, conversation API, real Weather/Forecast wiring) is now fully complete.
+
+---
+
+## Sprint 14.1.5 – GIS Loader Eager-Parse Caching (2026-07-29)
+
+### Added
+
+- Added `warm_up()` to `RiverNetworkLoader` and `OSMLoader`, eagerly parsing the full-extent Pakistan-wide OSM PBF dataset exactly once, ahead of any request.
+- Both loaders now retain the parsed full-extent layer(s) in memory (`_full_extent_layer`/`_full_extent_layers`) and serve every subsequent request by spatially clipping (`geometry.intersects(box(*bbox))`) the already-in-memory result, instead of re-reading from disk per request.
+- `configure_graph_dependencies()` now calls `warm_up()` on both loaders once at application startup.
+- `OSMLoader` gained a `close()` method (previously held no closable state) for symmetric shutdown cleanup alongside `RiverNetworkLoader`.
+
+### Fixed
+
+- **Root cause identified and resolved:** GDAL's OSM vector driver has no persistent spatial index for `.osm.pbf` files — a `bbox=` filter on `gpd.read_file()` narrows returned *results*, not the underlying *scan cost*, which is dominated by total file size, not query area. This meant every fresh-evidence conversation turn re-parsed the entire Pakistan-wide dataset from scratch (measured: 28–92s for river network, 65–220s for OSM infrastructure), regardless of the small region actually queried. Real per-request GIS collection time reduced from ~90 seconds–4 minutes to ~30 seconds (dominated by the remaining, unavoidable LLM reasoning and other tool calls), by moving the expensive parse to a one-time application-startup cost instead.
+
+### Verified
+
+- Full test suite passing, including two new tests per loader: `parses_disk_once_across_multiple_distinct_bboxes` (proves distinct bounding boxes are served from one in-memory parse, using a self-enforcing `side_effect` pattern that raises `StopIteration` on any unintended second disk read) and `warm_up_parses_the_dataset_once_before_any_request`.
+- Live end-to-end verification: a real fresh-evidence conversation turn against a warmed-up server completed in 30.4 seconds (previously 2–4 minutes), with GIS evidence (`citations: gis`) confirmed intact and correct.
+
+### Notes
+
+- Tradeoff, accepted deliberately: application startup time grows by the one-time full parse cost (~90s–5min), paid once at process start rather than repeated per request. Both full-Pakistan geometries remain resident in memory for the application's lifetime. This matches the project's actual usage pattern (server started once, then serves many live requests).
+- Regional PBF extraction (pre-clipping the source file to a Swat-district-only dataset via `osmium`/`ogr2ogr`) identified as the most durable long-term fix, explicitly deferred as a separate future data-preparation task — not a code change, out of scope for this session.
+- Sprint 14.1 (composition root, conversation API, real Weather/Forecast, GIS caching) is now fully complete.
 - Ready for Sprint 14.2 – Streamlit Dashboard.
 
 ---

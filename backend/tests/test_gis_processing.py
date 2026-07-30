@@ -189,6 +189,64 @@ class GISProcessingTests(unittest.TestCase):
             with self.assertRaises(OSMError):
                 OSMLoader(source).load()
 
+    def test_osm_loader_parses_disk_once_across_multiple_distinct_bboxes(self) -> None:
+        """Every distinct bbox must be served from one in-memory parse result."""
+
+        with TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "sample.osm.pbf"
+            source.touch()
+            lines, points, polygons = _fixture_osm_layers()
+            near_bounds = BoundingBox(
+                min_latitude=34.0,
+                min_longitude=72.0,
+                max_latitude=35.0,
+                max_longitude=73.0,
+            )
+            far_bounds = BoundingBox(
+                min_latitude=9.0,
+                min_longitude=89.0,
+                max_latitude=10.0,
+                max_longitude=90.0,
+            )
+            with patch(
+                "backend.app.gis.processing.osm.gpd.read_file",
+                side_effect=(lines, points, polygons),
+            ) as read_file:
+                loader = OSMLoader(source)
+                near = loader.load(near_bounds)
+                far = loader.load(far_bounds)
+
+        # side_effect only supplies 3 values: a 4th/5th/6th gpd.read_file call
+        # (i.e. a second on-disk parse) would raise StopIteration here.
+        self.assertEqual(read_file.call_count, 3)
+        self.assertEqual(len(near.roads), 2)
+        self.assertEqual(len(far.roads), 0)
+
+    def test_osm_loader_warm_up_parses_once_before_any_request(self) -> None:
+        """Eager warm-up should let every later request avoid a disk read entirely."""
+
+        with TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "sample.osm.pbf"
+            source.touch()
+            lines, points, polygons = _fixture_osm_layers()
+            with patch(
+                "backend.app.gis.processing.osm.gpd.read_file",
+                side_effect=(lines, points, polygons),
+            ) as read_file:
+                loader = OSMLoader(source)
+                loader.warm_up()
+                loader.load(
+                    BoundingBox(
+                        min_latitude=34.0,
+                        min_longitude=72.0,
+                        max_latitude=35.0,
+                        max_longitude=73.0,
+                    )
+                )
+                loader.load()
+
+        self.assertEqual(read_file.call_count, 3)
+
     def test_infrastructure_impact_uses_spatial_intersection(self) -> None:
         """All affected categories and critical assets are returned with stable counts."""
 

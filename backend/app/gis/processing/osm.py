@@ -5,6 +5,7 @@ from time import perf_counter
 
 import geopandas as gpd
 import pandas as pd
+from shapely.geometry import box
 
 from backend.app.core.logger import get_logger
 from backend.app.gis.config import GIS_CONFIG, OSM_AMENITY_TAGS
@@ -16,7 +17,13 @@ _LOGGER = get_logger(__name__)
 
 
 class OSMLoader:
-    """Extract selected infrastructure layers from a local OpenStreetMap PBF file."""
+    """Extract selected infrastructure layers from a local OpenStreetMap PBF file.
+
+    The full-extent dataset is parsed from disk exactly once (either eagerly
+    via ``warm_up`` or lazily on first use) and retained in memory; every
+    requested extent is served by spatially filtering those already-parsed
+    layers rather than re-reading the PBF source.
+    """
 
     def __init__(self, path: Path) -> None:
         """Initialize the loader for one configured OSM PBF source.
@@ -26,12 +33,31 @@ class OSMLoader:
         """
 
         self._path = path
+        self._full_extent_layers: (
+            tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame] | None
+        ) = None
+
+    def warm_up(self) -> None:
+        """Eagerly parse the full dataset once, ahead of any request.
+
+        Intended to be called once at application startup so the expensive
+        PBF parse is paid a single time rather than on every request.
+
+        Raises:
+            OSMError: If the source is absent, unsupported, or cannot be read.
+        """
+        self._validate_source()
+        self._load_full_extent_layers()
+
+    def close(self) -> None:
+        """Release the in-memory full-extent layers owned by this loader."""
+        self._full_extent_layers = None
 
     def load(self, bounds: BoundingBox | None = None) -> InfrastructureLayers:
         """Load roads and critical public-service assets from the PBF source.
 
         Args:
-            bounds: Optional WGS84 extent used to limit I/O for an analysis area.
+            bounds: Optional WGS84 extent used to limit the returned features.
 
         Returns:
             GeoDataFrames for infrastructure categories with source CRS preserved.
@@ -40,24 +66,11 @@ class OSMLoader:
             OSMError: If the source is absent, unsupported, or cannot be read.
         """
 
-        if (
-            not self._path.is_file()
-            or tuple(self._path.suffixes[-2:]) != GIS_CONFIG.osm_pbf_suffixes
-        ):
-            raise OSMError("OSM loader requires an existing .osm.pbf file.")
+        self._validate_source()
         if bounds is not None and not isinstance(bounds, BoundingBox):
             raise OSMError("OSM bounds must be a GIS BoundingBox.")
-        bbox = _bbox_tuple(bounds)
         started_at = perf_counter()
-        _LOGGER.debug("OSM infrastructure loading started: path=%s", self._path)
-        try:
-            lines = gpd.read_file(self._path, layer="lines", bbox=bbox)
-            points = gpd.read_file(self._path, layer="points", bbox=bbox)
-            polygons = gpd.read_file(self._path, layer="multipolygons", bbox=bbox)
-        except Exception as error:
-            raise OSMError(
-                "OpenStreetMap infrastructure data could not be loaded."
-            ) from error
+        lines, points, polygons = self._clipped_layers(bounds)
 
         facilities = _combine_layers(points, polygons)
         infrastructure_layers = InfrastructureLayers(
@@ -92,6 +105,52 @@ class OSMLoader:
             (perf_counter() - started_at) * 1000,
         )
         return infrastructure_layers
+
+    def _validate_source(self) -> None:
+        """Validate the configured production OSM PBF source before reading it."""
+        if (
+            not self._path.is_file()
+            or tuple(self._path.suffixes[-2:]) != GIS_CONFIG.osm_pbf_suffixes
+        ):
+            raise OSMError("OSM loader requires an existing .osm.pbf file.")
+
+    def _load_full_extent_layers(
+        self,
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """Parse the full dataset from disk exactly once and retain it in memory."""
+        if self._full_extent_layers is None:
+            started_at = perf_counter()
+            _LOGGER.info("OSM full-extent parse started: path=%s", self._path)
+            try:
+                lines = gpd.read_file(self._path, layer="lines")
+                points = gpd.read_file(self._path, layer="points")
+                polygons = gpd.read_file(self._path, layer="multipolygons")
+            except Exception as error:
+                raise OSMError(
+                    "OpenStreetMap infrastructure data could not be loaded."
+                ) from error
+            self._full_extent_layers = (lines, points, polygons)
+            _LOGGER.info(
+                "OSM full-extent parse finished: path=%s duration_ms=%.2f",
+                self._path,
+                (perf_counter() - started_at) * 1000,
+            )
+        return self._full_extent_layers
+
+    def _clipped_layers(
+        self, bounds: BoundingBox | None
+    ) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
+        """Return the in-memory full-extent layers filtered to one requested bbox."""
+        lines, points, polygons = self._load_full_extent_layers()
+        bbox = _bbox_tuple(bounds)
+        if bbox is None:
+            return lines, points, polygons
+        bbox_polygon = box(*bbox)
+        return (
+            lines.loc[lines.geometry.intersects(bbox_polygon)],
+            points.loc[points.geometry.intersects(bbox_polygon)],
+            polygons.loc[polygons.geometry.intersects(bbox_polygon)],
+        )
 
 
 def _bbox_tuple(bounds: BoundingBox | None) -> tuple[float, float, float, float] | None:

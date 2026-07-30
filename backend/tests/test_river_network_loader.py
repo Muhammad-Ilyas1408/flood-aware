@@ -49,7 +49,7 @@ def test_loader_discovers_loads_and_caches_authoritative_waterways() -> None:
 
 
 def test_loader_uses_bounded_query_and_preserves_crs() -> None:
-    """A spatial query should pass the documented GeoPandas bbox ordering."""
+    """A spatial query filters the in-memory layer and preserves its CRS."""
     bounds = BoundingBox(
         min_latitude=34.0,
         min_longitude=72.0,
@@ -64,7 +64,61 @@ def test_loader_uses_bounded_query_and_preserves_crs() -> None:
             result = loader.get_geometry(bounds)
 
     assert result.geometry.geom_type in {"LineString", "MultiLineString"}
-    assert read_file.call_args.kwargs["bbox"] == (72.0, 34.0, 73.0, 35.0)
+    assert result.crs == "EPSG:4326"
+    read_file.assert_called_once_with(loader._dataset_path, layer="lines")
+
+
+def _two_region_waterways() -> gpd.GeoDataFrame:
+    """Build two valid waterway features in clearly separated regions."""
+    return gpd.GeoDataFrame(
+        {"waterway": ("river", "river")},
+        geometry=[
+            LineString(((72.0, 34.0), (72.1, 34.1))),
+            LineString(((90.0, 10.0), (90.1, 10.1))),
+        ],
+        crs="EPSG:4326",
+    )
+
+
+def test_loader_parses_disk_once_across_multiple_distinct_bboxes() -> None:
+    """Every distinct bbox must be served from the one in-memory parse result."""
+    near_bounds = BoundingBox(
+        min_latitude=33.5, min_longitude=71.5, max_latitude=34.5, max_longitude=72.5
+    )
+    far_bounds = BoundingBox(
+        min_latitude=9.5, min_longitude=89.5, max_latitude=10.5, max_longitude=90.5
+    )
+    with TemporaryDirectory() as directory:
+        loader = RiverNetworkLoader(_dataset_path(directory))
+        with patch(
+            "backend.app.gis.river.loader.gpd.read_file",
+            return_value=_two_region_waterways(),
+        ) as read_file:
+            near = loader.get_geometry(near_bounds)
+            far = loader.get_geometry(far_bounds)
+            unbounded = loader.get_geometry()
+
+    assert read_file.call_count == 1
+    assert near.geometry.bounds[0] == pytest.approx(72.0)
+    assert far.geometry.bounds[0] == pytest.approx(90.0)
+    assert unbounded.geometry.geom_type == "MultiLineString"
+
+
+def test_warm_up_parses_the_dataset_once_before_any_request() -> None:
+    """Eager warm-up should let every later request avoid a disk read entirely."""
+    bounds = BoundingBox(
+        min_latitude=33.5, min_longitude=71.5, max_latitude=34.5, max_longitude=72.5
+    )
+    with TemporaryDirectory() as directory:
+        loader = RiverNetworkLoader(_dataset_path(directory))
+        with patch(
+            "backend.app.gis.river.loader.gpd.read_file", return_value=_waterways()
+        ) as read_file:
+            loader.warm_up()
+            loader.get_geometry(bounds)
+            loader.get_geometry()
+
+    assert read_file.call_count == 1
 
 
 def test_loader_rejects_missing_dataset() -> None:

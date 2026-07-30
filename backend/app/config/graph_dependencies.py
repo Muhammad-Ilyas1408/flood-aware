@@ -4,6 +4,9 @@ This module constructs the full LangGraph decision pipeline exactly as
 ``scripts/manual_chat.py``'s ``_build_container`` does, but once at FastAPI
 startup instead of once per script run, so expensive GIS resources (river
 network and OSM PBF parsing) are read once and reused across every request.
+``RiverNetworkLoader``/``OSMLoader`` are explicitly warmed up here (eager,
+unbounded parse of the Pakistan-wide PBF) so that one-time cost is paid at
+startup rather than being repeated on every request's evidence collection.
 
 Weather and forecast now use their real production boundaries. Weather calls
 OpenWeatherMap synchronously per request. Forecast reads the newest already-
@@ -78,6 +81,7 @@ class _GraphRuntimeResources:
 
     vector_store: ChromaVectorStore
     river_loader: RiverNetworkLoader
+    osm_loader: OSMLoader
     worldpop_loader: WorldPopLoader
     weather_client: OpenWeatherClient
 
@@ -85,6 +89,7 @@ class _GraphRuntimeResources:
         """Release every owned resource at application shutdown."""
         self.vector_store.close()
         self.river_loader.close()
+        self.osm_loader.close()
         self.worldpop_loader.close()
         self.weather_client.close()
 
@@ -203,9 +208,14 @@ def configure_graph_dependencies(application: FastAPI) -> None:
 
     worldpop_loader = WorldPopLoader(_WORLDPOP_RASTER_PATH)
     river_loader = RiverNetworkLoader(_OSM_PBF_PATH)
+    osm_loader = OSMLoader(_OSM_PBF_PATH)
+    # Eagerly parse the Pakistan-wide PBF once here, at startup, rather than
+    # paying that cost (measured at ~90s-4min combined) on every request.
+    river_loader.warm_up()
+    osm_loader.warm_up()
     gis_domain_service = GISDomainService(
         river_loader=river_loader,
-        osm_loader=OSMLoader(_OSM_PBF_PATH),
+        osm_loader=osm_loader,
         gis_analysis_tool=GISAnalysisTool(
             FloodZoneGenerator(),
             PopulationExposureCalculator(worldpop_loader),
@@ -247,6 +257,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
     application.state.graph_runtime_resources = _GraphRuntimeResources(
         vector_store=vector_store,
         river_loader=river_loader,
+        osm_loader=osm_loader,
         worldpop_loader=worldpop_loader,
         weather_client=weather_client,
     )
