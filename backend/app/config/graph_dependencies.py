@@ -5,8 +5,10 @@ This module constructs the full LangGraph decision pipeline exactly as
 startup instead of once per script run, so expensive GIS resources (river
 network and OSM PBF parsing) are read once and reused across every request.
 ``RiverNetworkLoader``/``OSMLoader`` are explicitly warmed up here (eager,
-unbounded parse of the Pakistan-wide PBF) so that one-time cost is paid at
-startup rather than being repeated on every request's evidence collection.
+unbounded parse of the buffered Swat-region PBF extract -- see
+``scripts/extract_regional_gis_data.py`` -- rather than the Pakistan-wide
+source) so that one-time cost is paid at startup rather than being repeated
+on every request's evidence collection.
 
 Weather and forecast now use their real production boundaries. Weather calls
 OpenWeatherMap synchronously per request. Forecast reads the newest already-
@@ -71,8 +73,8 @@ from backend.app.weather.client import OpenWeatherClient
 from backend.app.weather.settings import WeatherSettings
 from backend.app.weather.weather_tool import WeatherTool
 
-_OSM_PBF_PATH = PROJECT_ROOT / "data/gis/osm/raw/pakistan-latest.osm.pbf"
-_WORLDPOP_RASTER_PATH = PROJECT_ROOT / "data/gis/worldpop/raw/pak_ppp_2025.tif"
+_OSM_PBF_PATH = PROJECT_ROOT / "data/gis/osm/raw/swat-region.osm.pbf"
+_WORLDPOP_RASTER_PATH = PROJECT_ROOT / "data/gis/worldpop/raw/swat-region_ppp_2025.tif"
 
 
 @dataclass(frozen=True, slots=True)
@@ -210,8 +212,10 @@ def configure_graph_dependencies(application: FastAPI) -> None:
     worldpop_loader = WorldPopLoader(_WORLDPOP_RASTER_PATH)
     river_loader = RiverNetworkLoader(_OSM_PBF_PATH)
     osm_loader = OSMLoader(_OSM_PBF_PATH)
-    # Eagerly parse the Pakistan-wide PBF once here, at startup, rather than
-    # paying that cost (measured at ~90s-4min combined) on every request.
+    # Eagerly parse the buffered Swat-region PBF extract once here, at
+    # startup, rather than paying the Pakistan-wide parse cost (measured at
+    # ~90s-4min combined) on every request. See
+    # scripts/extract_regional_gis_data.py for how the extract was produced.
     river_loader.warm_up()
     osm_loader.warm_up()
     gis_domain_service = GISDomainService(

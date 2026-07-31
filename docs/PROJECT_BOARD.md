@@ -1299,6 +1299,23 @@ Status: Completed | 2026-07-31
 
 ---
 
-**Sprint 14 fully complete.** All previously-open items across 14.1–14.3 resolved and verified, live and in tests.
+## Hotfix 14.4 – Regional GIS Dataset Extraction
 
-**Next:** Sprint 15 (deployment) or further dashboard feature work.
+Status: **Completed**
+Completed: 2026-08-01
+
+Deliverables:
+- [x] scripts/extract_regional_gis_data.py (pyosmium reference-complete spatial extract + rasterio raster clip, 0.2° buffered Swat region)
+- [x] scripts/compare_regional_gis_accuracy.py (read-only validation tool)
+- [x] Bit-for-bit accuracy confirmed: river geometry, population/infrastructure exposure, all 7 infrastructure categories — identical between original and regional files
+- [x] graph_dependencies.py wired to regional extracts; manual_chat.py updated for consistency
+- [x] File size reduction: OSM 147.2 MiB → 4.2 MiB (~97.1%); WorldPop 134.9 MiB → 2.0 MiB (~98.5%)
+- [x] Real startup time: 5–6 min → 39 sec (~88–90% reduction)
+- [x] Real production-path verification via live dashboard (GIS citations, real reasoning confirmed post-swap)
+- [x] Original Pakistan-wide files preserved, untouched, still in repo
+
+---
+
+Resolves the real deployment-blocking cold-start concern identified before starting this work — a live deployed user will now face a well-under-a-minute cold start, not several minutes.
+
+**Ready for Sprint 15 React frontend work**

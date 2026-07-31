@@ -180,9 +180,9 @@ def _build_container() -> tuple[
     )
     knowledge_tool, vector_store = _build_knowledge_tool()
 
-    osm_path = PROJECT_ROOT / "data/gis/osm/raw/pakistan-latest.osm.pbf"
+    osm_path = PROJECT_ROOT / "data/gis/osm/raw/swat-region.osm.pbf"
     worldpop_loader = WorldPopLoader(
-        PROJECT_ROOT / "data/gis/worldpop/raw/pak_ppp_2025.tif"
+        PROJECT_ROOT / "data/gis/worldpop/raw/swat-region_ppp_2025.tif"
     )
     river_loader = RiverNetworkLoader(osm_path)
     gis_domain_service = GISDomainService(

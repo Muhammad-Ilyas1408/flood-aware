@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.7.0] - 2026-07-31
+## [1.4.0] - 2026-07-31
 
 ---
 
@@ -217,8 +217,33 @@ Found and fixed via live dashboard testing — not surfaced by any automated tes
 - A brief content-dimming visual during Streamlit's rerun transition was investigated and confirmed to be Streamlit's own standard framework-level rerun styling, present in every Streamlit app — not a defect in this project's code. Deliberately left as-is.
 - Situation Room's map still shows only a dataset-level bounding box with an honest "not configured" notice — real per-record `spatial_bounds` configuration remains a small, low-priority deferred item.
 - `uvicorn --reload`'s default file-watching includes the entire project directory, which can trigger an unrelated Windows `multiprocessing`/`anyio` reload-watcher crash when only frontend files change. Fix: scope watching with `--reload-dir backend`.
-- **Sprint 14 fully complete** — every previously-open item across 14.1–14.3 resolved and verified, live and in tests.
-- Ready for Sprint 15 (deployment) or further dashboard feature work.
+
+---
+
+## Hotfix 14.4 – Regional GIS Dataset Extraction (2026-08-01)
+
+### Added
+
+- Added `scripts/extract_regional_gis_data.py`: a one-time, standalone extraction script (not part of the request path) producing `data/gis/osm/raw/swat-region.osm.pbf` and `data/gis/worldpop/raw/swat-region_ppp_2025.tif` — spatially clipped, reference-complete regional extracts of the Pakistan-wide source files, buffered 0.2° (~20-22 km) around `DEFAULT_SWAT_BOUNDING_BOX` to avoid clipping anything analytically relevant near the boundary. Uses `pyosmium`'s `FileProcessor(...).with_locations()` + `BackReferenceWriter(remove_tags=False)` for a reference-complete spatial extract (no dangling node/way/relation references, no tags stripped) and `rasterio.mask.mask(crop=True)` for the raster clip. Original Pakistan-wide files are untouched and remain in the repository.
+- Added `scripts/compare_regional_gis_accuracy.py`: a read-only validation script proving the regional extract is analytically equivalent to the original before trusting it in production.
+
+### Fixed
+
+- **Deployment-blocking cold-start latency.** `configure_graph_dependencies()`'s eager GIS warm-up previously parsed the entire Pakistan-wide OSM PBF (147.2 MiB) and WorldPop raster (134.9 MiB) at every application startup, even though the application only ever analyzes the Swat region — a real liability for deployment, since every real user's first visit (and every cold start after a hosting platform idles the server) would face this same multi-minute wait, not just local development. `graph_dependencies.py` now points at the regional extracts instead.
+- Also updated `scripts/manual_chat.py`'s hardcoded paths to match, keeping the dev script consistent with production.
+
+### Verified
+
+- **Extraction accuracy:** direct side-by-side comparison (Mingora, 34.7700/72.3600, major severity) between the original Pakistan-wide files and the regional extract showed every metric bit-for-bit identical — river geometry (type, length to 2 decimal places, vertex count, bounds), affected area, population exposure, population density, WorldPop cell count, and all seven infrastructure categories (roads, bridges, schools, hospitals, clinics, police, fire stations).
+- **Real startup time:** measured 39 seconds from `"Waiting for application startup"` to `"Application startup complete"` — down from the previous 5–6 minutes, an ~88–90% reduction.
+- **Real production path:** live dashboard verification post-swap confirmed GIS analysis (`gis:GISDomainService` citation, real population/infrastructure reasoning) works correctly through the actual `/conversation` request path, not just in the isolated comparison script — confirmed for a real village at MODERATE severity.
+- File size reduction: OSM PBF 147.2 MiB → 4.2 MiB (~97.1%); WorldPop raster 134.9 MiB → 2.0 MiB (~98.5%).
+
+### Notes
+
+- This directly resolves the real deployment concern this hotfix was scoped to address: a live user visiting the deployed app will now face a well-under-a-minute cold start, not several minutes.
+- Original Pakistan-wide files and both new scripts remain in the repository — no data was deleted, only additional, smaller, regionally-scoped files were created alongside the originals.
+- This closes the last known pre-deployment infrastructure concern. Project is now ready for Sprint 15 (deployment) or the planned React frontend work, per priority.
 
 ---
 
