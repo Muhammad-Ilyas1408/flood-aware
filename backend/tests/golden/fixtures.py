@@ -177,6 +177,28 @@ def scenario_duplicate_evidence() -> EvidenceBundle:
     )
 
 
+def scenario_shelter_question_no_shelter_data() -> EvidenceBundle:
+    """Live-observed failure case: forecast/GIS/weather evidence present with
+    real quantitative figures, but ShelterEvidence is entirely absent while a
+    policy citation still mentions "shelter" -- tempting a specific-sounding
+    action about a resource that was never actually reported, and giving
+    _validate_specificity real, unrelated figures a shelter-focused answer
+    would have no honest reason to restate.
+    """
+    return EvidenceBundle(
+        forecast=ForecastEvidence(discharge=1400, severity="moderate"),
+        gis=GISEvidence(flood_zone="high_risk", population_exposed=18000),
+        weather=WeatherEvidence(rainfall=95, weather_condition="rain"),
+        knowledge=KnowledgeEvidence(citations=("PDMA Shelter Protocol 2024",)),
+        provenance=(
+            provenance("forecast", "glofas_forecast_tool"),
+            provenance("gis", "gis_domain_service"),
+            provenance("weather", "weather_tool"),
+            provenance("knowledge", "government_knowledge_tool"),
+        ),
+    )
+
+
 def scenario_full_bundle() -> EvidenceBundle:
     """Complete multi-source evidence for broad citation coverage."""
     return EvidenceBundle(

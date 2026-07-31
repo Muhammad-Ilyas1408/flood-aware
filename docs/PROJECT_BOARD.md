@@ -1250,135 +1250,55 @@ Deliverables:
 
 ---
 
-Ready for Sprint 14 – Streamlit Dashboard
+## Sprint 14 – Production Backend, Dashboard & Visual Identity
 
-## Sprint 14.1 – Production Composition Root & Conversation API
-
-Status: Completed
-Completed: 2026-07-29
+Status: **Completed**
+Completed: 2026-07-31
 
 ---
 
-### Sprint 14.1.1 – Production Graph Composition Root
+### Sprint 14.1 – Production Composition Root & Conversation API
+Status: Completed | 2026-07-29
 
-Status: Completed
-Deliverables:
-- [x] Singleton composition root (configure_graph_dependencies)
-- [x] Request-scoped orchestrator dependency provider
-- [x] Fail-fast startup validation
-- [x] GIS loader reuse verified (no per-request re-parsing)
-
----
-
-### Sprint 14.1.2 – POST /conversation Endpoint
-
-Status: Completed
-Deliverables:
-- [x] ConversationRequest/ConversationResponse schemas (minimal response surface)
-- [x] POST /conversation endpoint
-- [x] Fixed: strict-mode session_id defect (blocked every real client)
-- [x] Fixed: DecisionGenerationError → 503
-- [x] Fixed: unknown session → 404 (ConversationSessionNotFoundError)
-- [x] Full suite: 260 passed, 1 skipped
-- [x] Live end-to-end verification via real running server
+- [x] 14.1.1 — Singleton composition root, fail-fast startup validation, GIS loader reuse
+- [x] 14.1.2 — POST /conversation endpoint; fixed strict-mode session_id defect (blocked every real client); 503 for AI failures; 404 for unknown sessions
+- [x] 14.1.3 — FOCUS prompt instruction (initial version) + golden test; documented ratio-metric methodology finding
+- [x] 14.1.4 — Real Weather (OpenWeatherMap) + real Forecast (GloFAS, read-only) wired; snapshot staleness detection (internal + user-facing); fixed ForecastNode never populating evidence.forecast
+- [x] 14.1.5 — GIS eager-parse caching (2–4min → ~30s per request); root cause documented (no persistent OSM PBF spatial index)
 
 ---
 
-### Sprint 14.1.3 – Multi-Turn Reasoning Focus
+### Sprint 14.2 – Streamlit Dashboard & Production Hardening
+Status: Completed | 2026-07-30
 
-Status: Completed
-Deliverables:
-- [x] FOCUS prompt instruction with real weak/strong example
-- [x] Golden-set follow-up-focus test (stable 3x + full suite)
-- [x] Measurement-methodology correction documented (ratio → structural check)
-
----
-
-## Sprint 14.1.4 – Real Weather & Forecast Integration
-
-Status: Completed
-Completed: 2026-07-29
-
-Deliverables:
-
-- [x] Real WeatherTool wired (OpenWeatherMap)
-- [x] Real GloFASForecastTool wired (local snapshot read only, no live ingestion)
-- [x] Snapshot staleness detection (internal + user-facing via missing_evidence)
-- [x] Fixed: ForecastNode never populated evidence.forecast (pre-existing gap)
-- [x] Static stand-ins fully removed
-- [x] Full suite: 267 passed, 1 skipped
-- [x] Full golden set: 17/17 passing
-- [x] Live multi-village, multi-turn verification (Mingora + Barikot)
-- [x] Documented finding: intent-aware routing gap (deferred, links to Sprint 12)
-- [x] Documented finding: minor missing_evidence phrasing inconsistency (low priority, deferred)
+- [x] 14.2.1 — Situation Analysis page: dataset catalog, filterable tables, honest bounding-box map
+- [x] 14.2.2 — AI Assistant Chat page: real multi-turn UI, rotating progress messages, distinct 404/503/connection-failure handling
+- [x] 14.2.2 fix — Real village/shelter coordinates surfaced end-to-end (removed manual lat/lon entry requirement)
+- [x] 14.2.3 — Real Weather/Forecast/GIS caching hardening (see 14.1.4/14.1.5); RAG relevance-floor fix (score_threshold wired up, dedup improved); root cause of FOCUS instability found and fixed (current_request_text never reached decide())
+- [x] 14.2.4 — Shelter-action grounding refinement: DecisionActionGroundingError + parser-level enforcement, refined through 3 rounds of empirical verification against real examples
 
 ---
 
-## Sprint 14.1.5 – GIS Loader Eager-Parse Caching
+### Sprint 14.3 – Visual Identity & Policy Advisor
+Status: Completed | 2026-07-31
 
-Status: Completed
-Completed: 2026-07-29
-
-Deliverables:
-- [x] warm_up() eager-parse on RiverNetworkLoader and OSMLoader
-- [x] In-memory clip-per-request instead of re-read-per-request
-- [x] Wired into configure_graph_dependencies startup
-- [x] Root cause documented (no persistent PBF spatial index)
-- [x] Self-enforcing tests (StopIteration on unintended re-parse)
-- [x] Live verified: 30s vs. 2-4min per fresh-evidence request
-- [x] Regional PBF extraction identified, deferred as future data-prep task
-
----
-
-## Sprint 14.2 – Streamlit Dashboard & Production Hardening
-
-Status: Completed (one open issue carried forward)
-Completed: 2026-07-30
+- [x] Real theme (.streamlit/config.toml): navy/amber, badge-color-safe
+- [x] Shared header component + accessibility-hook-based active-page sidebar styling
+- [x] Real product naming: Flood-Aware Agent / Situation Room / Home, distinct per-page icons
+- [x] New Policy Advisor page (no location selector, routes to Knowledge/Dataset only)
+- [x] Page-appropriate rotating progress messages
+- [x] Fixed: chat input bottom-pinning
+- [x] Fixed: message rendering-order inconsistency (single source of truth)
+- [x] Fixed: risk badges hidden on Policy Advisor (display-only)
+- [x] Fixed: village selector UX (real placeholder, conditional manual fields)
+- [x] Fixed: shelter-specific-question 503 (root-caused via captured live log — DecisionSpecificityError, not the initially-suspected error type)
+- [x] Fixed: generalized specificity exemption to cover present-but-off-topic evidence, not just entirely-absent
+- [x] Corrected 2 over-strict golden-test assertions found during this work
+- [x] Full suite: 275 passed, 2 skipped | Full golden set: 21/21 passing
+- [x] Extensive live end-to-end re-verification after full process restart
 
 ---
 
-### Sprint 14.2.1 – Situation Analysis Page
-Status: Completed
-- [x] Thin-client dashboard scaffold, real API-backed catalog/tables/map
+**Sprint 14 fully complete.** All previously-open items across 14.1–14.3 resolved and verified, live and in tests.
 
-### Sprint 14.2.2 – AI Assistant Chat Page
-Status: Completed
-- [x] Real multi-turn chat UI, session-state history, badges, citations
-- [x] Rotating honest progress messaging
-- [x] Distinct 404/503/connection-failure handling
-- [x] Fixed: manual coordinate entry removed (real village coordinates surfaced end-to-end)
-
-### Sprint 14.2.3 – Real-Traffic Production Fixes
-Status: Completed
-- [x] Fixed: GIS eager-parse caching (2-4min → ~30s per request)
-- [x] Real Weather + Forecast wired, with snapshot staleness detection (internal + user-facing)
-- [x] Fixed: RAG retrieval relevance floor (score_threshold wired up) + dedup improvement
-- [x] Fixed: root cause of FOCUS instability (current_request_text never reached decide())
-- [x] Full suite (274 passed, 2 skipped) + full golden set (18/18) + extensive live verification
-
----
-
-⚠️ Known issue, carried forward: shelter-data response inconsistency
-(claims "no data available" while citing real evidence). Diagnostic
-queued as next session's first task.
-
----
-
-## Sprint 14.2.4 – Shelter-Action Grounding Refinement
-
-Status: Completed
-Completed: 2026-07-30
-
-Deliverables:
-- [x] DecisionActionGroundingError + parser-level enforcement
-- [x] Structured retry-feedback (rejected_action/absent_category)
-- [x] Content-aware classification (fixes over-rejection of legitimate general actions)
-- [x] Verified empirically against all 4 real reference examples
-- [x] Full suite: 275 passed, 2 skipped
-- [x] Full golden set: 19/19 passing (3x stability-confirmed on the refined test)
-- [x] Unrelated single-run golden flake logged, confirmed non-reproducing
-
----
-
-Sprint 14.2 fully complete — no open items remaining.
-Ready for Sprint 14.3 – Visual polish pass.
+**Next:** Sprint 15 (deployment) or further dashboard feature work.

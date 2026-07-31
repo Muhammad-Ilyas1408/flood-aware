@@ -1,14 +1,29 @@
 """Golden-set evaluation of real LLM decisions. Costs real API calls."""
 
+from datetime import UTC, datetime
 import os
 import re
 
 import pytest
 
+from backend.app.conversation.models import ConversationTurn
 from backend.app.decision.dependencies import build_openai_decision_provider
 from backend.app.decision.evidence_reference_index import EvidenceReferenceIndex
-from backend.app.decision.models import Decision, DecisionConfidence, RiskLevel, Priority
+from backend.app.decision.models import (
+    ActionRecommendation,
+    Decision,
+    DecisionConfidence,
+    DecisionReason,
+    Priority,
+    Recommendation,
+    RiskAssessment,
+    RiskLevel,
+)
 from backend.tests.golden import fixtures as f
+
+_INVENTED_SPECIFIC_PATTERN = re.compile(
+    r"\d|has capacity of|\bis ready\b", re.IGNORECASE
+)
 
 pytestmark = [
     pytest.mark.anyio,
@@ -136,6 +151,137 @@ class TestGoldenSet:
             or ref == bundle.shelters.nearest_shelter
         }
         assert references & shelter_related
+
+    async def test_shelter_specific_question_without_shelter_data_succeeds(
+        self, provider
+    ):
+        """Live-observed failure: a question specifically about the absent
+        'shelter' category must not exhaust the grounding-retry budget and
+        503. Reproduces the real session pattern -- a follow-up turn whose
+        *current request* itself asks about shelters ("What shelters are
+        available...") right after a general flood-outlook turn, while
+        ShelterEvidence is entirely absent. A successful return here (no
+        DecisionActionGroundingError propagating out of `decide`) is itself
+        proof retries did not exhaust; missing_evidence must still name
+        'shelter' honestly, and no action may fabricate shelter specifics.
+        """
+        bundle = f.scenario_shelter_question_no_shelter_data()
+        prior_turn = ConversationTurn(
+            request_text="What is the flood outlook for Mingora?",
+            village_name="Mingora",
+            evidence_bundle=bundle,
+            decision=Decision(
+                risk_assessment=RiskAssessment(
+                    level=RiskLevel.MODERATE,
+                    rationale="Moderate discharge with high-risk GIS exposure.",
+                ),
+                recommendation=Recommendation(
+                    summary="Monitor conditions and prepare for possible evacuation.",
+                    actions=(
+                        ActionRecommendation(
+                            action="Continue monitoring river discharge.",
+                            priority=Priority.MEDIUM,
+                            evidence_references=("forecast",),
+                        ),
+                    ),
+                    citations=("forecast", "gis"),
+                    supporting_evidence=("forecast", "gis"),
+                ),
+                reasons=(
+                    DecisionReason(
+                        statement="Discharge and GIS exposure indicate moderate risk.",
+                        evidence_references=("forecast", "gis"),
+                    ),
+                ),
+                confidence=DecisionConfidence.MEDIUM,
+            ),
+            created_at=datetime(2026, 7, 27, tzinfo=UTC),
+        )
+
+        decision = await provider.decide(
+            bundle,
+            history=(prior_turn,),
+            current_request_text=(
+                "What shelters are available near Mingora, and are they "
+                "ready for evacuees?"
+            ),
+        )
+
+        missing = " ".join(decision.recommendation.missing_evidence).lower()
+        assert "shelter" in missing
+
+        # Mentioning "shelter" by name is honest and expected here -- the
+        # question is about shelters. What's disqualifying is an INVENTED
+        # specific (a number, or a definitive, unearned status claim), not
+        # the topic word itself. Acknowledge/gather language like "Obtain
+        # shelter data" or "assess shelter capacity before finalizing
+        # evacuation planning" must remain allowed, matching the same
+        # standard parser.py's _validate_no_actions_on_absent_categories
+        # already enforces (specific-claim language grounded only in an
+        # absent category, not mere mention of the category).
+        for action in decision.recommendation.actions:
+            assert not _INVENTED_SPECIFIC_PATTERN.search(action.action), (
+                "Action invents a concrete shelter specific (a number or a "
+                "definitive status claim) despite shelter evidence being "
+                f"absent: {action.action!r}"
+            )
+
+    async def test_shelter_specific_question_does_not_trigger_specificity_error(
+        self, provider
+    ):
+        """Live-observed failure (captured log): failure_type=
+        DecisionSpecificityError, attempt_count=3, retry_count=2, followed
+        by decision_generation_fallback_used and a 503. Root cause:
+        _validate_specificity required a quantitative figure to appear
+        somewhere in the response even when the only figures available
+        (forecast/GIS/weather) are unrelated to a current request that is
+        specifically about the entirely-absent 'shelter' category, and the
+        honest answer for that absent category has nothing quantitative to
+        report. This must now succeed and still honestly name the absent
+        category in missing_evidence, without weakening the check for a
+        response that genuinely ignores present, cited figures.
+        """
+        bundle = f.scenario_shelter_question_no_shelter_data()
+        prior_turn = ConversationTurn(
+            request_text="What is the flood outlook for Mingora?",
+            village_name="Mingora",
+            evidence_bundle=bundle,
+            decision=Decision(
+                risk_assessment=RiskAssessment(
+                    level=RiskLevel.MODERATE,
+                    rationale="Moderate discharge of 1400 m3/s with high-risk GIS exposure.",
+                ),
+                recommendation=Recommendation(
+                    summary="Monitor conditions and prepare for possible evacuation.",
+                    actions=(
+                        ActionRecommendation(
+                            action="Continue monitoring river discharge.",
+                            priority=Priority.MEDIUM,
+                            evidence_references=("forecast",),
+                        ),
+                    ),
+                    citations=("forecast", "gis"),
+                    supporting_evidence=("forecast", "gis"),
+                ),
+                reasons=(
+                    DecisionReason(
+                        statement="Discharge of 1400 m3/s and high GIS exposure indicate moderate risk.",
+                        evidence_references=("forecast", "gis"),
+                    ),
+                ),
+                confidence=DecisionConfidence.MEDIUM,
+            ),
+            created_at=datetime(2026, 7, 27, tzinfo=UTC),
+        )
+
+        decision = await provider.decide(
+            bundle,
+            history=(prior_turn,),
+            current_request_text="What shelters are available near Mingora?",
+        )
+
+        missing = " ".join(decision.recommendation.missing_evidence).lower()
+        assert "shelter" in missing
 
     async def test_duplicate_evidence(self, provider):
         decision = await provider.decide(f.scenario_duplicate_evidence())

@@ -435,16 +435,27 @@ def _grounding_correction_message(invalid_references: tuple[str, ...]) -> str:
 def _action_grounding_correction_message(
     rejected_action: str, absent_category: str
 ) -> str:
-    """Name the exact rejected action and absent category for a targeted fix."""
+    """Name the exact rejected action and absent category for a targeted fix.
+
+    Distinguishes honestly acknowledging the topic from fabricating specifics
+    about it: a question that is itself about the absent category (e.g. "what
+    shelters are available") cannot be honestly answered by pretending the
+    category doesn't exist, only by admitting the data is missing.
+    """
     return (
         "Your previous JSON response recommended this action, which is grounded "
         f"only in the entirely-absent '{absent_category}' evidence category: "
-        f"{rejected_action!r}. Return a corrected JSON decision that either "
-        "removes this action entirely, or rewrites it to be general and not "
-        f"centered on '{absent_category}' (e.g. continuing to monitor and "
-        "gather missing evidence), keeping every other action, reason, and "
-        "citation unchanged. Return the complete corrected JSON object, "
-        "matching the original schema."
+        f"{rejected_action!r}. This was rejected because it invents specifics "
+        f"(capacity, names, readiness status, or similar) for '{absent_category}' "
+        "that are not in the evidence -- not because the topic itself is "
+        "off-limits. You MAY acknowledge that the request concerns "
+        f"'{absent_category}' and state plainly that this data is unavailable "
+        f"in recommendation.missing_evidence. You must NOT invent or imply any "
+        f"concrete detail about '{absent_category}'. Return a corrected JSON "
+        "decision that either removes this action entirely, or rewrites it to "
+        f"state only that '{absent_category}' data needs to be obtained, "
+        "keeping every other action, reason, and citation unchanged. Return "
+        "the complete corrected JSON object, matching the original schema."
     )
 
 

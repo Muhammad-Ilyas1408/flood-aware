@@ -1,0 +1,20 @@
+# Flood-Aware dashboard visual theme.
+#
+# Deliberately not Streamlit's default pure-black dark theme: a deep
+# navy/slate background with a warm amber accent, tuned for a government
+# situational-awareness product rather than an internal tool.
+#
+# `redColor`/`orangeColor`/`yellowColor`/`greenColor` are intentionally left
+# unset here. Those tokens are what `st.badge(color=...)` renders from, and
+# the risk/confidence badges across the dashboard rely on Streamlit's default
+# dark-theme values for them (#ff2b2b / #ff8700 / #ffe312 / #09ab3b), which
+# are already distinct and high-contrast against this background. Overriding
+# them would silently change badge colors without touching any badge logic.
+[theme]
+base = "dark"
+primaryColor = "#F59E0B"
+backgroundColor = "#0B1220"
+secondaryBackgroundColor = "#151F32"
+textColor = "#E5EAF2"
+borderColor = "#2A3A55"
+baseRadius = "medium"

@@ -26,6 +26,11 @@ _SPECIFIC_ACTION_CLAIM_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+# _flood_severity_figures keys are "{prefix}.{field}"; most prefixes already
+# match the category names _category_related_references matches against,
+# except the plural "shelters" field prefix vs. the singular "shelter" name.
+_FIGURE_PREFIX_TO_CATEGORY_NAME = {"shelters": "shelter"}
+
 
 class DecisionParser:
     """Own JSON parsing, schema validation, and grounding validation."""
@@ -69,13 +74,7 @@ class DecisionParser:
     ) -> None:
         """Reject decisions that cite evidence absent from the bundle."""
         allowed = EvidenceReferenceIndex.build(evidence)
-
-        cited: set[str] = set(decision.recommendation.citations)
-        cited.update(decision.recommendation.supporting_evidence)
-        for action in decision.recommendation.actions:
-            cited.update(action.evidence_references)
-        for reason in decision.reasons:
-            cited.update(reason.evidence_references)
+        cited = _cited_references(decision)
 
         unknown = cited - allowed
         if unknown:
@@ -92,7 +91,18 @@ class DecisionParser:
     def _validate_specificity(
         self, decision: Decision, evidence: EvidenceBundle
     ) -> None:
-        """Reject decisions that ignore available quantitative evidence."""
+        """Reject decisions that ignore available quantitative evidence.
+
+        Exempts a figure-free response when the gap is honest, not evasive:
+        every figure-bearing category the response left unquantified was
+        never engaged (no citation, supporting_evidence, or evidence_reference
+        touches it anywhere in the decision) — regardless of whether that
+        category is entirely absent from the bundle or merely present but
+        off-topic for this turn (e.g. a policy follow-up that never touches
+        GIS/weather, per the FOCUS instruction). A category that IS
+        cited/referenced but still left unquantified still raises: that is
+        genuine evidence-ignoring, not an honest scope narrowing.
+        """
         figures = _flood_severity_figures(evidence)
         if not figures:
             return
@@ -104,11 +114,16 @@ class DecisionParser:
                 *(reason.statement for reason in decision.reasons),
             )
         )
-        if not _QUANTITATIVE_FIGURE_PATTERN.search(text):
-            raise DecisionSpecificityError(
-                "Decision ignores available quantitative evidence: "
-                f"{sorted(figures)}"
-            )
+        if _QUANTITATIVE_FIGURE_PATTERN.search(text):
+            return
+
+        if _unquantified_figures_are_uncited(decision, evidence, figures):
+            return
+
+        raise DecisionSpecificityError(
+            "Decision ignores available quantitative evidence: "
+            f"{sorted(figures)}"
+        )
 
     def _validate_no_actions_on_absent_categories(
         self, decision: Decision, evidence: EvidenceBundle
@@ -150,6 +165,44 @@ class DecisionParser:
                         rejected_action=action.action,
                         absent_category=category,
                     )
+
+
+def _cited_references(decision: Decision) -> set[str]:
+    """Collect every citation-like reference the decision actually used."""
+    cited: set[str] = set(decision.recommendation.citations)
+    cited.update(decision.recommendation.supporting_evidence)
+    for action in decision.recommendation.actions:
+        cited.update(action.evidence_references)
+    for reason in decision.reasons:
+        cited.update(reason.evidence_references)
+    return cited
+
+
+def _unquantified_figures_are_uncited(
+    decision: Decision, evidence: EvidenceBundle, figures: dict[str, str]
+) -> bool:
+    """Return whether every figure-bearing category was never engaged.
+
+    "Engaged" means cited, supported, or referenced anywhere in the decision
+    (citations, supporting_evidence, or any evidence_references). This is
+    the sole gate, deliberately independent of whether a category is
+    entirely absent or just present-but-unused for this turn: either way,
+    a response that never touched a category's evidence at all cannot be
+    accused of silently dropping a number from it. If even one figure-
+    bearing category WAS engaged but its number still never appears in the
+    text, this returns False and the specificity check still fires — that
+    is genuine evidence-ignoring, not honest scope narrowing.
+    """
+    cited = _cited_references(decision)
+    figure_prefixes = {key.split(".", 1)[0] for key in figures}
+    figure_categories = {
+        _FIGURE_PREFIX_TO_CATEGORY_NAME.get(prefix, prefix)
+        for prefix in figure_prefixes
+    }
+    return all(
+        not (_category_related_references(evidence, category) & cited)
+        for category in figure_categories
+    )
 
 
 def _category_related_references(
