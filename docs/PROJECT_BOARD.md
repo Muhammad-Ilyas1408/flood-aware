@@ -1316,6 +1316,58 @@ Deliverables:
 
 ---
 
-Resolves the real deployment-blocking cold-start concern identified before starting this work — a live deployed user will now face a well-under-a-minute cold start, not several minutes.
+## Sprint 15 – Next.js Production Frontend
 
-**Ready for Sprint 15 React frontend work**
+Status: **Completed**
+Completed: 2026-08-01
+Branch: frontend-nextjs (backend and dashboard/ untouched, except the additive CORS fix)
+
+---
+
+### Sprint 15.1 – Scaffolding & Design System
+Status: Completed
+- [x] Next.js 16 + TypeScript + Tailwind v4 + shadcn/ui scaffolded
+- [x] Real design system (navy/amber, derived from existing Streamlit brand)
+- [x] Font pairing (Inter + Space Grotesk)
+- [x] Foundational primitives (Card, Badge w/ risk variants, PageShell)
+- [x] Typed API contracts + client mirroring real backend schemas
+- [x] Fixed: Node.js install + PATH propagation, CSS comment bug
+
+### Sprint 15.2 – Home Page
+Status: Completed
+- [x] Server-rendered hero with real live stats (150 villages, 51 shelters)
+- [x] Three feature cards, accurate copy, real hover/focus states
+- [x] Confirmed responsive to mobile
+
+### Sprint 15.3 – Flood-Aware Agent
+Status: Completed
+- [x] Real village selector (real coordinates, no manual entry)
+- [x] Real chat: history, rotating status, badges, actions, citations
+- [x] Distinct 404/503/network error handling
+- [x] Fixed: CORS middleware added to backend (real, additive backend change)
+- [x] Real live verification: grounded answers, session persistence, evidence reuse speedup, honest absent-evidence behavior
+
+### Sprint 15.4 – Policy Advisor
+Status: Completed
+- [x] Shared chat logic extracted (useConversation hook), Agent regression-verified post-refactor
+- [x] No village selector; risk badges correctly suppressed
+- [x] Real live verification: real NDMP citations, no badges
+
+### Sprint 15.5 – Situation Room
+Status: Completed
+- [x] Dataset provenance cards, sortable/filterable tables
+- [x] Real interactive map (react-leaflet, React 19-compatible) with real per-record markers — genuine improvement over Streamlit version
+- [x] Real live verification: real counts, real markers, real sort/filter
+
+### Sprint 15.6 – Navigation & Visual Polish
+Status: Completed
+- [x] Persistent site header, real navigation, accessible active-state, mobile menu
+- [x] Home hero centering + staggered animation
+- [x] Chat message entrance animation, staggered response reveal, status cross-fade
+- [x] "Start new conversation" button polish, missing icon fix (Agent)
+- [x] Missing-evidence UX: raw category names translated to plain-language sentences, muted supporting-context treatment (not hidden — deliberate honesty preserved)
+- [x] Fixed: cramped chat area — 3-round root-cause investigation (padding double-subtraction → header border → real-world subpixel variance), each verified with progressively deeper evidence (DOM class list → compiled CSS → DevTools Computed styles)
+
+---
+
+**Sprint 15 fully complete.** All four pages built, verified live against the real backend, real navigation, real polish. Streamlit dashboard retained as working reference. Ready for deployment planning or further feature work.

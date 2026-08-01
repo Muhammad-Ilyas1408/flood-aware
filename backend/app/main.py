@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException
 
 from backend.app.api.router import api_router
@@ -113,6 +114,12 @@ def create_application(
     )
     application.add_exception_handler(Exception, handle_unexpected_exception)
     application.middleware("http")(log_request)
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_allow_origins,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Accept"],
+    )
     return application
 
 

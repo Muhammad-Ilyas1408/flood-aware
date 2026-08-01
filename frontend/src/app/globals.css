@@ -1,0 +1,155 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/**
+ * Flood-Aware design system — base color scales.
+ *
+ * `navy` and `amber` are full 11-step Tailwind scales derived from the
+ * existing Streamlit dashboard's brand anchors:
+ *   background #0B1220 -> navy-950, secondary background #151F32 -> navy-900,
+ *   border #2A3A55 -> navy-700, text #E5EAF2 -> navy-50.
+ * `amber-500` (#F59E0B) matches the brand accent exactly; the rest of the
+ * amber scale follows Tailwind's own standard amber values so it composes
+ * predictably with the navy scale.
+ *
+ * This product is single-theme (dark navy) by design, matching the existing
+ * dashboard's identity, so semantic slots below are defined once in :root
+ * rather than duplicated under a `.dark` override.
+ */
+@theme {
+    --color-navy-50: #e5eaf2;
+    --color-navy-100: #d3dae8;
+    --color-navy-200: #b6c1d8;
+    --color-navy-300: #96a6c5;
+    --color-navy-400: #7387b0;
+    --color-navy-500: #536a97;
+    --color-navy-600: #3e5075;
+    --color-navy-700: #2a3a55;
+    --color-navy-800: #1f2a42;
+    --color-navy-900: #151f32;
+    --color-navy-950: #0b1220;
+
+    --color-amber-50: #fffbeb;
+    --color-amber-100: #fef3c7;
+    --color-amber-200: #fde68a;
+    --color-amber-300: #fcd34d;
+    --color-amber-400: #fbbf24;
+    --color-amber-500: #f59e0b;
+    --color-amber-600: #d97706;
+    --color-amber-700: #b45309;
+    --color-amber-800: #92400e;
+    --color-amber-900: #78350f;
+    --color-amber-950: #451a03;
+}
+
+:root {
+    /* Semantic risk-level tokens. Consumed as soft-tint badges/alerts, e.g.
+       "bg-risk-high/15 text-risk-high border-risk-high/30", never hardcoded
+       per component. */
+    --risk-normal: #22c55e;
+    --risk-moderate: #eab308;
+    --risk-high: #f97316;
+    --risk-extreme: #dc2626;
+
+    --background: var(--color-navy-950);
+    --foreground: var(--color-navy-50);
+    --card: var(--color-navy-900);
+    --card-foreground: var(--color-navy-50);
+    --popover: var(--color-navy-900);
+    --popover-foreground: var(--color-navy-50);
+    --primary: var(--color-amber-500);
+    --primary-foreground: var(--color-navy-950);
+    --secondary: var(--color-navy-800);
+    --secondary-foreground: var(--color-navy-50);
+    --muted: var(--color-navy-800);
+    --muted-foreground: var(--color-navy-300);
+    --accent: var(--color-navy-700);
+    --accent-foreground: var(--color-navy-50);
+    --destructive: var(--risk-extreme);
+    --destructive-foreground: var(--color-navy-50);
+    --border: var(--color-navy-700);
+    --input: var(--color-navy-700);
+    --ring: var(--color-amber-500);
+    --chart-1: var(--color-amber-500);
+    --chart-2: var(--risk-normal);
+    --chart-3: var(--risk-high);
+    --chart-4: var(--risk-extreme);
+    --chart-5: var(--color-navy-400);
+    --radius: 0.75rem;
+    --sidebar: var(--color-navy-900);
+    --sidebar-foreground: var(--color-navy-50);
+    --sidebar-primary: var(--color-amber-500);
+    --sidebar-primary-foreground: var(--color-navy-950);
+    --sidebar-accent: var(--color-navy-800);
+    --sidebar-accent-foreground: var(--color-navy-50);
+    --sidebar-border: var(--color-navy-700);
+    --sidebar-ring: var(--color-amber-500);
+}
+
+@theme inline {
+    --font-heading: var(--font-heading);
+    --font-sans: var(--font-sans);
+    --color-risk-normal: var(--risk-normal);
+    --color-risk-moderate: var(--risk-moderate);
+    --color-risk-high: var(--risk-high);
+    --color-risk-extreme: var(--risk-extreme);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+    }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+    }
+  html {
+    @apply font-sans;
+    }
+}

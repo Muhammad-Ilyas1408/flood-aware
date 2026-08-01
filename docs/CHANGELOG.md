@@ -8,6 +8,126 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.8.0] - 2026-08-01
+
+---
+
+# Sprint 15 – Next.js Production Frontend (2026-08-01)
+
+New, separate frontend on its own branch (frontend-nextjs), built entirely against the existing, unmodified FastAPI backend. The Streamlit dashboard (dashboard/) remains fully intact and working throughout as a reference implementation — not deployed, not deleted, retained until this frontend fully supersedes it.
+
+---
+
+## Sprint 15.1 — Project Scaffolding & Design System
+
+### Added
+
+- Scaffolded `frontend/`: Next.js 16 (App Router), TypeScript, Tailwind CSS v4, ESLint, `src/` structure, shadcn/ui (Radix-based components).
+- Real design system in `src/app/globals.css`: navy/amber color scale derived directly from the existing Streamlit dashboard's brand anchors (background #0B1220, secondary background #151F32, border #2A3A55, accent #F59E0B), full 11-step Tailwind color scales, plus dedicated semantic risk-level tokens (`risk-normal`/`moderate`/`high`/`extreme`) consumed via soft-tint badges, never hardcoded per component.
+- Font pairing via `next/font`: Inter (body) + Space Grotesk (headings), replacing Next's default font stack.
+- Foundational reusable primitives: `Card`, `Badge` (extended with risk-level variants), `PageShell` (consistent page layout wrapper).
+- Typed API contracts (`src/types/`) mirroring the real backend's Pydantic schemas exactly (`ConversationRequest`/`Response`, `VillageResponse`, `ShelterResponse`, `DatasetCatalogResponse`), and a typed API client (`src/lib/api-client.ts`).
+
+### Fixed
+
+- Node.js was not installed on the development machine; installed via `winget` and diagnosed/resolved a PATH-propagation issue (required a full VS Code restart, not just a new terminal, since VS Code's integrated terminals inherit PATH from when VS Code itself launched).
+- A CSS comment containing a literal `*/` sequence inside a code example prematurely terminated the comment block, breaking the build — found via a real dev-server run (not just a syntax check) and fixed.
+
+### Verified
+
+- `npm run lint` / `npx tsc --noEmit` clean. Real dev server run confirmed the design tokens, fonts, and Card/Badge primitives render correctly, including direct inspection of the compiled CSS output.
+
+---
+
+## Sprint 15.2 — Home Page
+
+### Added
+
+- Real production Home page (`src/app/page.tsx`): hero section with live stats (villages monitored, shelters tracked) fetched server-side at request time via an async Server Component — not a client-side loading flash — with a graceful, silent soft-fail if the backend is unreachable (standard practice for a landing page, not an error banner).
+- Three feature cards (Flood-Aware Agent, Policy Advisor, Situation Room) with distinct icons, accurate descriptions, and real hover/keyboard-focus states.
+
+### Verified
+
+- Live stats confirmed pulling real numbers (150 villages, 51 shelters) directly from `GET /datasets/catalog`, not mocked. Confirmed responsive down to mobile width via DevTools device simulation.
+
+---
+
+## Sprint 15.3 — Flood-Aware Agent (Chat)
+
+### Added
+
+- Real multi-turn chat interface (`src/app/agent/`): village selector (real data from `GET /villages`, real coordinates auto-populated, no manual lat/lon entry, "Other / not listed" fallback), message history in local component state, rotating honest status messages while awaiting a response, risk/confidence badges, priority-labeled actions, collapsible citations.
+- Distinct, user-facing handling for all three real failure modes (404 session-not-found with auto-fresh-session, 503 service-unavailable with no silent auto-retry, network failure), matching the Streamlit version's already-correct behavior.
+- Deliberate DOM structure (three flex siblings: header, scrollable message list, input) designed from the start to guarantee bottom-pinned input positioning — informed directly by the multiple rounds of layout bugs this exact problem caused in the Streamlit version.
+
+### Fixed
+
+- **CORS preflight failure (real backend change).** The backend had no CORS middleware configured, since it had never previously been called from an actual browser (Streamlit makes server-side Python requests, which aren't subject to browser CORS enforcement). `POST /conversation`'s preflight `OPTIONS` request was rejected with 405, blocking every conversation call from the new frontend. Added `CORSMiddleware` to `backend/app/main.py`, registered outermost (after existing middleware, so CORS headers apply even to error responses), with environment-driven allowed origins (`cors_allow_origins` in `Settings`, defaulting to local dev origins, overridable per environment for future deployment). Verified via a direct in-process `TestClient` simulation of the exact failing preflight (now 200 with correct headers), confirmed plain requests with no Origin header (how every existing backend test calls the app) are completely unaffected, and confirmed a disallowed origin correctly receives no CORS headers (the fix is properly scoped, not wide open).
+
+### Verified
+
+- Full real, unmocked live test: real village selection, real question, real grounded 200 response (risk/confidence/summary/actions/citations all correctly rendered), real follow-up reusing the same `session_id` with confirmed evidence-reuse speedup (~24s → ~4s, consistent with prior backend-level findings), and confirmed the shelter-absent-evidence honesty behavior (no fabricated capacity/names) holds correctly in the new frontend too.
+- Backend full test suite unaffected by the CORS change (275 passed, 2 skipped — consistent with all prior sessions).
+
+---
+
+## Sprint 15.4 — Policy Advisor
+
+### Added
+
+- Second, lighter-weight chat page (`src/app/policy-advisor/`), sharing all chat mechanics with Flood-Aware Agent via an extracted `useConversation` hook (refactored out of Agent's page, confirmed behaviorally identical via a real regression test after extraction). No village selector — location fields always omitted, relying on existing backend routing (absent coordinates correctly skip GIS/Weather/Forecast) to route purely through Knowledge/Dataset.
+- `showRiskBadges` prop added to the shared message-rendering component (default `true`), set to `false` on Policy Advisor — risk/confidence badges are conceptually wrong for pure policy questions, matching the same fix already made in the Streamlit version.
+- Policy-appropriate rotating status messages and page copy.
+
+### Verified
+
+- Real, unmocked policy question returned a real grounded answer citing real NDMP source pages, with badges correctly absent. Agent page confirmed unaffected by the shared-hook extraction via an identical real regression request.
+
+---
+
+## Sprint 15.5 — Situation Room
+
+### Added
+
+- Real district overview page (`src/app/situation-room/`): dataset provenance cards (real record counts, version, source), sortable/filterable village and shelter tables, and — a genuine improvement over the Streamlit version — a real interactive map (`react-leaflet`) with real per-record markers for every village and shelter, using the actual coordinates now available since Sprint 14's backend fix (the Streamlit version predates that fix and could only ever show a dataset-level bounding box).
+- `react-leaflet@5` chosen specifically for React 19 compatibility (confirmed via real peer-dependency inspection against the installed React version — the older `react-leaflet@4.x` targets React 18 only and would have been silently incompatible).
+
+### Verified
+
+- Real SSR output confirmed exact live record counts (150/51) and real village/shelter names in the tables. Real marker coordinates confirmed flowing from the live API. Sort/filter logic verified against real fetched data (population/capacity sorting, district filtering). Live visual confirmation: map renders correctly with real amber (village) and green (shelter) markers, clickable with real detail popups.
+
+---
+
+## Sprint 15.6 — Global Navigation & Visual Polish
+
+### Added
+
+- Persistent site header (`src/components/site-header.tsx`), rendered once in the root layout so it appears on all four pages automatically — real client-side navigation via Next.js `<Link>`, active-page indication via `usePathname()` matched against real routes and marked with the real `aria-current="page"` accessibility attribute (not just a visual class), smooth animated underline transition, and a mobile hamburger menu (shadcn `Sheet`) for narrow viewports. Resolves a real, significant usability gap: prior to this, there was no way to navigate between pages without returning to Home first.
+- Home hero: centered layout (previously left-aligned) with a deliberate staggered entrance animation (headline → value proposition → stats, ~150ms offsets).
+- Chat pages: extracted, restyled "Start new conversation" as a shared, properly weighted button component with a brand-consistent amber hover treatment; added a matching page-title icon to Flood-Aware Agent (previously missing, inconsistent with Policy Advisor/Situation Room).
+- Chat message entrance animation (fade + slide-in, keyed correctly so only newly-appended messages animate, not the full history on every render — verified via React's keyed-list reconciliation behavior, not assumed), a fast staggered reveal for each response's parts (badges → summary → actions → citations), and a smooth cross-fade for the rotating status messages (replacing an instant text swap).
+
+### Fixed
+
+- **Cramped chat message area — root-caused through three iterative rounds, each confirmed with progressively deeper verification:**
+  1. The chat pages' own `PageShell` never zeroed its default `py-8`/`sm:py-10` padding, which — combined with `box-sizing: border-box` — was being effectively double-subtracted against the hand-written `calc()` height formula, silently shrinking the available content area by 128–160px. Compounded by the site header's own padding not being fully neutralized at the `sm:` breakpoint, making its real rendered height taller than the formula assumed. Fixed by zeroing padding on both elements and correcting the formula to subtract only the real header height.
+  2. A residual 1px clipping issue remained: the header's own `border-bottom` (1px) sits outside `box-sizing: border-box`'s scope for an `auto`-height element (border/padding only get automatically absorbed for elements with an *explicit* height, not auto-sized ones) — an exact, 100%-reproducible discrepancy at every breakpoint. Fixed by including the real 1px border in the calc() formula, plus added an `env(safe-area-inset-bottom)`-aware buffer to the input form for notched/gesture-nav devices (resolves to 0 on ordinary screens, free insurance elsewhere).
+  3. Even after both mathematically-exact fixes, real-world testing still showed a few clipped pixels at the input's bottom border — pure `calc()` precision proved insufficient against real browser rendering variance (subpixel rounding, engine-specific `100dvh` behavior). Diagnosed via direct DevTools Computed-style inspection (not further formula reasoning) confirming the element itself was correctly sized with zero problematic padding, pointing to the outer container's lack of a hard overflow boundary. Added `overflow-hidden` to the outer container (verified not to interfere with the independently-scrolling inner message list, and confirmed the village selector's portal-rendered dropdown is unaffected), plus a final pragmatic ~10px safety buffer — deliberately trading a small amount of theoretical precision for real-world robustness, which fully resolved the issue.
+
+### Verified
+
+- All fixes confirmed via inspection of the actual rendered DOM class list after `twMerge` resolution (not just compiled-CSS class presence, which was identified as the specific verification gap that let the original bug through undetected across two earlier "verified correct" rounds) and, for the final round, direct browser DevTools Computed-style ground truth.
+- `npm run lint` / `npx tsc --noEmit` clean throughout every round. Real, live, human visual confirmation on both `/agent` and `/policy-advisor` that the message area now fills the available space correctly with no clipping, on both desktop and mobile widths.
+
+### Notes
+
+- This session's most valuable debugging lesson: two consecutive rounds of CSS fixes were each individually, provably correct (verified against real compiled/rendered output) yet did not resolve the visible symptom — the correct response was not a third theoretical fix, but stepping back to gather real DevTools ground-truth evidence, which immediately revealed the actual remaining cause. Worth carrying forward as a general debugging principle for this project.
+- The Streamlit dashboard (`dashboard/`) remains fully intact, untouched, and functional throughout Sprint 15 — retained as the working reference implementation until this Next.js frontend is deployed and can fully replace it.
+- No backend changes in this sprint beyond the CORS middleware addition (Sprint 15.3), which is additive and confirmed to not affect any existing backend test or behavior.
+- Ready for final pre-deployment review, or further page-specific feature work, per priority.
+
+---
+
 ## [1.4.0] - 2026-07-31
 
 ---
