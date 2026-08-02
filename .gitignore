@@ -72,6 +72,7 @@ data/cache/
 data/chroma/
 data/outputs/evaluation/
 data/glofas/
+data/gis/admin/raw
 
 # ==========================
 # GIS / Hydrology Data

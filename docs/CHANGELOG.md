@@ -8,7 +8,74 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.8.0] - 2026-08-01
+## [1.6.0] - 2026-08-02
+
+---
+
+# Sprint 16 – Production Deployment (2026-08-02)
+
+Full production deployment of both services: FastAPI backend to Railway, Next.js frontend to Vercel. Both free-tier, no Docker (native platform builders). Deployed from the frontend-nextjs branch; not yet merged into dev/main (deliberate — verify live deployment fully before merging).
+
+---
+
+## Sprint 16.1 — Backend Deployment (Railway)
+
+### Investigated
+
+- Full pre-deployment audit: app factory/entrypoint (`backend.app.main:app`), dependency management (uv, no requirements.txt needed), every environment variable the app reads across all pydantic-settings classes, host/port binding requirements, and — critically — which local data files are actually required at runtime versus safely excludable.
+- Confirmed GloFAS snapshot and Chroma vector store loading are lazy (not eagerly validated at startup, unlike the GIS regional extracts), meaning missing them would degrade functionality gracefully rather than crash — informed the decision below.
+
+### Fixed
+
+- **Platform selection: Render → Railway.** Render's current free-tier terms require a payment card on file, with real, current (2026) user reports of unexpected charges on the free tier despite no card being technically "required" in Render's own marketing language. Verified via direct research (Render's own pricing page confirming "$0/mo + compute" — i.e., compute is billed separately from the free workspace tier) before committing to a platform. Pivoted to Railway, confirmed via research to offer genuine no-card-required deployment (a $5 trial credit, sufficient for a lightweight service).
+- **Committed required runtime data to git**, overriding the blanket `data/` gitignore rule via explicit negated patterns (verified correct in an isolated scratch repository first, given git's known "cannot re-include a file whose parent directory is excluded" gotcha): the two regional GIS extracts (~6.4MB, from the prior session's Sprint 14.4 work), the populated Chroma government-knowledge vector store (~67MB — without this, Policy Advisor would be completely non-functional on first deploy), and the single most recent GloFAS snapshot (~32KB, correctly identified by its filename-encoded reference timestamp rather than an unreliable on-disk copy mtime).
+- **Real deployment blocker found and fixed: missing system libraries for GDAL-wrapping wheels.** First deploy attempt crashed with `ImportError: libexpat.so.1: cannot open shared object file` at `import rasterio` — Railway's base container image doesn't ship `libexpat`, a system library `rasterio`'s (and `fiona`'s) manylinux wheels expect the host to provide rather than bundle, per the manylinux packaging policy. Root-caused via direct research against authoritative sources (Railpack's own config docs, `rasterio`'s and `fiona`'s real GitHub issue trackers documenting the identical failure in other minimal-image environments, and the manylinux external-library allowlist) rather than guessed. Added `railpack.json` specifying `libexpat1`, plus `libsqlite3-0` and `libcurl4` proactively (same class of issue, commonly needed alongside `libexpat1` for the GDAL/PROJ stack, included preemptively to avoid a second failed-deploy cycle).
+
+### Verified
+
+- Live health check (`GET /health`) returns `200 healthy` from real Railway infrastructure.
+- **Real GIS warm-up on production hardware completed in ~2 seconds** (river network: 517ms, OSM infrastructure: 800ms) — direct, concrete confirmation that the prior session's regional-extraction work (Hotfix 14.4) wasn't just a local optimization; it's what made this deployment's cold-start time viable at all.
+- Real end-to-end `POST /conversation` call against live Railway infrastructure returned a correctly grounded, correctly non-fabricating response (moderate risk, real GIS/weather citations, honest `missing_evidence` for absent shelter/village data) — full pipeline confirmed working on real deployed infrastructure, not just locally.
+
+---
+
+## Sprint 16.2 — Frontend Deployment (Vercel)
+
+### Fixed
+
+- **Vercel's initial-import screen has no branch selector** — defaults to the repository's default branch (`main`), which does not contain `frontend/` (only `frontend-nextjs` does). Resolved by completing the initial import against `main` (an expected, harmless failed/404 first deployment, since the project must exist before its settings can be changed), then correcting the **Production environment's branch tracking** (found under Settings → Environments → Production in the current Vercel UI — not a simple "Production Branch" dropdown under Git settings, as in prior UI versions) to `frontend-nextjs`, and the **Root Directory** (Settings → Build and Deployment) to `frontend`.
+- **A stale "Output Directory: public" setting** (an artifact of the initial, framework-undetected first deployment attempt against `main`) caused subsequent Production builds to fail with `Error: No Output Directory named "public" found`, despite the underlying Next.js build itself succeeding correctly (confirmed via the build log's own route manifest, showing all four real routes compiled). Cleared to let Vercel's Next.js framework preset handle output location automatically, as intended.
+- Used a **Deploy Hook** (a project-specific webhook URL that triggers a build of a named branch) to force fresh, correctly-configured builds while iterating on the above settings, since Vercel's standard auto-deploy-on-push didn't apply here (no new commits were being pushed during this configuration phase).
+
+### Verified
+
+- Live production deployment at `https://flood-aware.vercel.app`, confirmed all four routes (Home, Agent, Policy Advisor, Situation Room) render correctly with real data from the live Railway backend.
+
+---
+
+## Sprint 16.3 — Cross-Origin (CORS) Production Hardening
+
+### Fixed
+
+- **Real CORS failure in production, distinct from the original Sprint 15.3 CORS fix.** Vercel generates a unique, permanent, randomly-suffixed URL for every individual deployment (in addition to the stable production domain and a branch-specific domain) — the original exact-string `cors_allow_origins` list, sufficient for local development, cannot account for URLs that don't exist yet at configuration time and change on every future deploy.
+- Added `cors_allow_origin_regex` (a new, separate setting alongside the existing exact-match list, both active simultaneously via Starlette's `CORSMiddleware`, which supports both mechanisms together) — **explicitly rejected the first, looser draft pattern** (`https://flood-aware.*\.vercel\.app`) after identifying it would incorrectly trust *any* Vercel project merely starting with "flood-aware," regardless of owner, since Vercel project-name slugs aren't globally exclusive beyond simple registration. Final pattern additionally pins the match to the actual, globally-unique Vercel account slug, closing that gap.
+- Verified the exact origin-matching behavior of the installed Starlette version's `CORSMiddleware` directly against its real source (`.fullmatch`, not a looser substring/prefix check) before finalizing the pattern, and tested the final regex against both all three real observed production URLs (all correctly matched) and five adversarial cases — a different project with the same prefix, a different account with a similar suffix, a domain-spoofing subdomain trick (`flood-aware.vercel.app.evil.com`), and a wrong-scheme (`http://`) origin — all correctly rejected.
+
+### Verified
+
+- Live, real cross-origin request from `https://flood-aware.vercel.app` to `https://flood-aware-production.up.railway.app/conversation` succeeds correctly; a real Policy Advisor question returned a genuine, grounded, NDMP-cited answer.
+- Full production walkthrough confirmed working end-to-end: Flood-Aware Agent (grounded conversation, honest absent-evidence handling), Policy Advisor (real RAG citations), Situation Room (real dataset stats, real map).
+
+### Notes
+
+- Both services remain on free/no-cost tiers as intended — Railway's trial credit model and Vercel's Hobby tier, neither requiring payment information.
+- `frontend-nextjs` is not yet merged into `dev`/`main`, and the Streamlit dashboard (`dashboard/`) has not yet been retired — both deliberately deferred to a dedicated follow-up session now that live deployment is fully confirmed working, rather than rushed immediately after this session's real, substantial debugging work.
+- Real, live, publicly reachable URLs: frontend `https://flood-aware.vercel.app`, backend `https://flood-aware-production.up.railway.app`.
+- Sprint 16 (backend deployment, frontend deployment, CORS production-hardening) is functionally complete and fully verified live.
+
+---
+
+## [1.5.0] - 2026-08-01
 
 ---
 

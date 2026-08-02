@@ -1371,3 +1371,40 @@ Status: Completed
 ---
 
 **Sprint 15 fully complete.** All four pages built, verified live against the real backend, real navigation, real polish. Streamlit dashboard retained as working reference. Ready for deployment planning or further feature work.
+
+## Sprint 16 – Production Deployment
+
+Status: **Completed** (branch merge & Streamlit retirement deferred to next session)
+Completed: 2026-08-02
+
+---
+
+### Sprint 16.1 – Backend Deployment (Railway)
+Status: Completed
+- [x] Full deployment audit (entrypoint, dependencies, env vars, runtime data requirements)
+- [x] Platform pivot: Render (real card-required billing risk, confirmed via research) → Railway (genuinely no-card-required)
+- [x] Committed required runtime data (GIS extracts, Chroma store, latest GloFAS snapshot) via verified gitignore negation
+- [x] Fixed: missing libexpat1/libsqlite3-0/libcurl4 system libraries (railpack.json), root-caused via real GitHub issues + manylinux policy docs
+- [x] Live verified: /health 200, ~2s real GIS warm-up on production hardware, full real /conversation pipeline working
+
+### Sprint 16.2 – Frontend Deployment (Vercel)
+Status: Completed
+- [x] Fixed: branch tracking (Production Environment settings, not Git settings, in current Vercel UI)
+- [x] Fixed: Root Directory (frontend)
+- [x] Fixed: stale Output Directory setting from initial misconfigured build
+- [x] Live verified: all 4 routes rendering with real backend data at flood-aware.vercel.app
+
+### Sprint 16.3 – CORS Production Hardening
+Status: Completed
+- [x] cors_allow_origin_regex added (dynamic Vercel URL support)
+- [x] Rejected first draft regex (too permissive), pinned to real account slug
+- [x] Verified against Starlette's real .fullmatch behavior + 3 real URLs + 5 adversarial cases
+- [x] Live verified: real cross-origin request succeeds, full 3-page production walkthrough passed
+
+---
+
+**Real, live URLs:**
+Frontend: https://flood-aware.vercel.app
+Backend: https://flood-aware-production.up.railway.app
+
+**Deliberately deferred to next session:** merge frontend-nextjs → dev → main; retire dashboard/ (Streamlit).
