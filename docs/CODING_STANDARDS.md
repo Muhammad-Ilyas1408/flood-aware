@@ -598,21 +598,14 @@ Configure application settings
 
 # 22. Formatting
 
-The project uses
+Code style and formatting were maintained through manual discipline and
+consistent convention throughout development, following the naming,
+structure, and readability standards defined in this document.
 
-Black
-
-for formatting.
-
-Ruff
-
-for linting.
-
-MyPy
-
-for static type checking.
-
-Do not manually format against these tools.
+Automated formatting/linting tooling (e.g. Ruff, Black, MyPy) was not
+adopted during this project's development cycle and is identified as a
+natural addition for a larger-scale or team-based continuation of this
+codebase.
 
 ---
 
@@ -650,15 +643,22 @@ Before considering a module complete, verify:
 
 When an AI coding assistant generates code, it must:
 
-- Read AI_CONTEXT.md before implementation.
-- Follow the project architecture exactly.
+- Read this document (CODING_STANDARDS.md) and follow the project
+  architecture exactly, inferring established conventions from the
+  existing codebase where this document doesn't explicitly cover a case.
 - Modify only the requested files.
 - Avoid introducing unrelated changes.
+- Investigate and verify real behavior (via tests, direct inspection, or
+  live execution) before implementing, rather than assuming from general
+  knowledge — this project's development consistently found that
+  verifying actual, current behavior catches real issues that assumption
+  alone misses.
 - Explain design decisions briefly.
 - Produce complete implementations.
 - Stop after completing the requested task.
 
-AI assistants must never redesign the architecture or invent new project requirements.
+AI assistants must never redesign the architecture or invent new project
+requirements.
 
 ---
 
