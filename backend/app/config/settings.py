@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     cors_allow_origins: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"]
     )
+    cors_allow_origin_regex: str | None = Field(default=None)
     flood_moderate_discharge: float = Field(default=250.0, ge=0)
     flood_major_discharge: float = Field(default=500.0, ge=0)
     flood_extreme_discharge: float = Field(default=1000.0, ge=0)
