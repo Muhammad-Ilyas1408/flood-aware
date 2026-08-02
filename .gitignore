@@ -105,3 +105,20 @@ cache/
 AI_CONTEXT.md
 docs/PROMPT_GUIDE.md
 prompts/
+
+# ==========================
+# Deployment: committed production data exceptions (Sprint 16.1)
+# ==========================
+!data/
+!data/gis/
+!data/gis/osm/
+!data/gis/osm/raw/
+!data/gis/osm/raw/swat-region.osm.pbf
+!data/gis/worldpop/
+!data/gis/worldpop/raw/
+!data/gis/worldpop/raw/swat-region_ppp_2025.tif
+!data/chroma/
+!data/chroma/government/
+!data/chroma/government/**
+!data/glofas/
+!data/glofas/glofas_control_20260725T140327Z.nc
