@@ -102,7 +102,6 @@ The system provides:
 ```mermaid
 graph TD
     A[Next.js Frontend<br/>Vercel] --> C[FastAPI Backend<br/>Railway]
-    B[Streamlit Dashboard<br/>reference] --> C
     C --> D[LangGraph Decision Agent<br/>severity-based routing]
     D --> E[Weather Tool<br/>OpenWeatherMap]
     D --> F[Forecast Tool<br/>GloFAS / Copernicus]
