@@ -90,16 +90,6 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## 4. Dashboard setup (Streamlit — reference implementation)
-
-From the repository root, with the backend dependencies already installed via `uv sync`:
-
-```bash
-streamlit run dashboard/Home.py
-```
-
-Open the URL Streamlit prints (typically `http://localhost:8501`).
-
 ---
 
 ## Running Tests

@@ -1320,7 +1320,7 @@ Deliverables:
 
 Status: **Completed**
 Completed: 2026-08-01
-Branch: frontend-nextjs (backend and dashboard/ untouched, except the additive CORS fix)
+Branch: frontend-nextjs, merged into dev and main (backend untouched except the additive CORS fix; dashboard/ retired in a follow-up commit)
 
 ---
 
@@ -1407,4 +1407,4 @@ Status: Completed
 Frontend: https://flood-aware.vercel.app
 Backend: https://flood-aware-production.up.railway.app
 
-**Deliberately deferred to next session:** merge frontend-nextjs → dev → main; retire dashboard/ (Streamlit).
+**Completed in follow-up session:** frontend-nextjs merged into dev and main; dashboard/ (Streamlit) retired, having fully served its purpose as a reference implementation during development.

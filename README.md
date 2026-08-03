@@ -20,7 +20,7 @@ Flood-Aware is an AI decision-support system built for real disaster-management 
 
 When evidence is missing or outdated, Flood-Aware says so, in plain language, rather than guessing. This honesty guarantee — enforced at the parser level, not just prompted for — is the core engineering contribution of this project, refined over dozens of real, live-tested iterations documented in full in [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
 
-The system is built around a real, working **LangGraph** multi-tool decision agent, a **FastAPI** backend, and two independent frontends: a production **Next.js** web application and a **Streamlit** dashboard, retained as a reference implementation.
+The system is built around a real, working **LangGraph** multi-tool decision agent, a **FastAPI** backend, and a production **Next.js** web application. An earlier Streamlit dashboard served as a working reference implementation throughout development and has since been retired now that the Next.js frontend is fully deployed and verified.
 
 ---
 
@@ -101,9 +101,8 @@ graph TD
 - Real conversation memory with evidence reuse across turns
 - Follow-up questions correctly shift focus to what's actually being asked, rather than repeating a generic overview
 
-### Two Independent Frontends
-- **Next.js** (production): real navigation, a deliberate design system, live data, real-time chat
-- **Streamlit**: retained as a working reference implementation throughout development
+### Production Frontend
+- **Next.js**: real navigation, a deliberate design system, live data, real-time chat, deployed on Vercel
 
 ---
 
@@ -120,9 +119,6 @@ GeoPandas · Rasterio · Shapely · PyProj · pyosmium
 
 **Frontend (Production)**
 Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · shadcn/ui · react-leaflet
-
-**Frontend (Reference)**
-Streamlit
 
 **Data Sources**
 GloFAS (Copernicus Climate Data Store) · WorldPop · OpenStreetMap · PDMA / NDMP official documentation · checked-in village and shelter datasets
@@ -167,7 +163,6 @@ Flood-Aware/
 │   │
 │   └── tests/               # Backend test suite (unit, integration, golden-set)
 │
-├── dashboard/                # Streamlit reference dashboard
 ├── data/                     # Datasets, GIS extracts, knowledge base
 ├── docs/                     # SRS, TDS, changelog, project board
 ├── experiments/              # Experimental / research work
@@ -205,7 +200,7 @@ Full project documentation is available in [`docs/`](docs/), including:
 |---|---|
 | Backend (FastAPI, LangGraph agent, GIS, RAG, forecasting) | Complete, deployed |
 | Next.js production frontend | Complete, deployed |
-| Streamlit reference dashboard | Complete, retained as reference |
+| Streamlit reference dashboard | Retired (superseded by Next.js frontend) |
 | Production deployment (Railway + Vercel) | Live |
 | Automated + golden-set testing | Passing |
 
