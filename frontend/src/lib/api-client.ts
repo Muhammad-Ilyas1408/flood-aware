@@ -14,6 +14,7 @@ import type {
   ErrorResponse,
   ShelterListResponse,
   VillageListResponse,
+  VillageSummaryListResponse,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
@@ -75,6 +76,15 @@ export function getDatasetCatalog(
   init?: RequestInit
 ): Promise<DatasetCatalogResponse> {
   return request<DatasetCatalogResponse>("/datasets/catalog", init);
+}
+
+/** Requires at least one explicit village name -- the backend never defaults to "all villages". */
+export function getVillageSummaries(
+  names: string[],
+  init?: RequestInit
+): Promise<VillageSummaryListResponse> {
+  const query = names.map((name) => `names=${encodeURIComponent(name)}`).join("&");
+  return request<VillageSummaryListResponse>(`/villages/summary?${query}`, init);
 }
 
 export function postConversation(

@@ -56,12 +56,15 @@ export function VillageSelector({
     };
   }, []);
 
+  // Always a defined string (never undefined) so the underlying Radix Select
+  // stays controlled for its whole lifetime -- "" is Radix's own sentinel for
+  // "nothing selected" and still shows the placeholder correctly.
   const selectValue =
     selection.kind === "village"
       ? String(villages.indexOf(selection.village))
       : selection.kind === "other"
         ? OTHER_VALUE
-        : undefined;
+        : "";
 
   function handleValueChange(value: string) {
     if (value === OTHER_VALUE) {

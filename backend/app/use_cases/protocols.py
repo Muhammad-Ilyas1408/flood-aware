@@ -3,11 +3,13 @@
 from typing import Protocol
 
 from backend.app.dtos.datasets import DatasetCatalogDTO, ShelterListDTO, VillageListDTO
+from backend.app.dtos.village_summary import VillageSummaryResultDTO
 
 __all__ = [
     "ViewVillagesUseCaseProtocol",
     "ViewSheltersUseCaseProtocol",
     "ViewDatasetCatalogUseCaseProtocol",
+    "ViewVillageSummariesUseCaseProtocol",
 ]
 
 
@@ -34,5 +36,14 @@ class ViewDatasetCatalogUseCaseProtocol(Protocol):
 
     def execute(self) -> DatasetCatalogDTO:
         """Return configured dataset summaries as an immutable DTO."""
+
+        ...
+
+
+class ViewVillageSummariesUseCaseProtocol(Protocol):
+    """Define the application task of viewing lightweight village condition summaries."""
+
+    def execute(self, village_names: tuple[str, ...]) -> VillageSummaryResultDTO:
+        """Return honest condition summaries for the requested village names."""
 
         ...

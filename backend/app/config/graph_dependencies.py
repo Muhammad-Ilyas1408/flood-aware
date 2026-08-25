@@ -25,6 +25,7 @@ from fastapi import FastAPI, Request
 from backend.app.ai.dataset_catalog_tool import DatasetCatalogTool
 from backend.app.ai.shelter_tool import ShelterTool
 from backend.app.ai.village_tool import VillageTool
+from backend.app.composition import get_village_service
 from backend.app.config.datasets import create_production_dataset_catalog_config
 from backend.app.config.settings import PROJECT_ROOT, get_settings
 from backend.app.conversation import ConversationOrchestrator, ConversationSessionStore
@@ -67,8 +68,11 @@ from backend.app.services.dependencies import (
     create_village_service,
 )
 from backend.app.use_cases.dataset_catalog import ViewDatasetCatalogUseCase
+from backend.app.use_cases.protocols import ViewVillageSummariesUseCaseProtocol
 from backend.app.use_cases.shelters import ViewSheltersUseCase
+from backend.app.use_cases.village_summary import ViewVillageSummariesUseCase
 from backend.app.use_cases.villages import ViewVillagesUseCase
+from backend.app.village_summary.service import VillageSummaryService
 from backend.app.weather.client import OpenWeatherClient
 from backend.app.weather.settings import WeatherSettings
 from backend.app.weather.weather_tool import WeatherTool
@@ -231,6 +235,12 @@ def configure_graph_dependencies(application: FastAPI) -> None:
     classification_service = FloodClassificationService(
         FloodClassificationPolicy.from_settings(get_settings())
     )
+    village_summary_service = VillageSummaryService(
+        weather_tool,
+        forecast_provider,
+        classification_service,
+        max_snapshot_age_hours=forecast_settings.glofas_max_snapshot_age_hours,
+    )
     decision_agent = build_openai_decision_provider()
     dependencies = GraphDependencies(
         weather_tool=weather_tool,
@@ -259,6 +269,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
 
     application.state.graph_container = container
     application.state.conversation_orchestrator = orchestrator
+    application.state.village_summary_service = village_summary_service
     application.state.graph_runtime_resources = _GraphRuntimeResources(
         vector_store=vector_store,
         river_loader=river_loader,
@@ -284,3 +295,23 @@ def get_conversation_orchestrator(request: Request) -> ConversationOrchestrator:
             "ConversationOrchestrator."
         )
     return orchestrator
+
+
+def get_village_summary_service(request: Request) -> VillageSummaryService:
+    """Provide the singleton village summary service configured at startup."""
+    service = getattr(request.app.state, "village_summary_service", None)
+    if not isinstance(service, VillageSummaryService):
+        raise ApplicationConfigurationError(
+            "Application graph dependencies require a configured "
+            "VillageSummaryService."
+        )
+    return service
+
+
+def get_village_summary_use_case(
+    request: Request,
+) -> ViewVillageSummariesUseCaseProtocol:
+    """Provide the use case for viewing lightweight village condition summaries."""
+    return ViewVillageSummariesUseCase(
+        get_village_service(request), get_village_summary_service(request)
+    )

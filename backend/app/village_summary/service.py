@@ -10,6 +10,7 @@ already relies on to route the graph before any GIS step runs -- so this is
 a strict subset of existing evidence, not a second, parallel classification.
 """
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 from backend.app.flood.classification.exceptions import FloodClassificationError
@@ -34,6 +35,7 @@ class VillageSummaryService:
         classification_service: FloodClassificationService,
         *,
         max_snapshot_age_hours: int,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         """Initialize the service with its injected production boundaries.
 
@@ -43,12 +45,15 @@ class VillageSummaryService:
             classification_service: The canonical forecast-severity classifier.
             max_snapshot_age_hours: The threshold past which a forecast snapshot
                 is honestly flagged stale rather than presented as fresh.
+            clock: Injectable current-time source, matching ``ForecastNode``'s
+                staleness computation. Defaults to the real system clock.
         """
 
         self._weather_tool = weather_tool
         self._forecast_provider = forecast_provider
         self._classification_service = classification_service
         self._max_snapshot_age_hours = max_snapshot_age_hours
+        self._clock = clock or (lambda: datetime.now(UTC))
 
     def summarize(
         self, *, name: str, district: str, latitude: float, longitude: float
@@ -107,6 +112,6 @@ class VillageSummaryService:
             return None, None, "The flood forecast could not be classified."
         age_hours = max(
             0.0,
-            (datetime.now(UTC) - forecast.metadata.retrieved_at).total_seconds() / 3600,
+            (self._clock() - forecast.metadata.retrieved_at).total_seconds() / 3600,
         )
         return severity, age_hours > self._max_snapshot_age_hours, None

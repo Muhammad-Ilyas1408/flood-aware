@@ -9,11 +9,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
-import { getDatasetCatalog, getShelters, getVillages } from "@/lib/api-client";
-import type { DatasetSummaryResponse, ShelterResponse, VillageResponse } from "@/types";
+import {
+  getDatasetCatalog,
+  getShelters,
+  getVillageSummaries,
+  getVillages,
+} from "@/lib/api-client";
+import type {
+  DatasetSummaryResponse,
+  ShelterResponse,
+  VillageResponse,
+  VillageSummaryListResponse,
+} from "@/types";
 
 import { MapLoader } from "./map-loader";
 import { SituationTables } from "./situation-tables";
+import { VillageExplorer } from "./village-explorer";
+import { VillageSnapshots } from "./village-snapshots";
 
 interface SituationData {
   villagesSummary: DatasetSummaryResponse;
@@ -21,6 +33,20 @@ interface SituationData {
   villages: VillageResponse[];
   shelters: ShelterResponse[];
 }
+
+/**
+ * Curated sample villages for the snapshot cards. /villages/summary requires
+ * explicit names -- it never defaults to "all villages" -- so the sample set
+ * lives here rather than being selected by the backend.
+ */
+const VILLAGE_SNAPSHOT_NAMES = [
+  "Bishbanr",
+  "Manglawar",
+  "Kokarai",
+  "Kas",
+  "Charbagh",
+  "Alamganj",
+];
 
 /** Soft-fails on an unreachable backend -- shows a calm fallback card instead of a raw error or a crashed page. */
 async function getSituationData(): Promise<SituationData | null> {
@@ -36,6 +62,15 @@ async function getSituationData(): Promise<SituationData | null> {
       villages: villagesResponse.data,
       shelters: sheltersResponse.data,
     };
+  } catch {
+    return null;
+  }
+}
+
+/** Soft-fails independently of the rest of the page -- a live-condition hiccup shouldn't hide the map or tables. */
+async function getVillageSnapshots(): Promise<VillageSummaryListResponse | null> {
+  try {
+    return await getVillageSummaries(VILLAGE_SNAPSHOT_NAMES, { cache: "no-store" });
   } catch {
     return null;
   }
@@ -77,7 +112,10 @@ function DatasetStatCard({
 }
 
 export default async function SituationRoomPage() {
-  const data = await getSituationData();
+  const [data, villageSnapshots] = await Promise.all([
+    getSituationData(),
+    getVillageSnapshots(),
+  ]);
 
   return (
     <PageShell className="flex flex-col gap-8 py-8 sm:py-10">
@@ -115,6 +153,25 @@ export default async function SituationRoomPage() {
           </div>
 
           <section className="flex flex-col gap-3">
+            <h2 className="text-xl font-semibold text-foreground">
+              Village Snapshots
+            </h2>
+            {villageSnapshots ? (
+              <VillageSnapshots
+                summaries={villageSnapshots.data}
+                unknownVillageNames={villageSnapshots.unknown_village_names}
+              />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center gap-2 py-8 text-center text-sm text-muted-foreground">
+                  <TriangleAlert className="size-5" aria-hidden="true" />
+                  <p>Live village condition data is temporarily unavailable.</p>
+                </CardContent>
+              </Card>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-3">
             <h2 className="text-xl font-semibold text-foreground">Map</h2>
             <MapLoader villages={data.villages} shelters={data.shelters} />
           </section>
@@ -122,6 +179,13 @@ export default async function SituationRoomPage() {
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-semibold text-foreground">Records</h2>
             <SituationTables villages={data.villages} shelters={data.shelters} />
+          </section>
+
+          <section className="flex flex-col gap-3">
+            <h2 className="text-xl font-semibold text-foreground">
+              Full Assessment
+            </h2>
+            <VillageExplorer />
           </section>
         </>
       )}
