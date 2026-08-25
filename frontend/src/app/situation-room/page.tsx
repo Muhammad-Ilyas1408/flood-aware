@@ -23,7 +23,6 @@ import type {
 } from "@/types";
 
 import { MapLoader } from "./map-loader";
-import { SituationTables } from "./situation-tables";
 import { VillageExplorer } from "./village-explorer";
 import { VillageSnapshots } from "./village-snapshots";
 
@@ -67,7 +66,7 @@ async function getSituationData(): Promise<SituationData | null> {
   }
 }
 
-/** Soft-fails independently of the rest of the page -- a live-condition hiccup shouldn't hide the map or tables. */
+/** Soft-fails independently of the rest of the page -- a live-condition hiccup shouldn't hide the map. */
 async function getVillageSnapshots(): Promise<VillageSummaryListResponse | null> {
   try {
     return await getVillageSummaries(VILLAGE_SNAPSHOT_NAMES, { cache: "no-store" });
@@ -174,11 +173,6 @@ export default async function SituationRoomPage() {
           <section className="flex flex-col gap-3">
             <h2 className="text-xl font-semibold text-foreground">Map</h2>
             <MapLoader villages={data.villages} shelters={data.shelters} />
-          </section>
-
-          <section className="flex flex-col gap-3">
-            <h2 className="text-xl font-semibold text-foreground">Records</h2>
-            <SituationTables villages={data.villages} shelters={data.shelters} />
           </section>
 
           <section className="flex flex-col gap-3">
