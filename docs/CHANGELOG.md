@@ -8,6 +8,39 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.7.0] - 2026-08-25
+
+---
+
+# Hotfix 17 – Village Live-Condition Summaries (2026-08-25)
+
+Supervisor-requested extension to Situation Room: lightweight, sample village condition cards plus a full-assessment village selector reusing the existing grounded AI agent. Built on a dedicated `feature/village-summary` branch, not yet merged into `dev`/`main`.
+
+### Added
+
+- **New backend module** (`backend/app/village_summary/`): a lightweight, non-LLM village condition summary capability, composing the existing `WeatherTool`, forecast provider, and `FloodClassificationService` — deliberately never invoking the LangGraph decision agent or OpenAI, so sample cards are fast and free rather than triggering a real API call per village shown.
+- **New endpoint**: `GET /villages/summary?names=...`, requiring at least one explicit village name (no "summarize everything" default, to avoid an unbounded fan-out across all 150 villages on a single request). Returns real current weather, a real severity classification derived from the same thresholds and forecast data the main decision agent uses, and a short, deterministic (non-generative) status message mapped from severity.
+- **Honest partial-data handling**: weather and forecast/severity failures are caught and reported independently, so one signal being unavailable doesn't silently suppress or fake the other — consistent with the project's existing grounding/honesty principles.
+- **Frontend**: a "Village Snapshots" section on Situation Room showing 6 curated real villages (Bishbanr, Manglawar, Kokarai, Kas, Charbagh, Alamganj) with real weather, severity badges, and status messages; a "Full Assessment" village selector that reuses the existing `VillageSelector` and `ChatMessageBubble` components verbatim and calls the real `/conversation` endpoint — no parallel or duplicated AI reasoning path.
+
+### Fixed
+
+- **Pre-existing React warning** ("Select is changing from uncontrolled to controlled") in `VillageSelector`, reproduced identically on the already-shipped Agent page, confirmed unrelated to this feature but fixed while present in the codebase — `village-selector.tsx` now always passes a defined string value (an empty-string sentinel) rather than `undefined`.
+- **Non-deterministic staleness tests**: `VillageSummaryService` gained an injectable clock (matching the existing `ForecastNode` pattern), so staleness-related tests no longer depend on real wall-clock time.
+
+### Verified
+
+- Real backend calls confirmed genuine, spatially-explained results: three villages (Bishbanr, Manglawar, Kokarai) returned an identical discharge value and "Moderate" classification not due to a bug, but because all three fall within GloFAS's coarser grid resolution (~3.6km apart, snapping to the same forecast grid cell) — confirmed via the real underlying discharge figure (257.39 m³/s) against the real configured thresholds (moderate ≥ 250.0 m³/s).
+- Live end-to-end browser verification: sample cards render real, varied data; the village-selector flow correctly triggers a real `POST /conversation` call and renders a genuine grounded response identical in presentation to the Agent page.
+- Backend suite: 292 passed, 23 skipped, no regressions. Frontend: `tsc --noEmit` and ESLint clean.
+- Refreshed the committed GloFAS snapshot (previous snapshot was ~22.8 days stale) to a current one (`glofas_control_20260825T183303Z.nc`), updating the negated-gitignore exception to match the new filename and removing the old snapshot from git tracking.
+
+### Notes
+
+- Not yet merged into `dev`/`main` — deliberately kept on `feature/village-summary` until fully reviewed, same pattern as the Sprint 15 frontend rewrite.
+
+---
+
 ## [1.6.0] - 2026-08-02
 
 ---

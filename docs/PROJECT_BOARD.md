@@ -1408,3 +1408,22 @@ Frontend: https://flood-aware.vercel.app
 Backend: https://flood-aware-production.up.railway.app
 
 **Completed in follow-up session:** frontend-nextjs merged into dev and main; dashboard/ (Streamlit) retired, having fully served its purpose as a reference implementation during development.
+
+---
+
+## Hotfix 17 – Village Live-Condition Summaries
+
+Status: **Completed** (merge to dev/main pending)
+Completed: 2026-08-25
+Branch: feature/village-summary
+
+- [x] Lightweight, non-LLM village summary endpoint (weather + severity, no OpenAI call)
+- [x] Honest partial-data handling (weather/forecast failures reported independently)
+- [x] Village Snapshots UI (6 curated villages) + Full Assessment selector reusing existing AI agent
+- [x] Fixed pre-existing VillageSelector React warning (also present on Agent page)
+- [x] Injectable clock for deterministic staleness tests
+- [x] Refreshed committed GloFAS snapshot, updated gitignore exception
+- [x] Backend: 292 passed, 23 skipped. Frontend: tsc + ESLint clean
+- [x] Live browser-verified end-to-end
+
+**Not yet done:** merge into dev/main.
