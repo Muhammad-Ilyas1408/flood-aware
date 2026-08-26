@@ -45,8 +45,15 @@ def forecast_result(
     *,
     discharge_m3_per_second: float = 100.0,
     retrieved_at: datetime | None = None,
+    points: tuple[ForecastPoint, ...] | None = None,
 ) -> ForecastResult:
-    """Create complete canonical forecast data without external I/O."""
+    """Create complete canonical forecast data without external I/O.
+
+    ``points``, when supplied, overrides the default single-point series --
+    used by tests asserting behavior across a multi-point forecast horizon
+    (e.g. which point a "peak discharge" selection picks). Ignored together
+    with ``discharge_m3_per_second`` if both are given; ``points`` wins.
+    """
     timestamp = datetime(2026, 7, 26, tzinfo=UTC)
     requested_point = Point(latitude=34.0151, longitude=71.5249)
     return ForecastResult(
@@ -65,7 +72,8 @@ def forecast_result(
             retrieved_at=retrieved_at or timestamp,
         ),
         series=ForecastSeries(
-            points=(
+            points=points
+            or (
                 ForecastPoint(
                     valid_time=timestamp,
                     lead_time_hours=0,

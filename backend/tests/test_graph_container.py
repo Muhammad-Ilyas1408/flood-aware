@@ -162,7 +162,11 @@ def test_container_wires_production_boundaries_into_the_graph() -> None:
 
     weather_tool.get_current_weather.assert_called_once()
     forecast_provider.get_forecast.assert_called_once_with(34.0151, 71.5249)
-    assert classification_service.classify.call_count == 2
+    assert classification_service.classify.call_count == 3, (
+        "ForecastNode, route_after_forecast, and GISAnalysisNode each "
+        "classify independently from the same forecast_result -- cheap, "
+        "pure, and deterministic, so the redundancy is intentional."
+    )
     assert all(
         call.args == (forecast_provider.get_forecast.return_value,)
         for call in classification_service.classify.call_args_list

@@ -29,6 +29,7 @@ from backend.app.composition import get_village_service
 from backend.app.config.datasets import create_production_dataset_catalog_config
 from backend.app.config.settings import PROJECT_ROOT, get_settings
 from backend.app.conversation import ConversationOrchestrator, ConversationSessionStore
+from backend.app.conversation.dependencies import build_openai_intent_classifier
 from backend.app.core.application_exceptions import ApplicationConfigurationError
 from backend.app.decision.dependencies import build_openai_decision_provider
 from backend.app.decision.prompt_builder import PromptBuilder as DecisionPromptBuilder
@@ -242,6 +243,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
         max_snapshot_age_hours=forecast_settings.glofas_max_snapshot_age_hours,
     )
     decision_agent = build_openai_decision_provider()
+    intent_classifier = build_openai_intent_classifier()
     dependencies = GraphDependencies(
         weather_tool=weather_tool,
         forecast_provider=forecast_provider,
@@ -266,6 +268,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
         session_store=ConversationSessionStore(),
         state_factory=GraphStateFactory(),
         knowledge_tool=knowledge_tool,
+        intent_classifier=intent_classifier,
     )
 
     application.state.graph_container = container

@@ -383,6 +383,73 @@ class ConversationEndpointTests(unittest.TestCase):
         _, _, mode = orchestrator.calls[0]
         self.assertEqual(mode, ConversationMode.POLICY_ADVISOR)
 
+    def test_post_conversation_returns_capability_question_without_risk_fields(
+        self,
+    ) -> None:
+        """A capability-question outcome must serialize with no risk/decision fields."""
+
+        outcome = ConversationOutcome(
+            response_type=ConversationResponseType.CAPABILITY_QUESTION,
+            summary="I assess flood risk for villages in Swat district.",
+        )
+        orchestrator = _FakeOrchestrator(outcome)
+        self.application.dependency_overrides[get_conversation_orchestrator] = (
+            lambda: orchestrator
+        )
+
+        status_code, body = asyncio.run(
+            _post_application_response(
+                self.application,
+                "/conversation",
+                {"request_text": "How can you help me?"},
+            )
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["response_type"], "capability_question")
+        self.assertIsNone(payload["risk_level"])
+        self.assertIsNone(payload["confidence"])
+        self.assertEqual(
+            payload["summary"], "I assess flood risk for villages in Swat district."
+        )
+        self.assertEqual(payload["actions"], [])
+        self.assertEqual(payload["citations"], [])
+        self.assertEqual(payload["missing_evidence"], [])
+
+    def test_post_conversation_returns_needs_clarification_without_risk_fields(
+        self,
+    ) -> None:
+        """A clarification outcome must serialize with no risk/decision fields."""
+
+        outcome = ConversationOutcome(
+            response_type=ConversationResponseType.NEEDS_CLARIFICATION,
+            summary="Which village or coordinates would you like me to assess?",
+        )
+        orchestrator = _FakeOrchestrator(outcome)
+        self.application.dependency_overrides[get_conversation_orchestrator] = (
+            lambda: orchestrator
+        )
+
+        status_code, body = asyncio.run(
+            _post_application_response(
+                self.application, "/conversation", {"request_text": "Is it safe?"}
+            )
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["response_type"], "needs_clarification")
+        self.assertIsNone(payload["risk_level"])
+        self.assertIsNone(payload["confidence"])
+        self.assertEqual(
+            payload["summary"],
+            "Which village or coordinates would you like me to assess?",
+        )
+        self.assertEqual(payload["actions"], [])
+        self.assertEqual(payload["citations"], [])
+        self.assertEqual(payload["missing_evidence"], [])
+
     def test_post_conversation_defaults_mode_to_flood_agent(self) -> None:
         """Omitting ``mode`` must forward the flood-agent default, not fail."""
 

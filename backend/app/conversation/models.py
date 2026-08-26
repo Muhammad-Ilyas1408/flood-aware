@@ -29,6 +29,8 @@ class ConversationResponseType(str, Enum):
     FLOOD_DECISION = "flood_decision"
     SMALL_TALK = "small_talk"
     POLICY_ANSWER = "policy_answer"
+    CAPABILITY_QUESTION = "capability_question"
+    NEEDS_CLARIFICATION = "needs_clarification"
 
 
 class ConversationOutcome(_FrozenConversationModel):

@@ -285,10 +285,36 @@ _ABSENT_EVIDENCE_CATEGORY_NAMES = frozenset(
 )
 
 
+def _is_forecast_absent(forecast: ForecastEvidence) -> bool:
+    """Return whether forecast evidence contains no real hydrological fact.
+
+    Checks the actual factual fields rather than exact equality against
+    ``ForecastEvidence()``'s default: ``ForecastNode`` always sets
+    ``snapshot_age_hours``/``snapshot_stale`` whenever a snapshot loads
+    successfully, so a bare equality check would never flag forecast as
+    absent even in a hypothetical future where those staleness fields get
+    set without the accompanying factual ones. Mirrors the same field list
+    ``evidence_aggregator.py``'s ``_has_forecast`` already checks for a
+    different purpose (provenance); kept as a local, explicit check here
+    rather than importing across the graph/decision boundary.
+    """
+    return all(
+        value is None
+        for value in (
+            forecast.discharge,
+            forecast.severity,
+            forecast.source,
+            forecast.return_period,
+            forecast.forecast_date,
+            forecast.lead_time,
+        )
+    )
+
+
 def _entirely_absent_evidence_categories(evidence: EvidenceBundle) -> set[str]:
     """Return major evidence categories whose sections contain no evidence."""
     absent: set[str] = set()
-    if evidence.forecast == ForecastEvidence():
+    if _is_forecast_absent(evidence.forecast):
         absent.add("forecast")
     if evidence.gis == GISEvidence():
         absent.add("gis")

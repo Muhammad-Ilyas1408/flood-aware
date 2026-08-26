@@ -13,7 +13,12 @@ import { useConversation } from "@/hooks/use-conversation";
 import { ChatMessageBubble } from "../agent/chat-message";
 import { PendingMessageBubble } from "../agent/pending-message";
 
+// The first message is deliberately neutral, not pipeline-specific: a turn
+// that resolves to a capability answer or a clarifying question also spends
+// a brief moment in the classifier before short-circuiting, and this is the
+// only message with any real chance of being shown for one of those turns.
 const STATUS_MESSAGES = [
+  "One moment...",
   "Reviewing government guidance...",
   "Searching official documents...",
   "Cross-referencing disaster-management plans...",

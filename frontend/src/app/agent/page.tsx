@@ -15,7 +15,12 @@ import { ChatMessageBubble } from "./chat-message";
 import { PendingMessageBubble } from "./pending-message";
 import { VillageSelector, type VillageSelection } from "./village-selector";
 
+// The first message is deliberately neutral, not pipeline-specific: a turn
+// that resolves to a capability answer or a clarifying question also spends
+// a brief moment in the classifier before short-circuiting, and this is the
+// only message with any real chance of being shown for one of those turns.
 const STATUS_MESSAGES = [
+  "One moment...",
   "Analyzing flood zone data...",
   "Reviewing weather and forecast data...",
   "Cross-checking village and shelter records...",
@@ -42,15 +47,6 @@ function locationFields(
   return {};
 }
 
-// "Other / not listed" with a blank name resolves to no location at all --
-// treat it the same as no selection so a flood question can't be submitted
-// without something to assess risk for.
-function hasResolvedLocation(selection: VillageSelection): boolean {
-  if (selection.kind === "village") return true;
-  if (selection.kind === "other") return selection.customName.trim().length > 0;
-  return false;
-}
-
 export default function AgentPage() {
   const [villageSelection, setVillageSelection] = useState<VillageSelection>({
     kind: "none",
@@ -72,12 +68,10 @@ export default function AgentPage() {
 
   async function handleSend() {
     const trimmed = inputText.trim();
-    if (!trimmed || isPending || !hasResolvedLocation(villageSelection)) return;
+    if (!trimmed || isPending) return;
     setInputText("");
     await sendMessage(trimmed);
   }
-
-  const hasLocation = hasResolvedLocation(villageSelection);
 
   return (
     <PageShell className="flex h-[calc(100dvh-3.5rem-1px-10px)] flex-col gap-4 overflow-hidden py-0 sm:h-[calc(100dvh-4rem-1px-10px)] sm:py-0">
@@ -119,8 +113,8 @@ export default function AgentPage() {
       >
         {messages.length === 0 && (
           <p className="m-auto max-w-sm text-center text-sm text-muted-foreground">
-            Select a village above, then ask a question about flood risk,
-            evacuation, or shelter capacity.
+            Select a village above and ask about flood risk, evacuation, or
+            shelter capacity -- or just ask what I can help with.
           </p>
         )}
 
@@ -149,19 +143,15 @@ export default function AgentPage() {
               void handleSend();
             }
           }}
-          placeholder={
-            hasLocation
-              ? "Ask about flood risk, evacuation routes, shelter capacity..."
-              : "Select a village above to begin"
-          }
-          disabled={isPending || !hasLocation}
+          placeholder="Ask about flood risk, evacuation routes, shelter capacity, or what I can help with..."
+          disabled={isPending}
           rows={1}
           className="min-h-10 max-h-40 resize-none"
         />
         <Button
           type="submit"
           size="icon"
-          disabled={isPending || !hasLocation || !inputText.trim()}
+          disabled={isPending || !inputText.trim()}
           aria-label="Send message"
         >
           <Send className="size-4" aria-hidden="true" />

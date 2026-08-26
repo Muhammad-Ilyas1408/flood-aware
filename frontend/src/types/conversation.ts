@@ -13,7 +13,9 @@ export type ConversationMode = "flood_agent" | "policy_advisor";
 export type ConversationResponseType =
   | "flood_decision"
   | "small_talk"
-  | "policy_answer";
+  | "policy_answer"
+  | "capability_question"
+  | "needs_clarification";
 
 export interface Coordinate {
   latitude: number;

@@ -186,7 +186,7 @@ def test_coordinate_less_policy_request_skips_location_nodes_and_completes() -> 
         FloodSeverity.MINOR,
         calls,
         weather_node=WeatherNode(weather_tool),
-        forecast_node=ForecastNode(forecast_provider),
+        forecast_node=ForecastNode(forecast_provider, Mock()),
     )
     state = state_factory().create(
         request_text="What does the PDMA preparedness policy require?"

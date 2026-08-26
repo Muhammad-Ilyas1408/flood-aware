@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from backend.app.ai.models import ToolResult
+from backend.app.conversation.dependencies import build_openai_intent_classifier
 from backend.app.conversation.models import ConversationOutcome
 from backend.app.conversation.orchestrator import ConversationOrchestrator
 from backend.app.conversation.session_store import ConversationSessionStore
@@ -96,7 +97,9 @@ def _is_shelter_grounded(
     return bool(set(action.evidence_references) & shelter_related)
 
 
-def _build_orchestrator(provider, severity: FloodSeverity = FloodSeverity.MAJOR):
+def _build_orchestrator(
+    provider, severity: FloodSeverity = FloodSeverity.MAJOR, *, intent_classifier=None
+):
     """Compose a real graph runtime with deterministic non-LLM tool boundaries."""
     weather_tool = Mock()
     weather_tool.get_current_weather.return_value = SimpleNamespace(
@@ -192,6 +195,7 @@ def _build_orchestrator(provider, severity: FloodSeverity = FloodSeverity.MAJOR)
         session_store=session_store,
         state_factory=GraphStateFactory(),
         knowledge_tool=knowledge_tool,
+        intent_classifier=intent_classifier or build_openai_intent_classifier(),
     )
     return orchestrator, session_store, {
         "weather": weather_tool,
@@ -483,3 +487,32 @@ class TestConversationGoldenSet:
             first.recommendation.summary,
             second.recommendation.summary,
         ]
+
+    async def test_adversarial_imperative_flood_question_reaches_full_pipeline(
+        self, provider
+    ):
+        """An imperative-phrased flood question must not be misread as capability-related.
+
+        The real intent classifier could plausibly mistake "what should I do
+        about..." for a meta question about the assistant itself rather than
+        a genuine question about actual flood risk. This must still run the
+        real evidence graph and produce a real grounded decision, exactly
+        like any other genuine flood question.
+        """
+        orchestrator, session_store, tools = _build_orchestrator(provider)
+        session_id, outcome = await orchestrator.handle_turn(
+            None,
+            _request(
+                "What should I do about the flood risk in Mingora right now?",
+                "Mingora",
+            ),
+        )
+        decision = _decision_from_outcome(outcome)
+
+        assert tools["gis"].execute.await_count == 1, (
+            "A genuine flood question must still run the full evidence graph, "
+            "not be diverted by the intent classifier."
+        )
+        session = await session_store.get_session(session_id)
+        assert session is not None
+        _assert_grounded(decision, session.turns[-1].evidence_bundle)

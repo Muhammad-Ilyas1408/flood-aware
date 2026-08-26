@@ -17,3 +17,13 @@ class MissingLocationError(ValidationException):
     Scoped to the flood-agent path only: Policy Advisor answers from
     government knowledge alone and never requires a location.
     """
+
+
+class IntentClassificationError(ConversationError):
+    """Raised when the intent classifier cannot produce a usable result.
+
+    Covers provider failures, timeouts, and malformed structured output
+    alike -- callers must treat this as "classification unavailable" and
+    fall back to the mode's default pipeline, never as a reason to drop or
+    misroute the turn.
+    """

@@ -1458,3 +1458,41 @@ Branch: feature/agent-refinements (branched off main)
 - [x] Backend: 312 passed, 2 skipped, 8 subtests passed (8 new tests: 5 in new `test_small_talk.py`, 3 in `test_conversation_orchestrator.py`)
 - [x] Frontend: `tsc --noEmit` (whole project) + ESLint (touched file) clean
 - [x] Manual verification confirmed working
+
+---
+
+## Hotfix 20 – Genuine Intent Routing, Agentic RAG, and an Evidence-Reuse Regression
+
+Status: **Completed**
+Completed: 2026-08-27
+Branch: feature/intent-routing (branched off main)
+
+- [x] New `IntentClassifier` boundary: real capability-question and needs-clarification routing (LLM-generated, not canned) for turns the small-talk phrase list doesn't match; `CAPABILITY_QUESTION`/`NEEDS_CLARIFICATION` response types fit the existing Hotfix 18 contract with zero schema changes
+- [x] Fixed a real frontend/backend design conflict found during implementation: Hotfix 19's location gate on `agent/page.tsx` made the new capability-question path unreachable through the UI — removed, genuine flood questions without location still correctly rejected via existing 422
+- [x] Root-caused and fixed classifier location-blindness (structural data-flow gap, same shape as Sprint 14.2.3's FOCUS bug) via an explicit `has_location` fact threaded into classification
+- [x] Caught and fixed two self-inflicted prompt-calibration regressions from the fix above, each confirmed via real-API reruns rather than trusted on diagnosis alone
+- [x] Found and fixed a real evidence-reuse regression via live manual testing: `requires_new_evidence()` (Sprint 13, unmodified) couldn't tell a previous turn had recorded empty evidence; fixed surgically in `_turn_request()` without widening the shared Sprint 13 contract
+- [x] Classifier default timeout raised 8.0s → 12.0s after a real, isolated, confirmed timeout (not a misclassification) surfaced in golden-set re-verification
+- [x] Backend: 337 passed, 2 skipped, 8 subtests passed (excl. golden)
+- [x] Golden set (real API, extensive rounds across the calibration fixes): all 4 post-fix batch-run failures individually isolated — 3 confirmed async-cleanup infra noise, 1 confirmed the same pre-existing, already-documented decision-agent flakiness from Hotfix 18, none a regression
+- [x] Situation Room's "Full village assessment" symptom investigated and confirmed unrelated (never reuses sessions) — traced to pre-existing, documented Sprint 12 severity-gated routing, left alone
+- [x] Frontend: `tsc --noEmit` clean; ESLint clean on every touched file (1 pre-existing, unrelated failure elsewhere confirmed via `git stash`, not introduced here)
+- [x] Known issue found and documented, not fixed in this hotfix: `state.forecast.discharge`/`severity`/`source`/`forecast_date` never populated by `ForecastNode` for any village — see Hotfix 21
+
+---
+
+## Hotfix 21 – Forecast-Discharge Evidence Mapping Fix
+
+Status: **Completed**
+Completed: 2026-08-27
+Branch: feature/intent-routing (same-night continuation of Hotfix 20's deferred finding)
+
+- [x] `ForecastNode.execute()` now maps `discharge`/`severity`/`source`/`forecast_date`/`lead_time` from the peak-discharge forecast point onto `EvidenceBundle.forecast` — previously only staleness metadata was ever written, leaving the actual hydrological facts permanently null for every village
+- [x] Peak point deliberately matches the same point `FloodClassificationService` already uses for severity, so the cited figure is always consistent with the severity it explains
+- [x] `return_period` deliberately left unpopulated, permanently — no return-period model exists anywhere in this pipeline; leaving it honest rather than fabricating a value
+- [x] Update is atomic (all fields computed before one `model_copy` call) — the property that makes `_entirely_absent_evidence_categories()`'s existing equality check correct again without needing to change it; added a small defensive hardening (`_is_forecast_absent()`) alongside anyway
+- [x] `FloodClassificationService` wired into `ForecastNode` via one added constructor argument — already a shared `GraphDependencies` field, no new composition-root wiring
+- [x] Backend: 339 passed, 2 skipped, 8 subtests passed (2 new tests: peak-point field mapping, atomicity-on-failure guarantee)
+- [x] `test_decision_golden_set.py` confirmed genuinely unaffected by reading its fixtures before implementing (bypasses `ForecastNode` entirely), then running it for real to confirm: 15/15 passed
+- [x] Both tests flagged as behaviorally at-risk in the pre-implementation proposal run for real and read carefully per direct instruction not to round failures into "known flakiness": one passed outright; the other's batch-run failure (plus two more in the same run) isolated and individually reconfirmed as the same async-cleanup noise from Hotfix 20 — the specific flagged risk (a new figure displacing shelter/policy-led actions) did not materialize
+- [x] Closes the known issue opened in Hotfix 20

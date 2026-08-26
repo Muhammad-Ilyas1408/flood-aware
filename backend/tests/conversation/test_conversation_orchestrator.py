@@ -7,7 +7,11 @@ from uuid import UUID
 
 import pytest
 
-from backend.app.conversation.exceptions import MissingLocationError
+from backend.app.conversation.exceptions import (
+    IntentClassificationError,
+    MissingLocationError,
+)
+from backend.app.conversation.intent import IntentClassification, IntentLabel
 from backend.app.conversation.models import (
     ConversationMode,
     ConversationResponseType,
@@ -106,6 +110,56 @@ class _KnowledgeToolSpy:
         return self._answer
 
 
+class _IntentClassifierSpy:
+    """Return a scripted classification (or raise) while recording every call.
+
+    Defaults to ``GENUINE_QUESTION``, which the orchestrator treats
+    identically to "classification unavailable" -- i.e. every existing
+    scenario that predates intent classification keeps behaving exactly as
+    it did before this collaborator existed, with zero script changes
+    required at those call sites.
+    """
+
+    def __init__(
+        self,
+        classification: IntentClassification | None = None,
+        *,
+        classifications: Sequence[IntentClassification] | None = None,
+        error: Exception | None = None,
+    ) -> None:
+        self._classification = classification or IntentClassification(
+            label=IntentLabel.GENUINE_QUESTION
+        )
+        self._classifications = (
+            list(classifications) if classifications is not None else None
+        )
+        self._error = error
+        self.calls: list[
+            tuple[str, ConversationMode, tuple[ConversationTurn, ...], bool]
+        ] = []
+
+    async def classify(
+        self,
+        request_text: str,
+        *,
+        mode: ConversationMode,
+        history: Sequence[ConversationTurn] = (),
+        has_location: bool = False,
+    ) -> IntentClassification:
+        """Record one classification request and return or raise as scripted.
+
+        ``classifications``, when supplied, is consumed in call order (one
+        per turn) -- mirrors ``_GraphRuntimeSpy``'s per-call bundle sequencing
+        -- for scenarios where different turns must classify differently.
+        """
+        self.calls.append((request_text, mode, tuple(history), has_location))
+        if self._error is not None:
+            raise self._error
+        if self._classifications:
+            return self._classifications.pop(0)
+        return self._classification
+
+
 def _state_factory() -> GraphStateFactory:
     """Create a deterministic factory with enough UUIDs for multi-turn tests."""
     identifiers = iter(UUID(int=index) for index in range(1, 32))
@@ -121,6 +175,7 @@ def _orchestrator(
     decisions: tuple[Decision | None, ...] | None = None,
     knowledge_tool: _KnowledgeToolSpy | None = None,
     session_store: ConversationSessionStore | None = None,
+    intent_classifier: _IntentClassifierSpy | None = None,
 ):
     """Build isolated collaborators for one scripted conversation scenario."""
     runtime = _GraphRuntimeSpy(
@@ -140,6 +195,7 @@ def _orchestrator(
         session_store=session_store or ConversationSessionStore(),
         state_factory=_state_factory(),
         knowledge_tool=knowledge,
+        intent_classifier=intent_classifier or _IntentClassifierSpy(),
         clock=lambda: datetime(2026, 7, 28, tzinfo=UTC),
     )
     return orchestrator, runtime, agent, knowledge
@@ -479,3 +535,290 @@ def test_policy_advisor_mode_ignores_small_talk_free_text() -> None:
     assert not runtime.inputs
     assert not agent.calls
     assert knowledge.questions == ["What is the government's evacuation policy?"]
+
+
+def test_exact_small_talk_phrase_never_invokes_intent_classifier() -> None:
+    """The zero-cost phrase-list path must not pay for an LLM classification call."""
+    classifier = _IntentClassifierSpy()
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    asyncio.run(orchestrator.handle_turn(None, UserRequest(request_text="hi")))
+
+    assert not classifier.calls
+    assert not runtime.inputs
+    assert not agent.calls
+    assert not knowledge.questions
+
+
+def test_genuine_follow_up_after_capability_question_runs_fresh_evidence() -> None:
+    """A genuine question right after a capability question must not reuse its empty evidence.
+
+    Regression test for a real bug found in live manual testing: a
+    capability-question (or clarification) turn records an empty
+    EvidenceBundle() while still carrying the request's real, unchanged
+    location. requires_new_evidence only compares location fields, so a
+    same-location follow-up was wrongly treated as reusable, starving a
+    genuine question of all evidence (missing_evidence listing every
+    category, citations empty) even though a real village was selected
+    throughout the conversation.
+    """
+    bundle = _bundle("PDMA Plan")
+    classifier = _IntentClassifierSpy(
+        classifications=[
+            IntentClassification(
+                label=IntentLabel.CAPABILITY_QUESTION,
+                response_text="I assess flood risk for villages in Swat district.",
+            ),
+            IntentClassification(label=IntentLabel.GENUINE_QUESTION),
+        ]
+    )
+    orchestrator, runtime, agent, _knowledge = _orchestrator(
+        (bundle,), intent_classifier=classifier
+    )
+
+    session_id, first_outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="How can you help me?", village_name="Mingora"),
+        )
+    )
+    assert first_outcome.response_type is ConversationResponseType.CAPABILITY_QUESTION
+
+    _, second_outcome = asyncio.run(
+        orchestrator.handle_turn(
+            session_id,
+            UserRequest(
+                request_text="What is the current flood condition?",
+                village_name="Mingora",
+            ),
+        )
+    )
+
+    assert len(runtime.inputs) == 1, (
+        "The genuine follow-up must run the evidence graph fresh, not reuse "
+        "the capability-question turn's empty evidence bundle."
+    )
+    assert second_outcome.response_type is ConversationResponseType.FLOOD_DECISION
+    assert second_outcome.decision is not None
+    assert not agent.calls, "A fresh graph run supplies its own decision directly."
+
+
+def test_capability_question_short_circuits_without_location_or_pipeline() -> None:
+    """A capability question must never require location or run the flood pipeline."""
+    classifier = _IntentClassifierSpy(
+        IntentClassification(
+            label=IntentLabel.CAPABILITY_QUESTION,
+            response_text="I assess flood risk for villages in Swat district.",
+        )
+    )
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    _, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None, UserRequest(request_text="How can you help me?")
+        )
+    )
+
+    assert classifier.calls == [
+        ("How can you help me?", ConversationMode.FLOOD_AGENT, (), False)
+    ]
+    assert not runtime.inputs
+    assert not agent.calls
+    assert not knowledge.questions
+    assert outcome.response_type is ConversationResponseType.CAPABILITY_QUESTION
+    assert outcome.decision is None
+    assert outcome.summary == "I assess flood risk for villages in Swat district."
+
+
+def test_classifier_receives_has_location_true_for_a_resolved_follow_up() -> None:
+    """A follow-up that already carries a village name must tell the classifier so.
+
+    Regression guard: the classifier previously received only raw request
+    text, with no visibility into the request's own resolved location, so
+    it could not reliably distinguish "no location established" from
+    "location established, something else is vague" -- causing real
+    follow-ups like "What about shelters?" in an established conversation
+    to be wrongly asked "which village?" again.
+    """
+    classifier = _IntentClassifierSpy()
+    orchestrator, runtime, agent, _knowledge = _orchestrator(
+        (_bundle("PDMA Plan"),), intent_classifier=classifier
+    )
+
+    asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What about shelters?", village_name="Mingora"),
+        )
+    )
+
+    assert classifier.calls[0][3] is True
+
+
+def test_classifier_receives_has_location_false_without_coordinates_or_village() -> None:
+    """A capability/ambiguous question asked before selecting a location must say so."""
+    classifier = _IntentClassifierSpy(
+        IntentClassification(label=IntentLabel.CAPABILITY_QUESTION, response_text="x")
+    )
+    orchestrator, _runtime, _agent, _knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    asyncio.run(
+        orchestrator.handle_turn(None, UserRequest(request_text="How can you help me?"))
+    )
+
+    assert classifier.calls[0][3] is False
+
+
+def test_capability_question_in_policy_advisor_mode_never_calls_knowledge_tool() -> None:
+    """A capability question in Policy Advisor mode must not trigger real RAG retrieval."""
+    classifier = _IntentClassifierSpy(
+        IntentClassification(
+            label=IntentLabel.CAPABILITY_QUESTION,
+            response_text="I answer from real PDMA/NDMP documents.",
+        )
+    )
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    _, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What can I ask you?"),
+            mode=ConversationMode.POLICY_ADVISOR,
+        )
+    )
+
+    assert not knowledge.questions
+    assert outcome.response_type is ConversationResponseType.CAPABILITY_QUESTION
+    assert outcome.summary == "I answer from real PDMA/NDMP documents."
+
+
+def test_needs_clarification_short_circuits_and_is_recorded_for_history() -> None:
+    """An ambiguous question must produce a clarifying question, not a guess."""
+    classifier = _IntentClassifierSpy(
+        IntentClassification(
+            label=IntentLabel.NEEDS_CLARIFICATION,
+            response_text="Which village or coordinates would you like me to assess?",
+        )
+    )
+    store = ConversationSessionStore()
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), intent_classifier=classifier, session_store=store
+    )
+
+    session_id, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(
+                request_text="Is it safe?",
+                coordinates=Coordinate(latitude=34.77, longitude=72.36),
+            ),
+        )
+    )
+
+    assert not runtime.inputs
+    assert not agent.calls
+    assert not knowledge.questions
+    assert outcome.response_type is ConversationResponseType.NEEDS_CLARIFICATION
+    assert outcome.decision is None
+    assert outcome.summary == "Which village or coordinates would you like me to assess?"
+
+    session = asyncio.run(store.get_session(session_id))
+    assert session is not None
+    recorded = session.turns[0]
+    assert recorded.decision is None
+    assert recorded.summary == outcome.summary
+    assert recorded.evidence_bundle == EvidenceBundle()
+
+
+def test_clarification_turn_is_visible_to_next_turns_classification_history() -> None:
+    """A follow-up must let the classifier see the clarifying question just asked."""
+    classifier = _IntentClassifierSpy(
+        IntentClassification(
+            label=IntentLabel.NEEDS_CLARIFICATION,
+            response_text="Which village would you like me to assess?",
+        )
+    )
+    orchestrator, _runtime, _agent, _knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    session_id, _ = asyncio.run(
+        orchestrator.handle_turn(None, UserRequest(request_text="Is it safe?"))
+    )
+    asyncio.run(
+        orchestrator.handle_turn(
+            session_id,
+            UserRequest(request_text="Mingora", village_name="Mingora"),
+        )
+    )
+
+    second_call_history = classifier.calls[1][2]
+    assert len(second_call_history) == 1
+    assert second_call_history[0].request_text == "Is it safe?"
+    assert (
+        second_call_history[0].recommendation_summary
+        == "Which village would you like me to assess?"
+    )
+
+
+def test_classifier_failure_falls_back_to_full_flood_pipeline() -> None:
+    """A classifier outage must never block or misroute a flood-agent turn."""
+    bundle = _bundle("PDMA Plan")
+    classifier = _IntentClassifierSpy(error=IntentClassificationError("boom"))
+    orchestrator, runtime, agent, _knowledge = _orchestrator(
+        (bundle,), intent_classifier=classifier
+    )
+
+    _, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What is the flood outlook?", village_name="Mingora"),
+        )
+    )
+
+    assert len(runtime.inputs) == 1
+    assert outcome.response_type is ConversationResponseType.FLOOD_DECISION
+
+
+def test_classifier_failure_falls_back_to_knowledge_tool_in_policy_advisor_mode() -> None:
+    """A classifier outage must never block or misroute a policy-advisor turn."""
+    classifier = _IntentClassifierSpy(error=IntentClassificationError("boom"))
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    _, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What does government policy require?"),
+            mode=ConversationMode.POLICY_ADVISOR,
+        )
+    )
+
+    assert knowledge.questions == ["What does government policy require?"]
+    assert outcome.response_type is ConversationResponseType.POLICY_ANSWER
+
+
+def test_classifier_failure_still_requires_location_for_flood_agent() -> None:
+    """A classifier outage must not bypass the existing location requirement."""
+    classifier = _IntentClassifierSpy(error=IntentClassificationError("boom"))
+    orchestrator, runtime, agent, _knowledge = _orchestrator(
+        (), intent_classifier=classifier
+    )
+
+    with pytest.raises(MissingLocationError):
+        asyncio.run(
+            orchestrator.handle_turn(
+                None, UserRequest(request_text="What is the flood outlook?")
+            )
+        )
+
+    assert not runtime.inputs

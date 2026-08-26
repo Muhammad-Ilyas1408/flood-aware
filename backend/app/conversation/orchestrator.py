@@ -1,6 +1,7 @@
 """Thin multi-turn orchestration over immutable graph and decision boundaries."""
 
 import asyncio
+import logging
 from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import UUID
@@ -8,7 +9,13 @@ from uuid import UUID
 from backend.app.conversation.evidence_reuse import requires_new_evidence
 from backend.app.conversation.exceptions import (
     ConversationSessionNotFoundError,
+    IntentClassificationError,
     MissingLocationError,
+)
+from backend.app.conversation.intent import (
+    IntentClassification,
+    IntentClassifierProtocol,
+    IntentLabel,
 )
 from backend.app.conversation.models import (
     ConversationMode,
@@ -18,6 +25,7 @@ from backend.app.conversation.models import (
 )
 from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.conversation.small_talk import is_small_talk, small_talk_reply
+from backend.app.core.logger import get_logger
 from backend.app.decision.exceptions import DecisionGenerationError
 from backend.app.decision.prompt_builder import PromptBuilder
 from backend.app.decision.protocols import DecisionAgentProtocol
@@ -26,7 +34,10 @@ from backend.app.graph.mappers import KnowledgeEvidenceMapper
 from backend.app.graph.runtime import GraphRuntime
 from backend.app.graph.state import EvidenceBundle, GraphState, UserRequest
 from backend.app.observability.context import ExecutionContext
+from backend.app.observability.logging import log_event
 from backend.app.rag.knowledge_tool import KnowledgeTool
+
+_LOGGER = get_logger(__name__)
 
 
 class ConversationOrchestrator:
@@ -46,6 +57,7 @@ class ConversationOrchestrator:
         session_store: ConversationSessionStore,
         state_factory: GraphStateFactory,
         knowledge_tool: KnowledgeTool,
+        intent_classifier: IntentClassifierProtocol,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         """Initialize explicit conversation collaborators.
@@ -56,6 +68,9 @@ class ConversationOrchestrator:
         injected directly (rather than only reached through the graph) so a
         policy-advisor turn can answer from government knowledge alone, without
         running the flood-evidence graph or the flood-decision agent.
+        ``intent_classifier`` is consulted only for turns the deterministic
+        small-talk check does not match, and only to decide whether to run the
+        mode's existing heavy pipeline at all -- never to replace or relax it.
         """
         self._graph_runtime = graph_runtime
         self._decision_agent = decision_agent
@@ -63,6 +78,7 @@ class ConversationOrchestrator:
         self._session_store = session_store
         self._state_factory = state_factory
         self._knowledge_tool = knowledge_tool
+        self._intent_classifier = intent_classifier
         self._clock = clock or (lambda: datetime.now(UTC))
 
     async def handle_turn(
@@ -80,10 +96,36 @@ class ConversationOrchestrator:
                 f"Conversation session {resolved_session_id} does not exist."
             )
 
-        if is_small_talk(request.request_text):
+        small_talk = is_small_talk(request.request_text)
+        classification: IntentClassification | None = None
+        if not small_talk:
+            classification = await self._classify_intent(
+                request.request_text,
+                mode=mode,
+                history=session.turns,
+                has_location=_has_location(request),
+            )
+
+        if small_talk:
             outcome = ConversationOutcome(
                 response_type=ConversationResponseType.SMALL_TALK,
                 summary=small_talk_reply(request.request_text, mode),
+            )
+            evidence = EvidenceBundle()
+        elif classification is not None and (
+            classification.label is IntentLabel.CAPABILITY_QUESTION
+        ):
+            outcome = ConversationOutcome(
+                response_type=ConversationResponseType.CAPABILITY_QUESTION,
+                summary=classification.response_text,
+            )
+            evidence = EvidenceBundle()
+        elif classification is not None and (
+            classification.label is IntentLabel.NEEDS_CLARIFICATION
+        ):
+            outcome = ConversationOutcome(
+                response_type=ConversationResponseType.NEEDS_CLARIFICATION,
+                summary=classification.response_text,
             )
             evidence = EvidenceBundle()
         elif mode is ConversationMode.POLICY_ADVISOR:
@@ -144,6 +186,42 @@ class ConversationOrchestrator:
         )
         return resolved_session_id, outcome
 
+    async def _classify_intent(
+        self,
+        request_text: str,
+        *,
+        mode: ConversationMode,
+        history: tuple[ConversationTurn, ...],
+        has_location: bool,
+    ) -> IntentClassification | None:
+        """Classify one non-small-talk turn, or None if classification is unavailable.
+
+        A ``None`` result must be treated exactly like ``GENUINE_QUESTION``:
+        the caller falls through to the mode's existing default pipeline. A
+        classifier outage must never drop, misroute, or silently reinterpret
+        a genuine question -- it can only ever cost the speculative-pipeline
+        behavior this feature exists to avoid, not correctness.
+
+        ``has_location`` is the same structural fact ``_has_location`` checks
+        before running the flood graph, computed once here and given to the
+        classifier directly -- it must never be inferred from conversation
+        text, which is an unreliable proxy for whether a location is
+        actually resolved on the current request.
+        """
+        try:
+            return await self._intent_classifier.classify(
+                request_text, mode=mode, history=history, has_location=has_location
+            )
+        except IntentClassificationError:
+            log_event(
+                _LOGGER,
+                logging.WARNING,
+                "intent_classification_failed",
+                ExecutionContext.uncorrelated(),
+                mode=mode.value,
+            )
+            return None
+
     def _state_for_request(self, request: UserRequest) -> GraphState:
         """Create the canonical execution state without reconstructing request facts."""
         return self._state_factory.create(
@@ -165,8 +243,17 @@ def _has_location(request: UserRequest) -> bool:
 
 
 def _turn_request(turn: ConversationTurn | None) -> UserRequest | None:
-    """Project only the reuse-policy fields from one immutable conversation turn."""
-    if turn is None:
+    """Project only the reuse-policy fields from one immutable conversation turn.
+
+    Returns ``None`` -- treated identically to "no previous turn" by
+    ``requires_new_evidence`` -- when the turn carried no real evidence.
+    Small-talk, capability-question, and clarification outcomes always
+    record an empty ``EvidenceBundle()``; reusing one just because its
+    location happens to match the current turn would silently starve a
+    genuine follow-up of all evidence, even though a real village or
+    coordinates were present throughout.
+    """
+    if turn is None or turn.evidence_bundle == EvidenceBundle():
         return None
     return UserRequest(
         request_text=turn.request_text,

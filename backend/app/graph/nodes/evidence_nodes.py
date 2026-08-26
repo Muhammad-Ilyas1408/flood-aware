@@ -74,18 +74,39 @@ class ForecastNode:
     def __init__(
         self,
         forecast_provider: ForecastProvider,
+        classification_service: FloodClassificationService,
         *,
         max_snapshot_age_hours: int = DEFAULT_MAX_SNAPSHOT_AGE_HOURS,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
-        """Initialize the node with the injected production forecast boundary."""
+        """Initialize the node with the injected production forecast boundary.
+
+        ``classification_service`` is the same collaborator already injected
+        into ``GISAnalysisNode`` and ``FloodSeverityRoutingPolicy`` --
+        classification is a cheap, deterministic, pure function of the
+        forecast series, so calling it here too (to populate the evidence
+        this node owns) is consistent with the existing pattern rather than
+        a new coupling.
+        """
 
         self._forecast_provider = forecast_provider
+        self._classification_service = classification_service
         self._max_snapshot_age_hours = max_snapshot_age_hours
         self._clock = clock or (lambda: datetime.now(UTC))
 
     async def execute(self, state: GraphState) -> GraphState:
-        """Store the provider's canonical result and its derived snapshot-age evidence."""
+        """Store the provider's canonical result and its derived evidence facts.
+
+        The update to ``state.forecast`` is computed and applied atomically:
+        every field is derived before the single ``model_copy`` call below,
+        inside this method's only try block. A failure at any point (provider
+        error, malformed result, classification failure) falls through to
+        ``_record_tool_failure`` without touching ``state.forecast`` at all,
+        so it is never left partially populated -- it is always either the
+        full default (genuine absence) or fully informative (genuine
+        success), never an in-between state that could be mistaken for
+        either by evidence-completeness checks.
+        """
         coordinates = state.user_request.coordinates
         if coordinates is None:
             _log_precondition_skip(state, "forecast", "request coordinates are absent")
@@ -106,11 +127,21 @@ class ForecastNode:
                 ).total_seconds()
                 / 3600,
             )
+            peak_point = max(
+                forecast_result.series.points,
+                key=lambda point: point.discharge_m3_per_second,
+            )
+            severity = self._classification_service.classify(forecast_result)
             return state.model_copy(
                 update={
                     "forecast_result": forecast_result,
                     "forecast": state.forecast.model_copy(
                         update={
+                            "discharge": peak_point.discharge_m3_per_second,
+                            "severity": severity.value,
+                            "source": forecast_result.metadata.dataset_name,
+                            "forecast_date": peak_point.valid_time,
+                            "lead_time": peak_point.lead_time_hours,
                             "snapshot_age_hours": age_hours,
                             "snapshot_stale": age_hours > self._max_snapshot_age_hours,
                         }

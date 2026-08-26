@@ -79,6 +79,7 @@ class GraphContainer:
             weather_node=WeatherNode(dependencies.weather_tool),
             forecast_node=ForecastNode(
                 dependencies.forecast_provider,
+                dependencies.flood_classification_service,
                 max_snapshot_age_hours=dependencies.forecast_max_snapshot_age_hours,
             ),
             gis_node=GISAnalysisNode(
