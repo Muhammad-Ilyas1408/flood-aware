@@ -9,6 +9,11 @@ import type { BaseResponse, ResponseStatus } from "./common";
 export type RiskLevel = "normal" | "low" | "moderate" | "high" | "extreme";
 export type Priority = "low" | "medium" | "high" | "critical";
 export type DecisionConfidence = "low" | "medium" | "high";
+export type ConversationMode = "flood_agent" | "policy_advisor";
+export type ConversationResponseType =
+  | "flood_decision"
+  | "small_talk"
+  | "policy_answer";
 
 export interface Coordinate {
   latitude: number;
@@ -22,6 +27,7 @@ export interface ConversationRequest {
   village_name?: string | null;
   district?: string | null;
   province?: string | null;
+  mode?: ConversationMode;
 }
 
 export interface ActionResponse {
@@ -32,8 +38,9 @@ export interface ActionResponse {
 export interface ConversationResponse extends BaseResponse {
   status: ResponseStatus;
   session_id: string;
-  risk_level: RiskLevel;
-  confidence: DecisionConfidence;
+  response_type: ConversationResponseType;
+  risk_level: RiskLevel | null;
+  confidence: DecisionConfidence | null;
   summary: string;
   actions: ActionResponse[];
   citations: string[];

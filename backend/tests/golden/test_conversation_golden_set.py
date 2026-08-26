@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from backend.app.ai.models import ToolResult
+from backend.app.conversation.models import ConversationOutcome
 from backend.app.conversation.orchestrator import ConversationOrchestrator
 from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.decision.dependencies import build_openai_decision_provider
@@ -39,6 +40,20 @@ pytestmark = [
         reason="Golden-set tests call the real OpenAI API; set RUN_GOLDEN_SET=1 to run.",
     ),
 ]
+
+
+def _decision_from_outcome(outcome: ConversationOutcome) -> Decision:
+    """Unwrap the canonical Decision from a flood-pipeline turn's outcome.
+
+    Every golden-set scenario in this module runs the full flood pipeline
+    (real coordinates, no small talk), so ``outcome.decision`` is always
+    populated; the assert documents that assumption rather than silently
+    propagating ``None`` into a confusing downstream AttributeError.
+    """
+    assert outcome.decision is not None, (
+        "Golden-set turns must run the flood pipeline and carry a Decision."
+    )
+    return outcome.decision
 
 
 def _all_references(decision: Decision) -> set[str]:
@@ -176,6 +191,7 @@ def _build_orchestrator(provider, severity: FloodSeverity = FloodSeverity.MAJOR)
         prompt_builder=PromptBuilder(),
         session_store=session_store,
         state_factory=GraphStateFactory(),
+        knowledge_tool=knowledge_tool,
     )
     return orchestrator, session_store, {
         "weather": weather_tool,
@@ -267,10 +283,11 @@ class TestConversationGoldenSet:
             None,
             _request("What is the flood outlook for Mingora?", "Mingora"),
         )
-        _, second = await orchestrator.handle_turn(
+        _, second_outcome = await orchestrator.handle_turn(
             session_id,
             _request("What about shelters near there?", "Mingora"),
         )
+        second = _decision_from_outcome(second_outcome)
 
         assert _tool_call_counts(tools) == {
             "weather": 1,
@@ -298,10 +315,11 @@ class TestConversationGoldenSet:
             None,
             _request("What is the flood situation in Mingora?", "Mingora"),
         )
-        _, second = await orchestrator.handle_turn(
+        _, second_outcome = await orchestrator.handle_turn(
             session_id,
             _request("What about shelters?", "Mingora"),
         )
+        second = _decision_from_outcome(second_outcome)
 
         session = await session_store.get_session(session_id)
         assert session is not None
@@ -324,14 +342,16 @@ class TestConversationGoldenSet:
         self, provider
     ):
         orchestrator, session_store, tools = _build_orchestrator(provider)
-        session_id, first = await orchestrator.handle_turn(
+        session_id, first_outcome = await orchestrator.handle_turn(
             None,
             _request("What is the flood situation in Mingora?", "Mingora"),
         )
-        _, second = await orchestrator.handle_turn(
+        first = _decision_from_outcome(first_outcome)
+        _, second_outcome = await orchestrator.handle_turn(
             session_id,
             _request("What about the government policy?", "Mingora"),
         )
+        second = _decision_from_outcome(second_outcome)
 
         session = await session_store.get_session(session_id)
         assert session is not None
@@ -372,10 +392,11 @@ class TestConversationGoldenSet:
             None,
             _request("What is the flood situation in Mingora?", "Mingora"),
         )
-        _, second = await orchestrator.handle_turn(
+        _, second_outcome = await orchestrator.handle_turn(
             session_id,
             _request("What about shelters?", "Mingora"),
         )
+        second = _decision_from_outcome(second_outcome)
 
         assert tools["shelter"].execute.call_count == 0, (
             "MODERATE severity must skip shelter collection per route_after_gis; "
@@ -412,10 +433,11 @@ class TestConversationGoldenSet:
             None,
             _request("What is the flood outlook for Mingora?", "Mingora"),
         )
-        _, second = await orchestrator.handle_turn(
+        _, second_outcome = await orchestrator.handle_turn(
             session_id,
             _request("What is the flood outlook for Saidu Sharif?", "Saidu Sharif"),
         )
+        second = _decision_from_outcome(second_outcome)
 
         assert all(count == 2 for count in _tool_call_counts(tools).values())
         session = await session_store.get_session(session_id)
@@ -435,18 +457,21 @@ class TestConversationGoldenSet:
             "build",
             wraps=provider._prompt_builder.build,
         ) as build:
-            session_id, first = await orchestrator.handle_turn(
+            session_id, first_outcome = await orchestrator.handle_turn(
                 None,
                 _request("What is the flood outlook for Mingora?", "Mingora"),
             )
-            _, second = await orchestrator.handle_turn(
+            first = _decision_from_outcome(first_outcome)
+            _, second_outcome = await orchestrator.handle_turn(
                 session_id,
                 _request("What about shelters near there?", "Mingora"),
             )
-            _, third = await orchestrator.handle_turn(
+            second = _decision_from_outcome(second_outcome)
+            _, third_outcome = await orchestrator.handle_turn(
                 session_id,
                 _request("What evacuation actions are appropriate?", "Mingora"),
             )
+            third = _decision_from_outcome(third_outcome)
 
         assert all(count == 1 for count in _tool_call_counts(tools).values())
         session = await session_store.get_session(session_id)

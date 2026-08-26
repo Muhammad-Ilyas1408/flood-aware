@@ -7,7 +7,11 @@ from uuid import UUID
 
 import pytest
 
-from backend.app.conversation.models import ConversationTurn
+from backend.app.conversation.models import (
+    ConversationMode,
+    ConversationResponseType,
+    ConversationTurn,
+)
 from backend.app.conversation.orchestrator import ConversationOrchestrator
 from backend.app.conversation.session_store import ConversationSessionStore
 from backend.app.decision.exceptions import DecisionGenerationError
@@ -27,6 +31,7 @@ from backend.app.graph.state import (
     UserRequest,
 )
 from backend.app.observability.context import ExecutionContext
+from backend.app.rag.models import Citation, GroundedAnswer
 
 
 def _decision(summary: str) -> Decision:
@@ -85,6 +90,20 @@ class _DecisionAgentSpy:
         return _decision(f"decision-{len(self.calls)}")
 
 
+class _KnowledgeToolSpy:
+    """Return a scripted grounded answer while recording every question asked."""
+
+    def __init__(self, answer: GroundedAnswer | None = None) -> None:
+        self._answer = answer or GroundedAnswer("No relevant guidance found.", ())
+        self.questions: list[str] = []
+
+    def answer(self, question: str, top_k: int = 5) -> GroundedAnswer:
+        """Capture one question without invoking a real retriever."""
+        del top_k
+        self.questions.append(question)
+        return self._answer
+
+
 def _state_factory() -> GraphStateFactory:
     """Create a deterministic factory with enough UUIDs for multi-turn tests."""
     identifiers = iter(UUID(int=index) for index in range(1, 32))
@@ -98,6 +117,8 @@ def _state_factory() -> GraphStateFactory:
 def _orchestrator(
     bundles: tuple[EvidenceBundle, ...],
     decisions: tuple[Decision | None, ...] | None = None,
+    knowledge_tool: _KnowledgeToolSpy | None = None,
+    session_store: ConversationSessionStore | None = None,
 ):
     """Build isolated collaborators for one scripted conversation scenario."""
     runtime = _GraphRuntimeSpy(
@@ -109,15 +130,17 @@ def _orchestrator(
         ),
     )
     agent = _DecisionAgentSpy()
+    knowledge = knowledge_tool or _KnowledgeToolSpy()
     orchestrator = ConversationOrchestrator(
         graph_runtime=runtime,
         decision_agent=agent,
         prompt_builder=PromptBuilder(),
-        session_store=ConversationSessionStore(),
+        session_store=session_store or ConversationSessionStore(),
         state_factory=_state_factory(),
+        knowledge_tool=knowledge,
         clock=lambda: datetime(2026, 7, 28, tzinfo=UTC),
     )
-    return orchestrator, runtime, agent
+    return orchestrator, runtime, agent, knowledge
 
 
 def _bundle(citation: str) -> EvidenceBundle:
@@ -133,6 +156,7 @@ def test_prompt_history_contains_only_prior_request_and_summary() -> None:
         village_name="Mingora",
         evidence_bundle=bundle,
         decision=_decision("Prepare local response."),
+        summary="Prepare local response.",
         created_at=datetime(2026, 7, 28, tzinfo=UTC),
     )
 
@@ -157,7 +181,7 @@ def test_prompt_history_contains_only_prior_request_and_summary() -> None:
 def test_same_village_follow_up_reuses_evidence_without_graph_execution() -> None:
     """A follow-up with unchanged location context must not invoke graph tools."""
     first_bundle = _bundle("PDMA Plan")
-    orchestrator, runtime, agent = _orchestrator((first_bundle,))
+    orchestrator, runtime, agent, _knowledge = _orchestrator((first_bundle,))
     request = UserRequest(request_text="Flood outlook?", village_name="Mingora")
 
     session_id, _ = asyncio.run(orchestrator.handle_turn(None, request))
@@ -170,7 +194,8 @@ def test_same_village_follow_up_reuses_evidence_without_graph_execution() -> Non
 
     assert len(runtime.inputs) == 1
     assert [call[0] for call in agent.calls] == [first_bundle]
-    assert second.recommendation.summary == "decision-1"
+    assert second.decision is not None
+    assert second.decision.recommendation.summary == "decision-1"
     assert agent.calls[0][2] == "What about shelters?", (
         "The reuse-path decide() call must receive the CURRENT turn's own "
         "request text, not the prior turn's, so the model can actually see "
@@ -181,7 +206,7 @@ def test_same_village_follow_up_reuses_evidence_without_graph_execution() -> Non
 def test_changed_village_runs_graph_again() -> None:
     """Changing the village must refresh the active evidence bundle."""
     first_bundle, second_bundle = _bundle("Mingora Plan"), _bundle("Saidu Plan")
-    orchestrator, runtime, agent = _orchestrator((first_bundle, second_bundle))
+    orchestrator, runtime, agent, _knowledge = _orchestrator((first_bundle, second_bundle))
 
     session_id, _ = asyncio.run(
         orchestrator.handle_turn(
@@ -203,7 +228,7 @@ def test_changed_village_runs_graph_again() -> None:
 def test_consecutive_same_context_follow_ups_grow_history_without_refetching() -> None:
     """Repeated local follow-ups reuse evidence and preserve ordered history."""
     bundle = _bundle("PDMA Plan")
-    orchestrator, runtime, agent = _orchestrator((bundle,))
+    orchestrator, runtime, agent, _knowledge = _orchestrator((bundle,))
     request = UserRequest(request_text="Flood outlook?", village_name="Mingora")
 
     session_id, _ = asyncio.run(orchestrator.handle_turn(None, request))
@@ -227,7 +252,7 @@ def test_consecutive_same_context_follow_ups_grow_history_without_refetching() -
 def test_reuse_tracks_the_most_recent_changed_context() -> None:
     """Follow-ups after a context change reuse the latest, not original, evidence."""
     first_bundle, second_bundle = _bundle("Mingora Plan"), _bundle("Saidu Plan")
-    orchestrator, runtime, agent = _orchestrator((first_bundle, second_bundle))
+    orchestrator, runtime, agent, _knowledge = _orchestrator((first_bundle, second_bundle))
     session_id, _ = asyncio.run(
         orchestrator.handle_turn(
             None,
@@ -254,7 +279,7 @@ def test_reuse_tracks_the_most_recent_changed_context() -> None:
 def test_agent_receives_active_evidence_and_ordered_prior_summaries() -> None:
     """Every turn must retain only prior decision summaries as conversation context."""
     first_bundle, second_bundle = _bundle("Mingora Plan"), _bundle("Saidu Plan")
-    orchestrator, _, agent = _orchestrator((first_bundle, second_bundle))
+    orchestrator, _, agent, _knowledge = _orchestrator((first_bundle, second_bundle))
     session_id, _ = asyncio.run(
         orchestrator.handle_turn(
             None,
@@ -285,7 +310,7 @@ def test_agent_receives_active_evidence_and_ordered_prior_summaries() -> None:
 def test_graph_fallback_without_canonical_decision_does_not_retry_provider() -> None:
     """A graph fallback cannot be represented as a real typed conversation turn."""
     bundle = _bundle("PDMA Plan")
-    orchestrator, runtime, agent = _orchestrator((bundle,), decisions=(None,))
+    orchestrator, runtime, agent, _knowledge = _orchestrator((bundle,), decisions=(None,))
 
     with pytest.raises(DecisionGenerationError):
         asyncio.run(
@@ -297,3 +322,109 @@ def test_graph_fallback_without_canonical_decision_does_not_retry_provider() -> 
 
     assert len(runtime.inputs) == 1
     assert not agent.calls
+
+
+def test_small_talk_short_circuits_without_graph_or_decision_agent() -> None:
+    """A casual greeting must never invoke the graph, decision agent, or RAG."""
+    orchestrator, runtime, agent, knowledge = _orchestrator(())
+
+    _, outcome = asyncio.run(
+        orchestrator.handle_turn(None, UserRequest(request_text="hi"))
+    )
+
+    assert not runtime.inputs
+    assert not agent.calls
+    assert not knowledge.questions
+    assert outcome.response_type is ConversationResponseType.SMALL_TALK
+    assert outcome.decision is None
+    assert outcome.citations == ()
+    assert outcome.summary
+
+
+def test_small_talk_turn_is_recorded_for_session_continuity() -> None:
+    """A small-talk turn must still be appended so history stays coherent."""
+    store = ConversationSessionStore()
+    orchestrator, _, _, _ = _orchestrator((), session_store=store)
+
+    session_id, outcome = asyncio.run(
+        orchestrator.handle_turn(None, UserRequest(request_text="hi"))
+    )
+
+    session = asyncio.run(store.get_session(session_id))
+    assert session is not None
+    assert len(session.turns) == 1
+    recorded = session.turns[0]
+    assert recorded.decision is None
+    assert recorded.summary == outcome.summary
+    assert recorded.evidence_bundle == EvidenceBundle()
+
+
+def test_small_talk_reply_is_mode_aware() -> None:
+    """The canned reply must differ between flood-agent and policy-advisor modes."""
+    flood_orchestrator, _, _, _ = _orchestrator(())
+    policy_orchestrator, _, _, _ = _orchestrator(())
+
+    _, flood_outcome = asyncio.run(
+        flood_orchestrator.handle_turn(
+            None, UserRequest(request_text="hi"), mode=ConversationMode.FLOOD_AGENT
+        )
+    )
+    _, policy_outcome = asyncio.run(
+        policy_orchestrator.handle_turn(
+            None, UserRequest(request_text="hi"), mode=ConversationMode.POLICY_ADVISOR
+        )
+    )
+
+    assert flood_outcome.summary != policy_outcome.summary
+
+
+def test_policy_advisor_mode_calls_knowledge_tool_only() -> None:
+    """Policy-advisor mode must answer from RAG alone, never the flood graph."""
+    scripted_answer = GroundedAnswer(
+        "District authorities must pre-position relief stock.",
+        (Citation("NDMP", 12, "Relief Stock"),),
+    )
+    store = ConversationSessionStore()
+    orchestrator, runtime, agent, knowledge = _orchestrator(
+        (), knowledge_tool=_KnowledgeToolSpy(scripted_answer), session_store=store
+    )
+
+    session_id, outcome = asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What does government policy require?"),
+            mode=ConversationMode.POLICY_ADVISOR,
+        )
+    )
+
+    assert not runtime.inputs
+    assert not agent.calls
+    assert knowledge.questions == ["What does government policy require?"]
+    assert outcome.response_type is ConversationResponseType.POLICY_ANSWER
+    assert outcome.decision is None
+    assert outcome.summary == scripted_answer.text
+    assert outcome.citations == ("NDMP:p12:Relief Stock",)
+
+    session = asyncio.run(store.get_session(session_id))
+    assert session is not None
+    recorded = session.turns[0]
+    assert recorded.decision is None
+    assert recorded.summary == scripted_answer.text
+    assert recorded.evidence_bundle.knowledge.citations == ("NDMP:p12:Relief Stock",)
+
+
+def test_policy_advisor_mode_ignores_small_talk_free_text() -> None:
+    """A real policy question in policy-advisor mode must not be misread as small talk."""
+    orchestrator, runtime, agent, knowledge = _orchestrator(())
+
+    asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(request_text="What is the government's evacuation policy?"),
+            mode=ConversationMode.POLICY_ADVISOR,
+        )
+    )
+
+    assert not runtime.inputs
+    assert not agent.calls
+    assert knowledge.questions == ["What is the government's evacuation policy?"]

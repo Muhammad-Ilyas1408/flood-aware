@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ApiError, postConversation } from "@/lib/api-client";
-import type { ConversationRequest } from "@/types";
+import type { ConversationMode, ConversationRequest } from "@/types";
 
 import type { ChatMessageData } from "@/app/agent/chat-message";
 
@@ -12,35 +12,59 @@ type LocationFields = Pick<
   "village_name" | "district" | "coordinates"
 >;
 
+/**
+ * A small-talk turn resolves almost immediately (no evidence collection, no
+ * decision agent), so a fixed rotating status like "Analyzing flood zone
+ * data..." would flash even though nothing of the sort happens. Rather than
+ * guessing client-side whether a given turn is small talk, delay showing the
+ * pending bubble at all -- a genuine full-pipeline turn (multiple seconds)
+ * shows it almost as promptly as before, while a near-instant turn never
+ * shows it long enough to display something inaccurate.
+ */
+const PENDING_DISPLAY_DELAY_MS = 300;
+
 interface UseConversationOptions {
   /** Rotates while a turn is pending -- keep these honest about what's actually happening. */
   statusMessages: readonly string[];
   /** Extra request fields (e.g. village location) layered onto every turn. Omit for none. */
   getLocationFields?: () => LocationFields;
+  /** Explicit backend routing mode for every turn. Omit to keep the backend's flood-agent default. */
+  mode?: ConversationMode;
 }
 
 export function useConversation({
   statusMessages,
   getLocationFields,
+  mode,
 }: UseConversationOptions) {
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [isPending, setIsPending] = useState(false);
+  const [showPending, setShowPending] = useState(false);
   const [statusIndex, setStatusIndex] = useState(0);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, isPending]);
+  }, [messages.length, showPending]);
 
   useEffect(() => {
-    if (!isPending) return;
+    if (!isPending) {
+      setShowPending(false);
+      return;
+    }
+    const timeout = setTimeout(() => setShowPending(true), PENDING_DISPLAY_DELAY_MS);
+    return () => clearTimeout(timeout);
+  }, [isPending]);
+
+  useEffect(() => {
+    if (!showPending) return;
     const interval = setInterval(() => {
       setStatusIndex((index) => (index + 1) % statusMessages.length);
     }, 1800);
     return () => clearInterval(interval);
-  }, [isPending, statusMessages.length]);
+  }, [showPending, statusMessages.length]);
 
   function appendMessage(message: Omit<ChatMessageData, "id">) {
     setMessages((prev) => [...prev, { ...message, id: crypto.randomUUID() }]);
@@ -55,6 +79,7 @@ export function useConversation({
       session_id: sid,
       request_text: requestText,
       ...(getLocationFields?.() ?? {}),
+      ...(mode ? { mode } : {}),
     };
 
     try {
@@ -142,6 +167,7 @@ export function useConversation({
   return {
     messages,
     isPending,
+    showPending,
     statusMessage: statusMessages[statusIndex],
     bottomRef,
     sendMessage,

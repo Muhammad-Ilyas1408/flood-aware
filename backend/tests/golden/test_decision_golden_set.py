@@ -195,6 +195,7 @@ class TestGoldenSet:
                 ),
                 confidence=DecisionConfidence.MEDIUM,
             ),
+            summary="Monitor conditions and prepare for possible evacuation.",
             created_at=datetime(2026, 7, 27, tzinfo=UTC),
         )
 
@@ -271,6 +272,7 @@ class TestGoldenSet:
                 ),
                 confidence=DecisionConfidence.MEDIUM,
             ),
+            summary="Monitor conditions and prepare for possible evacuation.",
             created_at=datetime(2026, 7, 27, tzinfo=UTC),
         )
 
