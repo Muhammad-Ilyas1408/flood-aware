@@ -1407,4 +1407,23 @@ Status: Completed
 Frontend: https://flood-aware.vercel.app
 Backend: https://flood-aware-production.up.railway.app
 
+---
+
+## Hotfix 18 – Small-Talk Routing, Policy Advisor RAG Scoping, and Missing-Evidence Fix
+
+Status: **Completed** (merge to dev/main pending)
+Completed: 2026-08-26
+Branch: feature/conversational-scoping
+
+- [x] Shared small-talk detection (`is_small_talk` + mode-aware canned reply), invoked once from `ConversationOrchestrator` for both Flood-Aware Agent and Policy Advisor
+- [x] Policy Advisor scoped to explicit `mode=policy_advisor`, RAG-only via `KnowledgeTool` — no more implicit inference from absent coordinates
+- [x] New `ConversationOutcome`/`response_type` contract: small-talk and policy-answer turns no longer forced into the flood-risk `Decision` schema
+- [x] Root-caused and fixed the "dataset, dataset, dataset..." `missing_evidence` bug via vocabulary validation + dedup in `DecisionParser`
+- [x] Frontend: `mode` plumbing, response-type-aware rendering, 300ms pending-bubble delay to stop inaccurate status-message flashes
+- [x] Backend: 287 passed, 2 skipped (full suite, excl. golden)
+- [x] Golden set (real API, run by project owner): 20/21 first run; the 1 failure (`test_follow_up_narrows_focus_to_policy_not_general_overview`) reran 3/4 pass — known LLM response-order variance, grounding held in every run, not a regression
+- [x] Frontend: `tsc` + ESLint clean
+
+**Not yet done:** merge into dev/main.
+
 **Completed in follow-up session:** frontend-nextjs merged into dev and main; dashboard/ (Streamlit) retired, having fully served its purpose as a reference implementation during development.
