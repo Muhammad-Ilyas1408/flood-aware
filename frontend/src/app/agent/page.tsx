@@ -42,6 +42,15 @@ function locationFields(
   return {};
 }
 
+// "Other / not listed" with a blank name resolves to no location at all --
+// treat it the same as no selection so a flood question can't be submitted
+// without something to assess risk for.
+function hasResolvedLocation(selection: VillageSelection): boolean {
+  if (selection.kind === "village") return true;
+  if (selection.kind === "other") return selection.customName.trim().length > 0;
+  return false;
+}
+
 export default function AgentPage() {
   const [villageSelection, setVillageSelection] = useState<VillageSelection>({
     kind: "none",
@@ -63,12 +72,12 @@ export default function AgentPage() {
 
   async function handleSend() {
     const trimmed = inputText.trim();
-    if (!trimmed || isPending || villageSelection.kind === "none") return;
+    if (!trimmed || isPending || !hasResolvedLocation(villageSelection)) return;
     setInputText("");
     await sendMessage(trimmed);
   }
 
-  const hasLocation = villageSelection.kind !== "none";
+  const hasLocation = hasResolvedLocation(villageSelection);
 
   return (
     <PageShell className="flex h-[calc(100dvh-3.5rem-1px-10px)] flex-col gap-4 overflow-hidden py-0 sm:h-[calc(100dvh-4rem-1px-10px)] sm:py-0">

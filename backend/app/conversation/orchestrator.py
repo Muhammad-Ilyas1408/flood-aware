@@ -6,7 +6,10 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from backend.app.conversation.evidence_reuse import requires_new_evidence
-from backend.app.conversation.exceptions import ConversationSessionNotFoundError
+from backend.app.conversation.exceptions import (
+    ConversationSessionNotFoundError,
+    MissingLocationError,
+)
 from backend.app.conversation.models import (
     ConversationMode,
     ConversationOutcome,
@@ -80,7 +83,7 @@ class ConversationOrchestrator:
         if is_small_talk(request.request_text):
             outcome = ConversationOutcome(
                 response_type=ConversationResponseType.SMALL_TALK,
-                summary=small_talk_reply(mode),
+                summary=small_talk_reply(request.request_text, mode),
             )
             evidence = EvidenceBundle()
         elif mode is ConversationMode.POLICY_ADVISOR:
@@ -95,6 +98,12 @@ class ConversationOrchestrator:
             )
             evidence = EvidenceBundle(knowledge=knowledge_evidence)
         else:
+            if not _has_location(request):
+                raise MissingLocationError(
+                    "A village or coordinates are required to assess flood "
+                    "risk.",
+                    field="village_name",
+                )
             previous = session.turns[-1] if session.turns else None
             state = self._state_for_request(request)
             if requires_new_evidence(_turn_request(previous), request):
@@ -146,6 +155,13 @@ class ConversationOrchestrator:
             province=request.province,
             scenario_request=request.scenario_request,
         )
+
+
+def _has_location(request: UserRequest) -> bool:
+    """Return whether a request carries a coordinate or a real village name."""
+    return request.coordinates is not None or bool(
+        request.village_name and request.village_name.strip()
+    )
 
 
 def _turn_request(turn: ConversationTurn | None) -> UserRequest | None:

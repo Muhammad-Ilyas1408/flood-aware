@@ -1442,3 +1442,19 @@ Branch: feature/conversational-scoping (merged into dev/main)
 - [x] Backend: 287 passed, 2 skipped (full suite, excl. golden)
 - [x] Golden set (real API, run by project owner): 20/21 first run; the 1 failure (`test_follow_up_narrows_focus_to_policy_not_general_overview`) reran 3/4 pass — known LLM response-order variance, grounding held in every run, not a regression
 - [x] Frontend: `tsc` + ESLint clean
+
+---
+
+## Hotfix 19 – Small-Talk Reply Variety and Missing-Location Validation
+
+Status: **Completed**
+Completed: 2026-08-26
+Branch: feature/agent-refinements (branched off main)
+
+- [x] Category-aware small-talk replies: 6 phrase categories (greeting/status-check/identity/thanks/acknowledgment/farewell), 2 hand-written variants each per mode (24 total); `small_talk_reply()` now takes `request_text` to resolve category
+- [x] New `MissingLocationError` (`ValidationException` subclass) rejects flood-agent-mode requests with no coordinates/village name before the graph runs — caught by the existing generic 422 handler, no new wiring needed
+- [x] Frontend: closed the "Other / not listed" + blank name submission gap (`hasResolvedLocation()` in `agent/page.tsx`) — previously only the fully-unselected state was blocked
+- [x] Scoped strictly to Flood-Aware Agent's flood-risk path; confirmed Policy Advisor (RAG-only, never checks location) unaffected
+- [x] Backend: 312 passed, 2 skipped, 8 subtests passed (8 new tests: 5 in new `test_small_talk.py`, 3 in `test_conversation_orchestrator.py`)
+- [x] Frontend: `tsc --noEmit` (whole project) + ESLint (touched file) clean
+- [x] Manual verification confirmed working

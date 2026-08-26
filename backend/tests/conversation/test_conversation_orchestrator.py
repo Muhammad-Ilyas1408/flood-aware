@@ -7,6 +7,7 @@ from uuid import UUID
 
 import pytest
 
+from backend.app.conversation.exceptions import MissingLocationError
 from backend.app.conversation.models import (
     ConversationMode,
     ConversationResponseType,
@@ -25,6 +26,7 @@ from backend.app.decision.models import (
 from backend.app.decision.prompt_builder import PromptBuilder
 from backend.app.graph.factory import GraphStateFactory
 from backend.app.graph.state import (
+    Coordinate,
     EvidenceBundle,
     GraphState,
     KnowledgeEvidence,
@@ -322,6 +324,55 @@ def test_graph_fallback_without_canonical_decision_does_not_retry_provider() -> 
 
     assert len(runtime.inputs) == 1
     assert not agent.calls
+
+
+def test_flood_agent_mode_requires_location() -> None:
+    """A flood-risk question with no coordinates or village name must be rejected before the graph runs."""
+    orchestrator, runtime, agent, _knowledge = _orchestrator(())
+
+    with pytest.raises(MissingLocationError):
+        asyncio.run(
+            orchestrator.handle_turn(
+                None,
+                UserRequest(request_text="What is the current flood condition here?"),
+            )
+        )
+
+    assert not runtime.inputs
+    assert not agent.calls
+
+
+def test_flood_agent_mode_rejects_whitespace_only_village_name() -> None:
+    """A blank/whitespace-only village name (e.g. an unfilled 'Other' field) is not a location."""
+    orchestrator, runtime, _agent, _knowledge = _orchestrator(())
+
+    with pytest.raises(MissingLocationError):
+        asyncio.run(
+            orchestrator.handle_turn(
+                None,
+                UserRequest(request_text="Flood outlook?", village_name="   "),
+            )
+        )
+
+    assert not runtime.inputs
+
+
+def test_flood_agent_mode_accepts_coordinates_without_village_name() -> None:
+    """Coordinates alone satisfy the location requirement."""
+    bundle = _bundle("PDMA Plan")
+    orchestrator, runtime, _agent, _knowledge = _orchestrator((bundle,))
+
+    asyncio.run(
+        orchestrator.handle_turn(
+            None,
+            UserRequest(
+                request_text="Flood outlook?",
+                coordinates=Coordinate(latitude=34.77, longitude=72.36),
+            ),
+        )
+    )
+
+    assert len(runtime.inputs) == 1
 
 
 def test_small_talk_short_circuits_without_graph_or_decision_agent() -> None:

@@ -67,6 +67,31 @@ Investigation-driven fix for three related problems reported from real usage: ca
 
 ---
 
+# Hotfix 19 – Small-Talk Reply Variety and Missing-Location Validation (2026-08-26)
+
+Two-part follow-up investigation on top of Hotfix 18's small-talk/policy-scoping work: (1) `small_talk_reply()` returning one identical canned string per mode felt robotic on repeat casual turns, and (2) a real captured test showed a flood-risk question submitted with no village selected reached the full decision pipeline and returned a technically honest but useless "Normal risk, low confidence, all evidence absent" response. Both investigated and reported before any code was written, per user direction. Built on `feature/agent-refinements`, branched off `main`.
+
+### Added
+
+- **Category-aware small-talk replies** (`backend/app/conversation/small_talk.py`): small-talk phrases are now grouped into six categories via a new `_PHRASE_CATEGORY` mapping — `GREETING`, `STATUS_CHECK`, `IDENTITY`, `THANKS`, `ACKNOWLEDGMENT`, `FAREWELL` — each with 2 hand-written reply variants per mode (24 strings total across flood-agent and policy-advisor). `small_talk_reply()` now takes `request_text` (previously just `mode`) so it can resolve the matched phrase's category and pick a random variant from that category's pool, chosen over a genuine LLM call to preserve Hotfix 18's zero-cost, zero-latency, zero-external-dependency small-talk short-circuit.
+- **`MissingLocationError`** (`backend/app/conversation/exceptions.py`): a new `ValidationException` subclass, raised by `ConversationOrchestrator.handle_turn` via a new `_has_location()` helper, when a `flood_agent`-mode, non-small-talk request has neither `coordinates` nor a non-empty `village_name`. Caught automatically by the app's existing generic `ValidationException` → 422 handler (`backend/app/core/exceptions.py`) — no new exception-handler wiring required. Scoped strictly to the flood-agent branch; Policy Advisor's RAG-only branch never checks location and is unaffected.
+- **Frontend location gating** (`frontend/src/app/agent/page.tsx`): a new `hasResolvedLocation()` helper closes the actual submission gap — selecting "Other / not listed" and leaving the name blank previously still counted as "has a location" (only the fully-unselected state was blocked), silently producing the same empty-evidence request the backend now also rejects. The send button and textarea are now disabled in that state too.
+
+### Fixed
+
+- Flood-risk questions with no location no longer reach `GraphRuntime` or the decision agent; the API now returns a clear 422 instead of running the full pipeline against zero evidence.
+- Small-talk replies ("hi", "thanks", "who are you", etc.) no longer return the exact same string on every matching turn within a mode.
+
+### Verified
+
+- Full backend suite (excl. golden/live-API tests): 312 passed, 2 skipped, 8 subtests passed, no regressions.
+- New tests: `backend/tests/conversation/test_small_talk.py` (5 new — exact-phrase matching excludes real questions, every matched phrase resolves to a reply in both modes, replies vary by category within one mode, more than one variant appears per category, reply pools are disjoint between modes) and 3 new tests in `test_conversation_orchestrator.py` (`test_flood_agent_mode_requires_location`, `test_flood_agent_mode_rejects_whitespace_only_village_name`, `test_flood_agent_mode_accepts_coordinates_without_village_name`) confirming the graph and decision agent are never invoked when location is missing, and that coordinates alone still satisfy the requirement.
+- Confirmed via `git stash` that this branch's pre-existing mypy warnings on `orchestrator.py` (an unrelated `union-attr` note) and the codebase's existing geopandas/shapely/rasterio stub-import errors elsewhere predate this change.
+- Frontend: `tsc --noEmit` (whole project) and ESLint (on the touched file) both clean.
+- Manual verification confirmed working.
+
+---
+
 ## [1.6.0] - 2026-08-02
 
 ---
