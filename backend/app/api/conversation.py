@@ -39,7 +39,7 @@ async def post_conversation(
     orchestrator: ConversationOrchestrator = Depends(get_conversation_orchestrator),
 ) -> ConversationResponse:
     """Handle one conversation turn and return its grounded public decision."""
-    session_id, decision = await orchestrator.handle_turn(
-        request.session_id, request.to_user_request()
+    session_id, outcome = await orchestrator.handle_turn(
+        request.session_id, request.to_user_request(), mode=request.mode
     )
-    return ConversationResponse.from_decision(session_id, decision)
+    return ConversationResponse.from_outcome(session_id, outcome)

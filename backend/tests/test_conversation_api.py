@@ -15,6 +15,11 @@ from fastapi import FastAPI
 
 from backend.app.config.graph_dependencies import get_conversation_orchestrator
 from backend.app.conversation.exceptions import ConversationSessionNotFoundError
+from backend.app.conversation.models import (
+    ConversationMode,
+    ConversationOutcome,
+    ConversationResponseType,
+)
 from backend.app.decision.exceptions import DecisionRateLimitedError
 from backend.app.decision.models import (
     ActionRecommendation,
@@ -50,30 +55,47 @@ def _decision() -> Decision:
     )
 
 
-class _FakeOrchestrator:
-    """Return a scripted decision while recording every requested turn."""
+def _flood_decision_outcome(decision: Decision) -> ConversationOutcome:
+    """Wrap a canonical Decision the way the real orchestrator's flood path would."""
+    return ConversationOutcome(
+        response_type=ConversationResponseType.FLOOD_DECISION,
+        summary=decision.recommendation.summary,
+        decision=decision,
+    )
 
-    def __init__(self, decision: Decision) -> None:
-        self.decision = decision
+
+class _FakeOrchestrator:
+    """Return a scripted outcome while recording every requested turn and mode."""
+
+    def __init__(self, outcome: ConversationOutcome) -> None:
+        self.outcome = outcome
         self.default_session_id = uuid4()
-        self.calls: list[tuple[UUID | None, UserRequest]] = []
+        self.calls: list[tuple[UUID | None, UserRequest, ConversationMode]] = []
 
     async def handle_turn(
-        self, session_id: UUID | None, request: UserRequest
-    ) -> tuple[UUID, Decision]:
-        """Record the requested turn and return the configured decision."""
-        self.calls.append((session_id, request))
-        return session_id or self.default_session_id, self.decision
+        self,
+        session_id: UUID | None,
+        request: UserRequest,
+        *,
+        mode: ConversationMode = ConversationMode.FLOOD_AGENT,
+    ) -> tuple[UUID, ConversationOutcome]:
+        """Record the requested turn and mode, then return the configured outcome."""
+        self.calls.append((session_id, request, mode))
+        return session_id or self.default_session_id, self.outcome
 
 
 class _FailingOrchestrator:
     """Always raise a decision-generation failure for error-path assertions."""
 
     async def handle_turn(
-        self, session_id: UUID | None, request: UserRequest
-    ) -> tuple[UUID, Decision]:
-        """Simulate a persistent provider failure instead of returning a decision."""
-        del session_id, request
+        self,
+        session_id: UUID | None,
+        request: UserRequest,
+        *,
+        mode: ConversationMode = ConversationMode.FLOOD_AGENT,
+    ) -> tuple[UUID, ConversationOutcome]:
+        """Simulate a persistent provider failure instead of returning an outcome."""
+        del session_id, request, mode
         raise DecisionRateLimitedError("Decision provider rate limit exceeded.")
 
 
@@ -81,10 +103,14 @@ class _UnknownSessionOrchestrator:
     """Always raise an unknown-session failure for not-found-path assertions."""
 
     async def handle_turn(
-        self, session_id: UUID | None, request: UserRequest
-    ) -> tuple[UUID, Decision]:
+        self,
+        session_id: UUID | None,
+        request: UserRequest,
+        *,
+        mode: ConversationMode = ConversationMode.FLOOD_AGENT,
+    ) -> tuple[UUID, ConversationOutcome]:
         """Simulate a stale or expired session id supplied by a real client."""
-        del request
+        del request, mode
         raise ConversationSessionNotFoundError(
             f"Conversation session {session_id} does not exist."
         )
@@ -155,7 +181,7 @@ class ConversationEndpointTests(unittest.TestCase):
     def test_post_conversation_returns_grounded_decision(self) -> None:
         """A successful turn returns only the minimal public decision surface."""
 
-        orchestrator = _FakeOrchestrator(_decision())
+        orchestrator = _FakeOrchestrator(_flood_decision_outcome(_decision()))
         self.application.dependency_overrides[get_conversation_orchestrator] = (
             lambda: orchestrator
         )
@@ -174,6 +200,7 @@ class ConversationEndpointTests(unittest.TestCase):
         self.assertEqual(status_code, 200)
         payload = json.loads(body)
         self.assertEqual(payload["status"], "success")
+        self.assertEqual(payload["response_type"], "flood_decision")
         self.assertEqual(payload["risk_level"], "high")
         self.assertEqual(payload["confidence"], "high")
         self.assertEqual(payload["summary"], "Prepare local response.")
@@ -187,10 +214,11 @@ class ConversationEndpointTests(unittest.TestCase):
         self.assertNotIn("reasons", payload)
         self.assertNotIn("supporting_evidence", payload)
         self.assertEqual(len(orchestrator.calls), 1)
-        session_id, request = orchestrator.calls[0]
+        session_id, request, mode = orchestrator.calls[0]
         self.assertIsNone(session_id)
         self.assertEqual(request.request_text, "Flood outlook for Mingora?")
         self.assertEqual(request.village_name, "Mingora")
+        self.assertEqual(mode, ConversationMode.FLOOD_AGENT)
 
     def test_post_conversation_maps_decision_generation_error_safely(self) -> None:
         """A decision-generation failure returns the centralized safe error response."""
@@ -247,7 +275,7 @@ class ConversationEndpointTests(unittest.TestCase):
     def test_post_conversation_creates_session_then_reuses_supplied_id(self) -> None:
         """The first turn creates a session id; a second turn reuses the supplied one."""
 
-        orchestrator = _FakeOrchestrator(_decision())
+        orchestrator = _FakeOrchestrator(_flood_decision_outcome(_decision()))
         self.application.dependency_overrides[get_conversation_orchestrator] = (
             lambda: orchestrator
         )
@@ -284,6 +312,94 @@ class ConversationEndpointTests(unittest.TestCase):
         self.assertEqual(first_session_id, second_session_id)
         self.assertIsNone(orchestrator.calls[0][0])
         self.assertEqual(str(orchestrator.calls[1][0]), first_session_id)
+
+    def test_post_conversation_returns_small_talk_without_risk_fields(self) -> None:
+        """A small-talk outcome must serialize with no risk/decision-shaped fields."""
+
+        outcome = ConversationOutcome(
+            response_type=ConversationResponseType.SMALL_TALK,
+            summary="Hi! Ask me about flood risk for a specific place.",
+        )
+        orchestrator = _FakeOrchestrator(outcome)
+        self.application.dependency_overrides[get_conversation_orchestrator] = (
+            lambda: orchestrator
+        )
+
+        status_code, body = asyncio.run(
+            _post_application_response(
+                self.application, "/conversation", {"request_text": "hi"}
+            )
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["response_type"], "small_talk")
+        self.assertIsNone(payload["risk_level"])
+        self.assertIsNone(payload["confidence"])
+        self.assertEqual(
+            payload["summary"], "Hi! Ask me about flood risk for a specific place."
+        )
+        self.assertEqual(payload["actions"], [])
+        self.assertEqual(payload["citations"], [])
+        self.assertEqual(payload["missing_evidence"], [])
+
+    def test_post_conversation_returns_policy_answer_with_citations_only(self) -> None:
+        """A policy-answer outcome must carry citations but no risk/decision fields."""
+
+        outcome = ConversationOutcome(
+            response_type=ConversationResponseType.POLICY_ANSWER,
+            summary="District authorities must pre-position relief stock.",
+            citations=("NDMP:p12:Relief Stock",),
+        )
+        orchestrator = _FakeOrchestrator(outcome)
+        self.application.dependency_overrides[get_conversation_orchestrator] = (
+            lambda: orchestrator
+        )
+
+        status_code, body = asyncio.run(
+            _post_application_response(
+                self.application,
+                "/conversation",
+                {
+                    "request_text": "What does government policy require?",
+                    "mode": "policy_advisor",
+                },
+            )
+        )
+
+        self.assertEqual(status_code, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload["response_type"], "policy_answer")
+        self.assertIsNone(payload["risk_level"])
+        self.assertIsNone(payload["confidence"])
+        self.assertEqual(
+            payload["summary"], "District authorities must pre-position relief stock."
+        )
+        self.assertEqual(payload["citations"], ["NDMP:p12:Relief Stock"])
+        self.assertEqual(payload["actions"], [])
+        self.assertEqual(payload["missing_evidence"], [])
+
+        self.assertEqual(len(orchestrator.calls), 1)
+        _, _, mode = orchestrator.calls[0]
+        self.assertEqual(mode, ConversationMode.POLICY_ADVISOR)
+
+    def test_post_conversation_defaults_mode_to_flood_agent(self) -> None:
+        """Omitting ``mode`` must forward the flood-agent default, not fail."""
+
+        orchestrator = _FakeOrchestrator(_flood_decision_outcome(_decision()))
+        self.application.dependency_overrides[get_conversation_orchestrator] = (
+            lambda: orchestrator
+        )
+
+        status_code, _ = asyncio.run(
+            _post_application_response(
+                self.application, "/conversation", {"request_text": "Flood outlook?"}
+            )
+        )
+
+        self.assertEqual(status_code, 200)
+        _, _, mode = orchestrator.calls[0]
+        self.assertEqual(mode, ConversationMode.FLOOD_AGENT)
 
 
 if __name__ == "__main__":

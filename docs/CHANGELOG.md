@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
 
 # Hotfix 17 – Village Live-Condition Summaries (2026-08-25)
 
-Supervisor-requested extension to Situation Room: lightweight, sample village condition cards plus a full-assessment village selector reusing the existing grounded AI agent. Built on a dedicated `feature/village-summary` branch, not yet merged into `dev`/`main`.
+Supervisor-requested extension to Situation Room: lightweight, sample village condition cards plus a full-assessment village selector reusing the existing grounded AI agent. Built on a dedicated `feature/village-summary` branch.
 
 ### Added
 
@@ -35,9 +35,35 @@ Supervisor-requested extension to Situation Room: lightweight, sample village co
 - Backend suite: 292 passed, 23 skipped, no regressions. Frontend: `tsc --noEmit` and ESLint clean.
 - Refreshed the committed GloFAS snapshot (previous snapshot was ~22.8 days stale) to a current one (`glofas_control_20260825T183303Z.nc`), updating the negated-gitignore exception to match the new filename and removing the old snapshot from git tracking.
 
+---
+
+# Hotfix 18 – Small-Talk Routing, Policy Advisor RAG Scoping, and Missing-Evidence Fix (2026-08-26)
+
+Investigation-driven fix for three related problems reported from real usage: casual, non-flood messages (e.g. "hi") being forced through the full flood-decision pipeline and its rigid schema; Policy Advisor still reaching the flood-Decision schema despite Sprint 15.4's intent to route it purely through Knowledge/Dataset; and a real captured bug where a response's missing-evidence line read "This assessment doesn't yet include dataset, dataset, dataset, dataset, or dataset." Root-caused before any code was written: the near-empty-evidence, non-flood-question scenario created by the first two problems turned out to be the same scenario that triggered the third. Built on `feature/conversational-scoping`, branched off `main`.
+
+### Added
+
+- **Shared small-talk detection** (`backend/app/conversation/small_talk.py`): a deterministic, conservative phrase-matching heuristic (`is_small_talk`) plus a mode-aware canned reply (`small_talk_reply`), invoked from the single `ConversationOrchestrator.handle_turn` choke point so both Flood-Aware Agent and Policy Advisor get identical detection with zero duplicated logic.
+- **`ConversationMode` / `ConversationResponseType` / `ConversationOutcome`** (`backend/app/conversation/models.py`): new domain types letting a conversation turn resolve to a small-talk reply or a policy-only RAG answer without forcing either into the flood-specific `Decision` schema (required `RiskAssessment`, `RiskLevel`, etc.).
+- **Policy Advisor now explicitly RAG-only**: `ConversationRequest.mode` (`"flood_agent"` default | `"policy_advisor"`) replaces the previous fragile inference from absent coordinates. In `policy_advisor` mode, `ConversationOrchestrator` calls `KnowledgeTool.answer()` directly and never touches `GraphRuntime`, the flood-evidence graph, or the decision agent.
+- **API contract**: `ConversationResponse` gains `response_type` (`flood_decision` | `small_talk` | `policy_answer`); `risk_level`/`confidence` are now nullable, populated only for `flood_decision`.
+- **Frontend**: `mode` plumbed through `useConversation` and the Policy Advisor page; `ChatMessageBubble` renders all three response types correctly (risk/confidence badges now guard on both fields being present, not just `showRiskBadges`); the pending-status bubble now waits 300ms before appearing, so a near-instant small-talk or RAG reply never flashes an inaccurate rotating status message (e.g. "Analyzing flood zone data..." for "hi").
+
+### Fixed
+
+- **Root cause of the "dataset, dataset, dataset, dataset, or dataset" bug**: `Decision.recommendation.missing_evidence` was unconstrained free text — nothing validated it against the fixed evidence-category vocabulary the prompt actually instructs, and nothing deduplicated it. `DecisionParser` now normalizes it (`_normalize_missing_evidence`): an entry survives only if it case-insensitively names one of the six fixed categories, or exactly matches a current stale-evidence notice or conflict subject; exact duplicates collapse to one. Deliberately permissive enough to preserve legitimate elaboration (e.g. "shelter occupancy") — confirmed by an existing test fixture using exactly that phrasing, which a first, stricter (exact-match-only) version of this fix would have wrongly stripped.
+- Policy Advisor previously reached the backend indistinguishable from a coordinate-less Flood-Aware Agent request; both are now explicitly separated by `mode`.
+
+### Verified
+
+- Full backend suite (excluding golden/live-API tests): 287 passed, 2 skipped, no regressions.
+- New/updated unit tests: 17 conversation-orchestrator tests (6 new — small-talk short-circuit with zero graph/agent/RAG calls, session-continuity recording with `decision=None`, mode-aware canned replies, policy-advisor RAG-only routing), 7 new API-level tests (response serialization, `mode` forwarding and defaulting), 4 new decision-parser tests directly reproducing the captured bug (`("dataset",)*5` → stripped to `()`) and confirming the fix preserves real category names, legitimate elaboration, and conflict-subject entries.
+- **Golden set (real OpenAI calls, `RUN_GOLDEN_SET=1`), run by the project owner with real credentials**: 20/21 passed on the first full run; the one failure (`test_follow_up_narrows_focus_to_policy_not_general_overview`) was rerun 4 times total, passing 3 of 4. In every run, including the failing ones, the retrieved policy citation was genuinely present in the response (the grounding guarantee held) — the only variance was whether it appeared as the first (highest-priority) action or a secondary one. Treated as known LLM response variance, consistent with this project's documented history of similar non-reproducing golden-test flakiness (see Sprint 11), not a regression from this session's changes. Not fixed further.
+- Frontend: `tsc --noEmit` and ESLint clean on every touched file.
+
 ### Notes
 
-- Not yet merged into `dev`/`main` — deliberately kept on `feature/village-summary` until fully reviewed, same pattern as the Sprint 15 frontend rewrite.
+- Both Hotfix 17 and Hotfix 18 are now merged into `dev`/`main`.
 
 ---
 

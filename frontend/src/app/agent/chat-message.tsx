@@ -83,8 +83,8 @@ function formatMissingEvidenceSentence(categories: string[]): string {
 }
 
 export interface AssistantDecision {
-  risk_level: RiskLevel;
-  confidence: DecisionConfidence;
+  risk_level: RiskLevel | null;
+  confidence: DecisionConfidence | null;
   summary: string;
   actions: ActionResponse[];
   citations: string[];
@@ -134,7 +134,7 @@ export function ChatMessageBubble({
   return (
     <div className="flex justify-start">
       <div className="flex max-w-[85%] animate-in fade-in slide-in-from-bottom-2 flex-col gap-3 rounded-2xl rounded-bl-sm border border-border bg-card px-4 py-3 text-sm text-card-foreground duration-[250ms]">
-        {decision && showRiskBadges && (
+        {decision && showRiskBadges && decision.risk_level && decision.confidence && (
           <div className="flex animate-in fade-in fill-mode-backwards flex-wrap items-center gap-2 duration-[200ms]">
             <Badge variant={RISK_BADGE_VARIANT[decision.risk_level]}>
               {RISK_LABEL[decision.risk_level]} risk

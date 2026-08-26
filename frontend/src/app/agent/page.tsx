@@ -51,6 +51,7 @@ export default function AgentPage() {
   const {
     messages,
     isPending,
+    showPending,
     statusMessage,
     bottomRef,
     sendMessage,
@@ -118,7 +119,7 @@ export default function AgentPage() {
           <ChatMessageBubble key={message.id} message={message} />
         ))}
 
-        {isPending && <PendingMessageBubble statusMessage={statusMessage} />}
+        {showPending && <PendingMessageBubble statusMessage={statusMessage} />}
 
         <div ref={bottomRef} />
       </div>

@@ -15,8 +15,10 @@ from backend.app.decision.exceptions import (
 )
 from backend.app.decision.models import Decision
 from backend.app.decision.prompt_builder import (
+    _ABSENT_EVIDENCE_CATEGORY_NAMES,
     _entirely_absent_evidence_categories,
     _flood_severity_figures,
+    _stale_evidence_notices,
 )
 from backend.app.graph.state import EvidenceBundle
 
@@ -67,7 +69,7 @@ class DecisionParser:
         self._validate_grounding(decision, evidence)
         self._validate_specificity(decision, evidence)
         self._validate_no_actions_on_absent_categories(decision, evidence)
-        return decision
+        return _normalize_missing_evidence(decision, evidence)
 
     def _validate_grounding(
         self, decision: Decision, evidence: EvidenceBundle
@@ -202,6 +204,60 @@ def _unquantified_figures_are_uncited(
     return all(
         not (_category_related_references(evidence, category) & cited)
         for category in figure_categories
+    )
+
+
+def _normalize_missing_evidence(decision: Decision, evidence: EvidenceBundle) -> Decision:
+    """Constrain ``missing_evidence`` to the real vocabulary and drop duplicates.
+
+    The provider is free-text on this field (see ``Decision.recommendation
+    .missing_evidence`` and the OpenAI strict-schema translation in
+    ``decision/agent.py``), so nothing upstream stops it from inventing a
+    category name outside the fixed vocabulary or repeating one several
+    times. Neither is a citation-grounding problem (``_validate_grounding``
+    only checks citations/supporting_evidence/evidence_references), so this
+    normalizes deterministically instead of retrying the provider: a
+    hallucinated or duplicated label is dropped/deduped rather than
+    corrected, since there is nothing a retry could ground it against.
+
+    An entry is kept only if it names (case-insensitive substring, matching
+    the same permissive convention ``_category_related_references`` already
+    uses below) one of the fixed evidence categories, or exactly matches one
+    of the current stale-evidence notices or conflicts' subjects -- the
+    sources the prompt actually instructs the model to draw from (see
+    prompt_builder.py's COMPLETENESS and CONFLICTS instructions). Substring
+    matching deliberately preserves legitimate elaboration on a real category
+    (e.g. "shelter occupancy") rather than requiring the bare category name;
+    it only filters the label vocabulary, and does not verify a kept category
+    is genuinely absent (that would be a separate, stricter check).
+    """
+    exact_allowed = set(_stale_evidence_notices(evidence)) | {
+        conflict.subject for conflict in evidence.conflicts
+    }
+
+    def _is_allowed(entry: str) -> bool:
+        if entry in exact_allowed:
+            return True
+        lowered = entry.lower()
+        return any(category in lowered for category in _ABSENT_EVIDENCE_CATEGORY_NAMES)
+
+    seen: set[str] = set()
+    normalized: list[str] = []
+    for entry in decision.recommendation.missing_evidence:
+        if entry in seen or not _is_allowed(entry):
+            continue
+        seen.add(entry)
+        normalized.append(entry)
+
+    normalized_tuple = tuple(normalized)
+    if normalized_tuple == decision.recommendation.missing_evidence:
+        return decision
+    return decision.model_copy(
+        update={
+            "recommendation": decision.recommendation.model_copy(
+                update={"missing_evidence": normalized_tuple}
+            )
+        }
     )
 
 

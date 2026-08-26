@@ -43,6 +43,8 @@ from backend.app.graph.nodes import RecommendationNode
 from backend.app.graph.mappers import DecisionFallbackMapper
 from backend.app.graph.state import (
     EvidenceBundle,
+    EvidenceConflict,
+    EvidenceObservation,
     EvidenceProvenance,
     ForecastEvidence,
     GISEvidence,
@@ -178,6 +180,124 @@ def test_parser_rejects_malformed_or_invalid_decisions(
     """Malformed JSON and schema failures must be domain-specific failures."""
     with pytest.raises((DecisionParsingError, LLMOutputValidationError)):
         DecisionParser().parse(response, parser_evidence)
+
+
+def test_parser_strips_hallucinated_missing_evidence_categories() -> None:
+    """A repeated, non-vocabulary missing_evidence value must be fully removed.
+
+    Reproduces the real captured bug: a near-empty evidence bundle led the
+    model to write the literal word "dataset" five times instead of the five
+    real absent category names. "dataset" matches none of the fixed category
+    names, the current stale-evidence notices, or any conflict subject, so
+    every copy must be dropped -- not just deduplicated to one leftover copy.
+    """
+    evidence = EvidenceBundle()
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.NORMAL, rationale="No evidence available."
+        ),
+        recommendation=Recommendation(
+            summary="No grounded evidence is available for this request.",
+            missing_evidence=("dataset", "dataset", "dataset", "dataset", "dataset"),
+        ),
+        confidence=DecisionConfidence.LOW,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed.recommendation.missing_evidence == ()
+
+
+def test_parser_preserves_real_absent_categories_and_dedupes_repeats() -> None:
+    """Real category names survive normalization; exact duplicates collapse to one."""
+    evidence = EvidenceBundle()
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.NORMAL, rationale="No evidence available."
+        ),
+        recommendation=Recommendation(
+            summary="No grounded evidence is available for this request.",
+            missing_evidence=(
+                "forecast",
+                "gis",
+                "forecast",
+                "weather",
+                "shelter",
+                "village",
+            ),
+        ),
+        confidence=DecisionConfidence.LOW,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed.recommendation.missing_evidence == (
+        "forecast",
+        "gis",
+        "weather",
+        "shelter",
+        "village",
+    )
+
+
+def test_parser_preserves_missing_evidence_elaboration_on_a_real_category() -> None:
+    """Descriptive elaboration on a real category, not just the bare name, survives."""
+    evidence = EvidenceBundle()
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.NORMAL, rationale="No evidence available."
+        ),
+        recommendation=Recommendation(
+            summary="No grounded evidence is available for this request.",
+            missing_evidence=("shelter occupancy", "shelter occupancy"),
+        ),
+        confidence=DecisionConfidence.LOW,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed.recommendation.missing_evidence == ("shelter occupancy",)
+
+
+def test_parser_preserves_missing_evidence_naming_a_real_conflict_subject() -> None:
+    """A named conflict subject is legitimate even naming no fixed category."""
+    evidence = EvidenceBundle(
+        conflicts=(
+            EvidenceConflict(
+                subject="population_estimate",
+                observations=(
+                    EvidenceObservation(
+                        evidence_type="gis",
+                        value="18000",
+                        origin=EvidenceProvenance(
+                            evidence_type="gis", tool_name="GISAnalysisTool"
+                        ),
+                    ),
+                    EvidenceObservation(
+                        evidence_type="village",
+                        value="20000",
+                        origin=EvidenceProvenance(
+                            evidence_type="village", tool_name="VillageTool"
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )
+    decision = Decision(
+        risk_assessment=RiskAssessment(
+            level=RiskLevel.MODERATE, rationale="Conflicting population figures."
+        ),
+        recommendation=Recommendation(
+            summary="Population estimates disagree; treat cautiously.",
+            missing_evidence=("population_estimate",),
+        ),
+        confidence=DecisionConfidence.MEDIUM,
+    )
+
+    parsed = DecisionParser().parse(decision.model_dump_json(), evidence)
+
+    assert parsed.recommendation.missing_evidence == ("population_estimate",)
 
 
 def test_parser_raises_specificity_error_when_no_digits_are_used() -> None:
@@ -374,6 +494,7 @@ def test_openai_provider_forwards_prior_turns_to_prompt_builder(
             village_name="Mingora",
             evidence_bundle=parser_evidence,
             decision=_decision(),
+            summary=_decision().recommendation.summary,
             created_at=datetime(2026, 7, 28, tzinfo=UTC),
         ),
     )

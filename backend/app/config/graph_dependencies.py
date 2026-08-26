@@ -265,6 +265,7 @@ def configure_graph_dependencies(application: FastAPI) -> None:
         prompt_builder=DecisionPromptBuilder(),
         session_store=ConversationSessionStore(),
         state_factory=GraphStateFactory(),
+        knowledge_tool=knowledge_tool,
     )
 
     application.state.graph_container = container

@@ -107,6 +107,7 @@ AI_CONTEXT.md
 docs/PROMPT_GUIDE.md
 docs/thesis
 prompts/
+docs/thesis
 
 # ==========================
 # Deployment: committed production data exceptions (Sprint 16.1)

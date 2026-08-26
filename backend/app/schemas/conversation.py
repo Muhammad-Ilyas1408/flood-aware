@@ -4,9 +4,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.app.conversation.models import (
+    ConversationMode,
+    ConversationOutcome,
+    ConversationResponseType,
+)
 from backend.app.decision.models import (
     ActionRecommendation,
-    Decision,
     DecisionConfidence,
     Priority,
     RiskLevel,
@@ -36,6 +40,7 @@ class ConversationRequest(BaseModel):
     village_name: str | None = None
     district: str | None = None
     province: str | None = None
+    mode: ConversationMode = ConversationMode.FLOOD_AGENT
 
     def to_user_request(self) -> UserRequest:
         """Translate this API request into the canonical graph user request."""
@@ -65,38 +70,56 @@ class ActionResponse(BaseModel):
 
 
 class ConversationResponse(BaseResponse):
-    """Describe the minimal public decision surface for one conversation turn.
+    """Describe the minimal public surface for one conversation turn's outcome.
 
     This intentionally excludes internal fields such as the full evidence
     bundle, conversation history, or grounding-only detail (reasons,
     supporting_evidence) that a client does not need to act on a decision.
+    ``risk_level``/``confidence``/``actions``/``missing_evidence`` are
+    populated only for ``response_type == "flood_decision"``: a small-talk or
+    policy-advisor turn never ran the flood-decision agent, so it has no
+    factual risk assessment to report.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     status: ResponseStatus = ResponseStatus.SUCCESS
     session_id: UUID
-    risk_level: RiskLevel
-    confidence: DecisionConfidence
+    response_type: ConversationResponseType
+    risk_level: RiskLevel | None = None
+    confidence: DecisionConfidence | None = None
     summary: str = Field(min_length=1)
     actions: tuple[ActionResponse, ...] = ()
     citations: tuple[str, ...] = ()
     missing_evidence: tuple[str, ...] = ()
 
     @classmethod
-    def from_decision(
-        cls, session_id: UUID, decision: Decision
+    def from_outcome(
+        cls, session_id: UUID, outcome: ConversationOutcome
     ) -> "ConversationResponse":
-        """Translate a canonical Decision into the minimal public API surface."""
+        """Translate one conversation-turn outcome into the public API surface."""
+        if outcome.response_type is ConversationResponseType.FLOOD_DECISION:
+            decision = outcome.decision
+            if decision is None:
+                raise ValueError(
+                    "A flood_decision outcome must carry its canonical Decision."
+                )
+            return cls(
+                session_id=session_id,
+                response_type=outcome.response_type,
+                risk_level=decision.risk_assessment.level,
+                confidence=decision.confidence,
+                summary=decision.recommendation.summary,
+                actions=tuple(
+                    ActionResponse.from_decision_action(action)
+                    for action in decision.recommendation.actions
+                ),
+                citations=decision.recommendation.citations,
+                missing_evidence=decision.recommendation.missing_evidence,
+            )
         return cls(
             session_id=session_id,
-            risk_level=decision.risk_assessment.level,
-            confidence=decision.confidence,
-            summary=decision.recommendation.summary,
-            actions=tuple(
-                ActionResponse.from_decision_action(action)
-                for action in decision.recommendation.actions
-            ),
-            citations=decision.recommendation.citations,
-            missing_evidence=decision.recommendation.missing_evidence,
+            response_type=outcome.response_type,
+            summary=outcome.summary,
+            citations=outcome.citations,
         )

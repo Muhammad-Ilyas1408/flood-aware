@@ -26,11 +26,15 @@ export default function PolicyAdvisorPage() {
   const {
     messages,
     isPending,
+    showPending,
     statusMessage,
     bottomRef,
     sendMessage,
     resetConversation,
-  } = useConversation({ statusMessages: STATUS_MESSAGES });
+  } = useConversation({
+    statusMessages: STATUS_MESSAGES,
+    mode: "policy_advisor",
+  });
 
   async function handleSend() {
     const trimmed = inputText.trim();
@@ -85,7 +89,7 @@ export default function PolicyAdvisorPage() {
           />
         ))}
 
-        {isPending && <PendingMessageBubble statusMessage={statusMessage} />}
+        {showPending && <PendingMessageBubble statusMessage={statusMessage} />}
 
         <div ref={bottomRef} />
       </div>

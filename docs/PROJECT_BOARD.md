@@ -1413,9 +1413,9 @@ Backend: https://flood-aware-production.up.railway.app
 
 ## Hotfix 17 – Village Live-Condition Summaries
 
-Status: **Completed** (merge to dev/main pending)
+Status: **Completed**
 Completed: 2026-08-25
-Branch: feature/village-summary
+Branch: feature/village-summary (merged into dev/main)
 
 - [x] Lightweight, non-LLM village summary endpoint (weather + severity, no OpenAI call)
 - [x] Honest partial-data handling (weather/forecast failures reported independently)
@@ -1426,4 +1426,19 @@ Branch: feature/village-summary
 - [x] Backend: 292 passed, 23 skipped. Frontend: tsc + ESLint clean
 - [x] Live browser-verified end-to-end
 
-**Not yet done:** merge into dev/main.
+---
+
+## Hotfix 18 – Small-Talk Routing, Policy Advisor RAG Scoping, and Missing-Evidence Fix
+
+Status: **Completed**
+Completed: 2026-08-26
+Branch: feature/conversational-scoping (merged into dev/main)
+
+- [x] Shared small-talk detection (`is_small_talk` + mode-aware canned reply), invoked once from `ConversationOrchestrator` for both Flood-Aware Agent and Policy Advisor
+- [x] Policy Advisor scoped to explicit `mode=policy_advisor`, RAG-only via `KnowledgeTool` — no more implicit inference from absent coordinates
+- [x] New `ConversationOutcome`/`response_type` contract: small-talk and policy-answer turns no longer forced into the flood-risk `Decision` schema
+- [x] Root-caused and fixed the "dataset, dataset, dataset..." `missing_evidence` bug via vocabulary validation + dedup in `DecisionParser`
+- [x] Frontend: `mode` plumbing, response-type-aware rendering, 300ms pending-bubble delay to stop inaccurate status-message flashes
+- [x] Backend: 287 passed, 2 skipped (full suite, excl. golden)
+- [x] Golden set (real API, run by project owner): 20/21 first run; the 1 failure (`test_follow_up_narrows_focus_to_policy_not_general_overview`) reran 3/4 pass — known LLM response-order variance, grounding held in every run, not a regression
+- [x] Frontend: `tsc` + ESLint clean

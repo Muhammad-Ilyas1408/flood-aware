@@ -280,6 +280,11 @@ def _stale_evidence_notices(evidence: EvidenceBundle) -> tuple[str, ...]:
     return tuple(notices)
 
 
+_ABSENT_EVIDENCE_CATEGORY_NAMES = frozenset(
+    {"forecast", "gis", "weather", "knowledge", "shelter", "village"}
+)
+
+
 def _entirely_absent_evidence_categories(evidence: EvidenceBundle) -> set[str]:
     """Return major evidence categories whose sections contain no evidence."""
     absent: set[str] = set()
