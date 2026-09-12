@@ -71,7 +71,7 @@ class IntentClassifierProtocol(Protocol):
 
 
 _FLOOD_AGENT_CAPABILITIES = (
-    "Flood-Aware Agent assesses flood risk for specific villages in Swat "
+    "Flood Guide assesses flood risk for specific villages in Swat "
     "district. It needs a village or coordinates to run, and answers using "
     "live weather, river-forecast (GloFAS), GIS flood-zone/population/"
     "infrastructure analysis, and shelter data -- never general knowledge "
@@ -85,7 +85,7 @@ _POLICY_ADVISOR_CAPABILITIES = (
     "disaster-management plans, and official evacuation guidance, grounded "
     "only in retrieved passages from real PDMA/NDMP documents. It never "
     "assesses live flood risk for a specific location, and never uses "
-    "weather, forecast, or GIS data -- for that, Flood-Aware Agent handles "
+    "weather, forecast, or GIS data -- for that, Flood Guide handles "
     "location-specific flood-risk questions."
 )
 

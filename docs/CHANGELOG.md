@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Renamed the "Flood-Aware Agent" page/assistant to "Flood Guide"** across the frontend, backend, and docs, per supervisor request — a display-name-only rebrand to make the assistant approachable for non-technical users. "Flood-Aware" remains the unchanged product/brand name; the `/agent` route path is unchanged. Historical CHANGELOG.md/PROJECT_BOARD.md entries below are left as-is, describing what was true at the time.
+
 ---
 
 ## [1.7.0] - 2026-08-25

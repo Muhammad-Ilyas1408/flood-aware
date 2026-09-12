@@ -39,7 +39,7 @@ const FEATURES = [
   {
     href: "/agent",
     icon: Compass,
-    title: "Flood-Aware Agent",
+    title: "Flood Guide",
     description:
       "Ask questions in plain language and get grounded, evidence-cited flood risk answers for any village or shelter in Swat.",
   },

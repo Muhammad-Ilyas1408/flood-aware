@@ -97,8 +97,8 @@ export function VillageExplorer() {
           Full village assessment
         </CardTitle>
         <CardDescription>
-          Select a village to run the full grounded Flood-Aware Agent -- the
-          same evidence-based reasoning as the Agent page.
+          Select a village to run the full grounded Flood Guide -- the
+          same evidence-based reasoning as the Flood Guide page.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

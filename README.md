@@ -33,7 +33,7 @@ The system is built around a real, working **LangGraph** multi-tool decision age
 | **Health check** | [/health](https://flood-aware-production.up.railway.app/health) |
 
 **Pages:**
-- **Flood-Aware Agent** — grounded, multi-turn flood-risk conversation for any village in the coverage area
+- **Flood Guide** — grounded, multi-turn flood-risk conversation for any village in the coverage area
 - **Policy Advisor** — government policy and disaster-management guidance, grounded in real PDMA/NDMP documents
 - **Situation Room** — live village/shelter data, dataset provenance, and an interactive map
 

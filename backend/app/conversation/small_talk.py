@@ -80,7 +80,7 @@ def is_small_talk(request_text: str) -> bool:
 
 _FLOOD_AGENT_REPLIES: dict[_Category, tuple[str, ...]] = {
     _Category.GREETING: (
-        "Hi! I'm the Flood-Aware assistant. Share a village name or "
+        "Hi! I'm Flood Guide. Share a village name or "
         "coordinates and I'll pull together the latest forecast, GIS, and "
         "shelter evidence for you.",
         "Hey there! I'm here to help with flood risk for Swat district -- "
@@ -93,7 +93,7 @@ _FLOOD_AGENT_REPLIES: dict[_Category, tuple[str, ...]] = {
         "latest evidence for you.",
     ),
     _Category.IDENTITY: (
-        "I'm the Flood-Aware assistant. Ask me about flood risk for a "
+        "I'm Flood Guide. Ask me about flood risk for a "
         "specific place -- share coordinates or a village name and I'll "
         "pull together the latest forecast, GIS, and shelter evidence for "
         "you.",

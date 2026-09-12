@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
-  { href: "/agent", label: "Flood-Aware Agent" },
+  { href: "/agent", label: "Flood Guide" },
   { href: "/policy-advisor", label: "Policy Advisor" },
   { href: "/situation-room", label: "Situation Room" },
 ] as const;

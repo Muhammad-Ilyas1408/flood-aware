@@ -122,7 +122,7 @@ graph TD
 
 ## Frontend — Next.js (Production)
 
-Responsibilities: user interface, real-time chat, live data visualization, navigation. Built with TypeScript, Tailwind CSS v4, shadcn/ui, react-leaflet. Four pages: Home, Flood-Aware Agent, Policy Advisor, Situation Room.
+Responsibilities: user interface, real-time chat, live data visualization, navigation. Built with TypeScript, Tailwind CSS v4, shadcn/ui, react-leaflet. Four pages: Home, Flood Guide, Policy Advisor, Situation Room.
 
 ## Frontend — Streamlit (Reference)
 

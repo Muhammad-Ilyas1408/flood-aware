@@ -7,7 +7,7 @@ This app is a client for the [Flood-Aware FastAPI backend](../backend) — real 
 ## Pages
 
 - **Home** (`/`) — live overview and navigation
-- **Flood-Aware Agent** (`/agent`) — grounded, evidence-cited flood risk conversation for any village
+- **Flood Guide** (`/agent`) — grounded, evidence-cited flood risk conversation for any village
 - **Policy Advisor** (`/policy-advisor`) — government policy and disaster-management guidance, grounded in real PDMA/NDMP documents
 - **Situation Room** (`/situation-room`) — real village/shelter data and an interactive map
 

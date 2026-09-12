@@ -1496,3 +1496,14 @@ Branch: feature/intent-routing (same-night continuation of Hotfix 20's deferred 
 - [x] `test_decision_golden_set.py` confirmed genuinely unaffected by reading its fixtures before implementing (bypasses `ForecastNode` entirely), then running it for real to confirm: 15/15 passed
 - [x] Both tests flagged as behaviorally at-risk in the pre-implementation proposal run for real and read carefully per direct instruction not to round failures into "known flakiness": one passed outright; the other's batch-run failure (plus two more in the same run) isolated and individually reconfirmed as the same async-cleanup noise from Hotfix 20 — the specific flagged risk (a new figure displacing shelter/policy-led actions) did not materialize
 - [x] Closes the known issue opened in Hotfix 20
+
+---
+
+## Rebrand – "Flood-Aware Agent" Renamed to "Flood Guide"
+
+Status: **Completed**
+Completed: 2026-09-13
+
+- [x] Supervisor-requested display-name-only rebrand: the "Flood-Aware Agent" page/assistant is now shown as "Flood Guide" everywhere user-facing (frontend page heading, tab title, nav label, home page feature card, Situation Room copy, README/TDS docs, and the backend capability text an LLM can echo back when a user asks what the assistant can do)
+- [x] "Flood-Aware" left unchanged as the overall product/brand name; the `/agent` route path is unchanged — only displayed text moved
+- [x] Historical CHANGELOG.md/PROJECT_BOARD.md entries above left untouched, since they document what was true at the time of each past sprint/hotfix

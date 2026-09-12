@@ -86,7 +86,7 @@ export default function AgentPage() {
           </Link>
           <h1 className="flex items-center gap-2 font-heading text-2xl font-semibold tracking-tight text-foreground">
             <Compass className="size-6 text-primary" aria-hidden="true" />
-            Flood-Aware Agent
+            Flood Guide
           </h1>
           <p className="text-sm text-muted-foreground">
             Grounded, evidence-based flood risk answers for Swat district.
