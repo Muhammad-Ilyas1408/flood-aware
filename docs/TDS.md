@@ -4,7 +4,7 @@
 > **Version:** 2.0
 > **Status:** Complete, deployed to production
 > **Document Owner:** Project Lead
-> **Last Updated:** August 2026
+> **Last Updated:** September 2026
 
 ---
 
@@ -130,7 +130,11 @@ Retained as a working reference implementation from earlier development. Not the
 
 ## Backend API (FastAPI)
 
-Responsibilities: request handling, validation (Pydantic), CORS enforcement, error translation, service orchestration. Endpoints: `/conversation`, `/villages`, `/shelters`, `/datasets/catalog`, `/health`.
+Responsibilities: request handling, validation (Pydantic), CORS enforcement, error translation, service orchestration. Endpoints: `/conversation`, `/villages`, `/villages/summary`, `/shelters`, `/datasets/catalog`, `/health`.
+
+## Conversation Orchestrator / Intent Layer
+
+Responsibilities: a real, first-class routing layer sitting in front of the LangGraph decision agent, resolving every incoming turn's intent before any evidence collection begins. A deterministic, zero-cost small-talk phrase match runs first; anything it doesn't match is classified by a lightweight OpenAI structured-output `IntentClassifier` into a capability question (answered directly, grounded only in the product's real fixed capabilities), a genuinely ambiguous question needing one real clarifying question, or a genuine flood-risk/policy question that falls through unchanged to the full evidence-collection pipeline. Fails safe: any classifier error or timeout is treated identically to a genuine question, so a classifier outage can only ever cost the short-circuit behavior, never correctness.
 
 ## LangGraph Decision Agent
 
@@ -138,7 +142,7 @@ Responsibilities: severity-based conditional tool orchestration, evidence collec
 
 ## Forecast Module
 
-Responsibilities: reading pre-ingested local GloFAS snapshots (never live-ingesting within a request path, due to the underlying CDS API's unbounded blocking queue behavior), staleness detection.
+Responsibilities: reading pre-ingested local GloFAS snapshots (never live-ingesting within a request path, due to the underlying CDS API's unbounded blocking queue behavior), staleness detection, and mapping the real hydrological facts onto the evidence bundle — `discharge`, `severity`, `source`, `forecast_date`, and `lead_time`, taken from the forecast series' peak-discharge point so the cited figure stays consistent with the severity it explains.
 
 ## GIS Module
 
@@ -204,7 +208,10 @@ Detailed inventory: `docs/DATA_INVENTORY.md`.
 
 ```mermaid
 graph TD
-    A[User Request] --> B[Route by Flood Severity]
+    A[User Request] --> Z{Intent Classification<br/>small talk / capability /<br/>clarification / genuine question}
+    Z -->|Small talk or<br/>capability question| S[Direct Short-Circuit Reply<br/>no evidence collection]
+    Z -->|Needs clarification| CQ[Clarifying Question Response<br/>no evidence collection]
+    Z -->|Genuine flood-risk<br/>or policy question| B[Route by Flood Severity]
     B --> C[Collect Evidence<br/>Weather, Forecast, GIS, RAG, Village/Shelter]
     C --> D[Aggregate Evidence Bundle]
     D --> E[Construct Grounded Prompt<br/>current request + conversation history]
@@ -224,6 +231,7 @@ graph TD
 | `/health` | GET | Liveness check |
 | `/conversation` | POST | Submit a conversation turn, grounded decision response |
 | `/villages` | GET | Real village records (name, district, population, coordinates) |
+| `/villages/summary` | GET | Lightweight, non-LLM village condition summaries (weather, severity, status) for explicitly named villages |
 | `/shelters` | GET | Real shelter records (name, district, capacity, coordinates) |
 | `/datasets/catalog` | GET | Dataset provenance and record counts |
 

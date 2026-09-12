@@ -35,7 +35,7 @@ The system is built around a real, working **LangGraph** multi-tool decision age
 **Pages:**
 - **Flood Guide** — grounded, multi-turn flood-risk conversation for any village in the coverage area
 - **Policy Advisor** — government policy and disaster-management guidance, grounded in real PDMA/NDMP documents
-- **Situation Room** — live village/shelter data, dataset provenance, and an interactive map
+- **Situation Room** — live village/shelter data, dataset provenance, an interactive map, curated Village Snapshot condition cards, and a full-assessment village selector
 
 ---
 
@@ -97,6 +97,7 @@ graph TD
 - Every claim traceable to a real, cited source document and page
 
 ### Multi-Turn Conversation
+- Intent-aware routing resolves each turn as a small-talk reply, a capability answer, a clarifying question, or a full flood-risk/policy decision — not an all-or-nothing pipeline
 - Real conversation memory with evidence reuse across turns
 - Follow-up questions correctly shift focus to what's actually being asked, rather than repeating a generic overview
 
