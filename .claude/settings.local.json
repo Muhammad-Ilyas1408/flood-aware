@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python *)",
+      "Bash(awk { if \\(length > 89\\) print NR\": \"length } *)",
+      "Bash(git mv *)",
+      "Bash(git check-ignore *)",
+      "Bash(grep -oE \"Yv=p\\\\\\(.a.,\\\\{target:.e1md1dwn5.\\\\}\\\\\\)\\\\\\(.{600}\" index.BvGIeCyC.js)",
+      "Bash(grep -oE \"Uv=\\\\\\([^=]{0,80}=>[^;]{0,200}\" index.BvGIeCyC.js)",
+      "Bash(grep -oE \"[a-zA-Z$]{0,3}Uv[=:][^;]{0,200}\" index.BvGIeCyC.js)",
+      "Bash(grep -oE \"Uv=\\\\\\(e,t,n=!1,r\\\\\\)=>\\\\{[^}]*\\\\}[^}]*\\\\}\" index.BvGIeCyC.js)",
+      "Bash(grep -rn \"dashboard/app\\\\.py\\\\|dashboard\\\\\\\\\\\\\\\\app\\\\.py\" --include=*.py --include=*.md .)",
+      "Bash(uv run *)",
+      "Bash(where osmium *)",
+      "Bash(xargs grep -l \"BackReferenceWriter\\\\|extract\")",
+      "Bash(npm --version)",
+      "PowerShell(npm *)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx shadcn *)",
+      "Bash(node *)",
+      "Bash(curl -s http://localhost:3000/agent -o /tmp/agent_fixed.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"agent:%{http_code}\\\\n\" http://localhost:3000/agent)",
+      "Bash(curl -s -o /dev/null -w \"policy:%{http_code}\\\\n\" http://localhost:3000/policy-advisor)",
+      "Bash(PYTHONPATH=F:/Flood-Aware python -c ' *)",
+      "Bash(npx eslint *)"
+    ]
+  }
+}

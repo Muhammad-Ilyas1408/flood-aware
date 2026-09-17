@@ -73,6 +73,7 @@ data/chroma/
 data/outputs/evaluation/
 data/glofas/
 data/gis/admin/raw
+data\chroma\government
 
 # ==========================
 # GIS / Hydrology Data
