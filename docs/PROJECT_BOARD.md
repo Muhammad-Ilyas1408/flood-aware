@@ -1499,6 +1499,23 @@ Branch: feature/intent-routing (same-night continuation of Hotfix 20's deferred 
 
 ---
 
+## Hotfix 22 – Shelter Proximity Matching
+
+Status: **Completed**
+Completed: 2026-09-17
+Branch: feature/shelter-matching-fix (branched off main)
+
+- [x] Root-caused a live-testing-confirmed bug: real shelter "Government Degree College Mingora" exists in `shelters.csv`, but a flood question for Mingora returned "shelter data is currently unavailable" — no shelter-matching logic existed anywhere; every request got the full, unfiltered, unlabeled shelter list with zero district/coordinate/distance signal
+- [x] `ShelterEvidenceMapper` now filters to `Operational` shelters within a real 5km radius of the request's coordinates (haversine distance, reusing existing `gis/distance.py`), sorted nearest-first, populating the previously-always-null `nearest_shelter`/`available_capacity` fields
+- [x] 5km chosen from a real rural-evacuation walking-distance heuristic (~1hr) and confirmed against the real dataset's own tehsil clustering (every same-tehsil shelter within 3.53km, next tehsil starts at 6.17km) — captures 24/51 shelters (47%), not "everything"
+- [x] Found and fixed a necessary companion gap: `status` (Operational/Closed) was silently dropped at the repository-projection boundary — several nearest-by-distance rows are decade-closed 2009 relief camps that a naive distance-only fix would have wrongly started recommending
+- [x] Confirmed in code that Situation Room's Full Assessment selector calls the exact same `/conversation` endpoint as the Agent page (no parallel logic) — fix applies to both with zero extra frontend/backend changes; Situation Room's separate Village Snapshots cards never touch shelter data and correctly stay untouched
+- [x] Backend: 348 passed, 53 skipped, 8 subtests passed (9 new tests, up from 339) — new `test_shelter_evidence_mapper.py` (unit + real-CSV Mingora regression tests) plus one new `status`-projection test
+- [x] Real dual-path live verification, each confirmed independently: Agent path (forced-major-severity to reach the shelter-collection step, real production shelters, real OpenAI call) now cites real nearby shelters by name with `missing_evidence: ()`; Situation Room's Full Assessment independently confirmed live in Chrome to hit the identical endpoint and return the identical response shape
+- [x] Stayed within approved minimal scope — the pre-agreed stop condition (more files, shared-interface changes, unrelated test risk) was checked explicitly and not triggered; only disclosed fallout was two mechanical fixture-coordinate fixes in tests already about shelter grounding
+
+---
+
 ## Rebrand – "Flood-Aware Agent" Renamed to "Flood Guide"
 
 Status: **Completed**

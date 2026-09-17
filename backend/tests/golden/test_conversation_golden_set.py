@@ -249,10 +249,17 @@ def _shelter_result(context) -> ToolResult:
 
 
 def _request(question: str, village_name: str) -> UserRequest:
-    """Create one realistic Swat request with stable location context."""
+    """Create one realistic Swat request with stable location context.
+
+    Coordinates are Mingora's real location: every scenario in this module
+    uses a Mingora-area village_name, and ``_shelter_result`` below places
+    its fixture shelter at these same coordinates, so shelter-distance
+    matching (ShelterEvidenceMapper) finds it relevant, as it would for the
+    real village.
+    """
     return UserRequest(
         request_text=question,
-        coordinates=Coordinate(latitude=34.0151, longitude=71.5249),
+        coordinates=Coordinate(latitude=34.7700, longitude=72.3600),
         village_name=village_name,
         district="Swat",
         province="Khyber Pakhtunkhwa",

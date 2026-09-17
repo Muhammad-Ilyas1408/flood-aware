@@ -173,7 +173,9 @@ def test_shelter_node_maps_tool_result_without_ranking() -> None:
         updated = asyncio.run(ShelterNode(shelter_tool).execute(state))
 
     shelter_tool.execute.assert_called_once()
-    evidence_mapper.assert_called_once_with(shelter_tool.execute.return_value.data)
+    evidence_mapper.assert_called_once_with(
+        shelter_tool.execute.return_value.data, origin=state.user_request.coordinates
+    )
     assert updated.shelters.shelters == ("School Hall",)
     assert updated.villages is state.villages
 

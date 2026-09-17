@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
+from backend.app.config.datasets import create_production_dataset_catalog_config
 from backend.app.data.file_support import DatasetFileFormat
 from backend.app.data.models import (
     DatasetColumn,
@@ -101,3 +102,19 @@ class ProductionRepositoryProjectionTests(unittest.TestCase):
         )
         self.assertEqual(len(table.rows), len(shelters.shelters))
         self.assertTrue(shelters.shelters[0].name)
+
+    def test_shelter_status_is_preserved_for_operational_filtering(self) -> None:
+        """The production schema's status column must survive projection.
+
+        Real production rows include historical 2009 relief camps marked
+        "Closed" -- without this column, shelter-relevance matching cannot
+        tell them apart from real, currently operational shelters.
+        """
+        config = create_production_dataset_catalog_config()
+        shelters = ShelterService(CSVRepository(config.shelters)).load_shelters()
+        by_name = {shelter.name: shelter for shelter in shelters.shelters}
+
+        self.assertEqual(
+            by_name["Government Degree College Mingora"].status, "Operational"
+        )
+        self.assertEqual(by_name["Relief Camp Jail Road Mingora"].status, "Closed")

@@ -248,7 +248,11 @@ class ShelterNode:
             context = ToolContextMapper.to_domain(state)
             result = await asyncio.to_thread(self._shelter_tool.execute, context)
             return state.model_copy(
-                update={"shelters": ShelterEvidenceMapper.to_graph(result.data)}
+                update={
+                    "shelters": ShelterEvidenceMapper.to_graph(
+                        result.data, origin=state.user_request.coordinates
+                    )
+                }
             )
         except Exception as error:
             return _record_tool_failure(state, "shelter", error)

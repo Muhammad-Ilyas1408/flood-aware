@@ -190,10 +190,23 @@ def _production_projection(
 
     village_headers = ("name", "district", "population", "latitude", "longitude")
     shelter_headers = ("name", "district", "capacity", "latitude", "longitude")
+    shelter_headers_with_status = shelter_headers + ("status",)
     if expected_headers == village_headers and "village_name" in source_headers:
         return ("village_name", "district", "population", "latitude", "longitude")
     if expected_headers == shelter_headers and "shelter_name" in source_headers:
         return ("shelter_name", "district", "capacity", "latitude", "longitude")
+    if (
+        expected_headers == shelter_headers_with_status
+        and "shelter_name" in source_headers
+    ):
+        return (
+            "shelter_name",
+            "district",
+            "capacity",
+            "latitude",
+            "longitude",
+            "status",
+        )
     return None
 
 
