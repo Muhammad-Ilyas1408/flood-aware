@@ -87,6 +87,7 @@ def create_production_dataset_catalog_config() -> DatasetCatalogConfig:
                 ("capacity", DatasetColumnType.INTEGER, True),
                 ("latitude", DatasetColumnType.FLOAT, False),
                 ("longitude", DatasetColumnType.FLOAT, False),
+                ("status", DatasetColumnType.STRING, False),
             ),
             tags=("shelters", "production"),
         ),

@@ -90,8 +90,8 @@ def test_container_wires_production_boundaries_into_the_graph() -> None:
                     name="School Hall",
                     district="Swat",
                     capacity=200,
-                    latitude=34.7800,
-                    longitude=72.3700,
+                    latitude=34.0180,
+                    longitude=71.5280,
                 ),
             )
         ),

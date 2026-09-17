@@ -32,6 +32,7 @@ class ShelterDTO:
     capacity: int
     latitude: float
     longitude: float
+    status: str = "Operational"
 
 
 @dataclass(frozen=True, slots=True)
